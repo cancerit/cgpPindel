@@ -1,4 +1,4 @@
-package Sanger::CGP::Pindel::Read;
+package Sanger::CGP::Pindel::InputGen::Read;
 
 use strict;
 use English qw( -no_match_vars );

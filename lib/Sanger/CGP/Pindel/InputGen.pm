@@ -19,9 +19,9 @@ $SIG{TERM} = sub { exit };
 
 use threads;
 
-use Sanger::CGP::Pindel::SamHeader;
-use Sanger::CGP::Pindel::PairToPindel;
-use Sanger::CGP::Pindel::Pair;
+use Sanger::CGP::Pindel::InputGen::SamHeader;
+use Sanger::CGP::Pindel::InputGen::PairToPindel;
+use Sanger::CGP::Pindel::InputGen::Pair;
 
 const my $PAIRS_PER_THREAD => 500_000;
 

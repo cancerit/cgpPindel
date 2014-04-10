@@ -1,4 +1,4 @@
-package Sanger::CGP::Pindel::SamHeader;
+package Sanger::CGP::Pindel::InputGen::SamHeader;
 
 use strict;
 use English qw( -no_match_vars );

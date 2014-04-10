@@ -1,4 +1,4 @@
-package Sanger::CGP::Pindel::Pair;
+package Sanger::CGP::Pindel::InputGen::Pair;
 
 use strict;
 use English qw( -no_match_vars );
@@ -6,7 +6,7 @@ use autodie qw(:all);
 use warnings FATAL => 'all';
 use Const::Fast qw(const);
 
-use Sanger::CGP::Pindel::Read;
+use Sanger::CGP::Pindel::InputGen::Read;
 
 const my $MIN_MAPQ => 0;
 const my $SINGLE_END_MIN_MAPQ => 6;

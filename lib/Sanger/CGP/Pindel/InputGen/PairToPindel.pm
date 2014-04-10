@@ -1,4 +1,4 @@
-package Sanger::CGP::Pindel::PairToPindel;
+package Sanger::CGP::Pindel::InputGen::PairToPindel;
 
 use strict;
 use English qw( -no_match_vars );
