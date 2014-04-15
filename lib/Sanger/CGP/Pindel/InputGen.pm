@@ -12,6 +12,9 @@ use Try::Tiny qw(try catch finally);
 use File::Spec;
 use Data::Dumper;
 
+use Sanger::CGP::Pindel;
+our $VERSION = Sanger::CGP::Pindel->VERSION;
+
 # add signal handler for any interrupt so that cleanup of temp is handled correctly.
 use File::Temp;
 $SIG{INT} = sub { exit };
@@ -65,7 +68,7 @@ sub set_outdir {
 }
 
 sub run {
-    my $self = shift;
+  my $self = shift;
 
   # set up values used in loop;
   my $pair_count = 0;
@@ -80,7 +83,7 @@ sub run {
   my $command .= sprintf $BAMCOLLATE, $collate, File::Spec->catfile($tmpdir, 'collate_tmp'), $self->{'bam'};
     try {
     my ($rg_pis, $sample_name);
-    my $head_ob = Sanger::CGP::Pindel::SamHeader->new;
+    my $head_ob = Sanger::CGP::Pindel::InputGen::SamHeader->new($self->{'bam'});
     my $collate_start = time;
     my ($pid, $process);
     $pid = open $process, q{-|}, $command or croak 'Could not fork: '.$OS_ERROR;
@@ -172,10 +175,10 @@ sub reads_to_pindel {
 
   my $total_reads = scalar @reads;
   my @records;
-  my $to_pindel = Sanger::CGP::Pindel::PairToPindel->new($sample_name, $rg_pis);
+  my $to_pindel = Sanger::CGP::Pindel::InputGen::PairToPindel->new($sample_name, $rg_pis);
   my $total_pairs = $total_reads / 2;
   for(1..$total_pairs) {
-    my $pair = Sanger::CGP::Pindel::Pair->new(\shift @reads, \shift @reads);
+    my $pair = Sanger::CGP::Pindel::InputGen::Pair->new(\shift @reads, \shift @reads);
     next unless($pair->keep_pair);
     $to_pindel->set_pair($pair);
     push @records, @{$to_pindel->pair_to_pindel};
@@ -220,9 +223,9 @@ sub reads_to_disk {
 
 __END__
 
-=head1 NAME
+=head1 Sanger::CGP::Pindel::InputGen
 
-Sanger::CGP::Pindel::InputGen - Generate pindel input from BAM.
+Generate pindel input from BAM.
 
 =head2 Constructor
 

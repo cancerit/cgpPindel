@@ -6,6 +6,9 @@ use autodie qw(:all);
 use warnings FATAL => 'all';
 use Const::Fast qw(const);
 
+use Sanger::CGP::Pindel;
+our $VERSION = Sanger::CGP::Pindel->VERSION;
+
 use Sanger::CGP::Pindel::InputGen::Read;
 
 const my $MIN_MAPQ => 0;
@@ -17,8 +20,8 @@ sub new {
   my ($class, $r1, $r2) = @_;
   my $self = {};
   bless $self, $class;
-  $self->{'r1'} = Sanger::CGP::Pindel::Read->new($r1, 1);
-  $self->{'r2'} = Sanger::CGP::Pindel::Read->new($r2, 2);
+  $self->{'r1'} = Sanger::CGP::Pindel::InputGen::Read->new($r1, 1);
+  $self->{'r2'} = Sanger::CGP::Pindel::InputGen::Read->new($r2, 2);
   return $self;
 }
 
@@ -61,9 +64,9 @@ sub keep_pair {
 
 __END__
 
-=head1 NAME
+=head1 Sanger::CGP::Pindel::InputGen::Pair
 
-Sanger::CGP::Pindel::Pair - Describes a pair of reads and their suitability as Pindel candidates
+Describes a pair of reads and their suitability as Pindel candidates
 
 =head2 Constructor
 
