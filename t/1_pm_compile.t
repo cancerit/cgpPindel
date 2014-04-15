@@ -17,7 +17,7 @@ my $lib_path = "$Bin/../lib";
 
 # Add modules here that cannot be instantiated (should be extended and have no 'new')
 # or need a set of inputs - these should be tested in own test script
-use constant MODULE_SKIP => qw(Sanger::CGP::Pindel::InputGen::Pair Sanger::CGP::Pindel::InputGen::Read);
+use constant MODULE_SKIP => qw(Sanger::CGP::Pindel::InputGen::Pair Sanger::CGP::Pindel::InputGen::Read Sanger::CGP::Pindel::OutputGen::CombinedRecordGenerator Sanger::CGP::Pindel::OutputGen::PindelRecordParser Sanger::CGP::Pindel::OutputGen::VcfConverter);
 
 
 my $init_cwd = getcwd;
