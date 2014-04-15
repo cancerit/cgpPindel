@@ -7,11 +7,17 @@ use warnings FATAL => 'all';
 use Const::Fast qw(const);
 use Carp qw( croak );
 
+use Sanger::CGP::Pindel;
+our $VERSION = Sanger::CGP::Pindel->VERSION;
+
+use PCAP::Bam::Bas;
+
 const my $DEFAULT_PI => 500;
 
 sub new {
-  my $class = shift;
+  my ($class, $bam) = @_;
   my $self = {'header_lines' => [],};
+  $self->{'bas'} = PCAP::Bam::Bas->new("$bam.bas") if(defined $bam && -e "$bam.bas");
   bless $self, $class;
   return $self;
 }
@@ -33,6 +39,7 @@ sub rgs_to_offsets_and_sample_name {
     die "No header information has been provided in the BAM file" unless($force);
     return {'.' => $DEFAULT_PI};
   }
+
   my %rgs;
   my $sample_name;
   for my $rg( @{$self->{'header_lines'}} ) {
@@ -40,8 +47,11 @@ sub rgs_to_offsets_and_sample_name {
     die "Readgroup line has no ID:\n\n$rg\n" unless(defined $rg_id);
     my ($median_insert) = $rg =~ m/\tPI:([[:digit:]]+)/;
     if(!defined $median_insert) {
-      warn "No PI tag found for RG $rg_id";
-      $median_insert = $DEFAULT_PI;
+      $median_insert = $self->{'bas'}->get($rg_id, 'median_insert_size') if(exists $self->{'bas'});
+      if(!defined $median_insert) {
+        warn "No PI tag found for RG $rg_id in header of *.bam.bas file";
+        $median_insert = $DEFAULT_PI;
+      }
     }
     die "BAM file has multiple RG lines with ID of: $rg_id" if(exists $rgs{$rg_id});
     $rgs{$rg_id} = $median_insert;
@@ -68,9 +78,9 @@ sub rgs_to_offsets_and_sample_name {
 
 __END__
 
-=head1 NAME
+=head1 Sanger::CGP::Pindel::InputGen::SamHeader
 
-Sanger::CGP::Pindel::SamHeader - Collate relevant header information.
+Collate relevant header information.
 
 =head2 Constructor
 
