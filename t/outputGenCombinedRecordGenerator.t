@@ -3,6 +3,7 @@ use Test::More;
 use Test::Fatal;
 use FindBin qw($Bin);
 use Data::Dumper;
+use File::Spec;
 
 use Bio::DB::Sam;
 
@@ -13,15 +14,15 @@ use_ok 'Sanger::CGP::Vcf::Contig';
 use_ok 'Sanger::CGP::Pindel::OutputGen::CombinedRecord';
 
 my $test_data = "$Bin/../testData";
-my $ref_file = join('/',$test_data,'genome_22.fa');
-my $pin_file = join('/',$test_data,'test.txt_22');
+my $ref_file = File::Spec->catfile($test_data,'genome_22.fa');
+my $pin_file = File::Spec->catfile($test_data,'test.txt_22');
 
-my $mt_file = join('/',$test_data,'test.bam');
-my $wt_file = join('/',$test_data,'test-BL.bam');
+my $mt_file = File::Spec->catfile($test_data,'test.bam');
+my $wt_file = File::Spec->catfile($test_data,'test-BL.bam');
 
 subtest 'Initialisation checks' => sub {
   use_ok($MODULE);
-  
+
   my $fai = Bio::DB::Sam::Fai->load($ref_file);
   my $wt_sam = Bio::DB::Sam->new(-bam => $wt_file, -fasta => $ref_file);
   my $mt_sam = Bio::DB::Sam->new(-bam => $mt_file, -fasta => $ref_file);
@@ -30,7 +31,7 @@ subtest 'Initialisation checks' => sub {
   is($obj->{_wt_sam},$wt_sam,'Correctly setting wt sam object');
   is($obj->{_mt_sam},$mt_sam,'Correctly setting mt sam object');
   is($obj->{_mutant_sample_name},'test','Correctly setting sample name');
-  
+
   eval{
     new $MODULE(-path => $pin_file, -fai => $fai, -wt_sam => $wt_sam, -mutant_sample_name => 'test');
   };unless($@){
@@ -38,7 +39,7 @@ subtest 'Initialisation checks' => sub {
   }else{
   	pass('new method throws exception as expected if no mt_sam object arguments');
   }
-  
+
   eval{
     new $MODULE(-path => $pin_file, -fai => $fai, -mt_sam => $mt_sam, -mutant_sample_name => 'test');
   };unless($@){
@@ -46,7 +47,7 @@ subtest 'Initialisation checks' => sub {
   }else{
   	pass('new method throws exception as expected if no wt_sam object arguments');
   }
-  
+
 };
 
 
@@ -55,9 +56,9 @@ subtest 'Non-object funcions' => sub {
 
 
   subtest '_read_depth' => sub {
-  	
+
   	my $wt_sam = Bio::DB::Sam->new(-bam => $wt_file, -fasta => $ref_file);
-  	
+
   	my $expect = [{
   	  'HWUSI-EAS493_8289_FC30GNW_PE:6:86:991:775' => '724837',
   	  'HWI-EAS255_8305_FC30G7J_PE:5:12:939:716' => '723578',
@@ -120,15 +121,15 @@ subtest 'Non-object funcions' => sub {
   	  'HWI-EAS255_8282_FC30G79_PE:7:42:818:255' => '723091',
   	  'HWI-EAS300_8282_FC30BVC_PE:7:80:394:1321' => '723380',
   	}];
-  	
+
   	is_deeply([Sanger::CGP::Pindel::OutputGen::CombinedRecordGenerator::_read_depth($wt_sam, 22, 16060480, 16060485)],$expect,'Checking correct interpretation of loci');
   };
-  
+
   subtest '_count_sam_event_reads' => sub {
-  	
+
   	my $mt_sam = Bio::DB::Sam->new(-bam => $mt_file, -fasta => $ref_file);
   	my $samp_type_key = 'mt';
-  	
+
   	my $record_2 = new Sanger::CGP::Pindel::OutputGen::CombinedRecord(
   	  -length => 6,
       -type => 'D',
@@ -146,7 +147,7 @@ subtest 'Non-object funcions' => sub {
       -reads => {'test'=>{'-'=>[['EAS139_64:1:55:1728:1427_r1_D0',16,22,16060468,29,'12M6D63M','*',0,0,'AGTTAACTCTCTTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTCTTTCTTTCTTTCTTTCTTTCTTT','*','MD:Z:1A10^TTTTTC63','NM:i:7'],]}},
       -lub => 'T'
   	);
-  	
+
     my $record_1 = new Sanger::CGP::Pindel::OutputGen::CombinedRecord(
       -length => 4,
       -type => 'I',
@@ -163,7 +164,7 @@ subtest 'Non-object funcions' => sub {
       -reads => {'test'=>{'-'=>[['EAS54_120:2:98:542:174_r1_I0',16,22,16052144,29,'12M6D63M','*',0,0,'ACAGAGCAAGACTCTATCTCAAAAAACAAACAAACAAACAAACAAACAAACAAACAAACTGTCAAAATCTGTAC','*','MD:Z:1A1063','NM:i:4'],]}},
       -lub => 'A'
     );
- 
+
     my $exp_pos_reads = {
    	  'EAS25_5:1:71:437:248' => 1,
       'EAS192_65:5:10:134:1020' => 1,
@@ -176,41 +177,41 @@ subtest 'Non-object funcions' => sub {
       'EAS54_120:1:14:1351:1949' => 1,
       'EAS192_60:3:72:1166:2006' => 1
     };
-   
+
     my $exp_neg_reads = {
     	'EAS192_60:4:16:399:753' => 1,
         'EAS131_6:2:71:269:644' => 1,
         'EAS89_7:6:18:195:315' => 1
     };
- 
+
   	my ($pos_reads,$neg_reads) = Sanger::CGP::Pindel::OutputGen::CombinedRecordGenerator::_count_sam_event_reads($record_1, $mt_sam, $samp_type_key);
-  	
+
 #  	warn "pos:";
 #  	use Data::Dumper;
 #  	warn Dumper($pos_reads);
 #  	warn "neg:";
 #  	warn Dumper($neg_reads);
-  	
+
   	is($record_1->b_mt_pos,10,'Check for correct pos read call counts');
   	is($record_1->b_mt_neg,3,'Check for correct neg read call counts');
-  	
+
   	is_deeply($pos_reads,$exp_pos_reads,'Check for correct pos read call hash');
   	is_deeply($neg_reads,$exp_neg_reads,'Check for correct neg read call hash');
-  	
+
   };
-  
+
 };
 
 subtest 'Object funcions' => sub {
-  
+
   subtest '_process_counts' => sub {
-  	
-  	
+
+
   	my $fai = Bio::DB::Sam::Fai->load($ref_file);
     my $wt_sam = Bio::DB::Sam->new(-bam => $wt_file, -fasta => $ref_file);
     my $mt_sam = Bio::DB::Sam->new(-bam => $mt_file, -fasta => $ref_file);
   	my $samp_type_key = 'mt';
-  	
+
   	my $generator = new Sanger::CGP::Pindel::OutputGen::CombinedRecordGenerator(
   	  -path => $pin_file,
   	  -fai => $fai,
@@ -218,7 +219,7 @@ subtest 'Object funcions' => sub {
   	  -mt_sam => $mt_sam,
   	  -mutant_sample_name => 'test'
   	);
-  	
+
   	my $record_1 = new Sanger::CGP::Pindel::OutputGen::CombinedRecord(
   	  -length => 6,
       -type => 'D',
@@ -236,7 +237,7 @@ subtest 'Object funcions' => sub {
       },
       -lub => 'T'
   	);
-  	
+
   	my $exp_record_1 = new Sanger::CGP::Pindel::OutputGen::CombinedRecord(
   	  -length => 6,
       -type => 'D',
@@ -253,14 +254,14 @@ subtest 'Object funcions' => sub {
         'test-BL'=>{'-'=>[['EAS139_64:1:55:1728:1427_r1_D0',16,22,16060468,29,'12M6D63M','*',0,0,'AGTTAACTCTCTTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTCTTTCTTTCTTTCTTTCTTTCTTT','*','MD:Z:1A10^TTTTTC63','NM:i:7']]}
       },
       -lub => 'T',
-      
+
       -p_mt_pos => 0,
       -p_mt_neg => 1,
       -b_mt_pos => 0, ## no bwa calls which is a little odd..... as would expect there to be at least one bwa call in this case.....
       -b_mt_neg => 0, ## no bwa calls which is a little odd.....
       -d_mt_pos => 26,
       -d_mt_neg => 29,
-      
+
       -rd_mt_pos => 26,
       -rd_mt_neg => 29,
       -uc_mt_pos => 0,
@@ -268,11 +269,11 @@ subtest 'Object funcions' => sub {
       -call_mt_rg_count => 1,
       -total_mt_rg_count => 41
   	);
-  	
+
   	$generator->_process_counts($record_1, $samp_type_key);
-  	
+
   	is_deeply($record_1,$exp_record_1,'Check for correct depth and call counts deletion');
-  	
+
   	my $record_2 = new Sanger::CGP::Pindel::OutputGen::CombinedRecord(
       -type => 'I',
       -idx => 'I1',
@@ -289,7 +290,7 @@ subtest 'Object funcions' => sub {
         'test-BL'=>{'+'=>[['EAS54_120:3:83:51:90_r1_I1',0,22,16052145,37,'23M4I47M','*',0,0,'ACAGAGCAAGACTCTATCTCAAAAAACAAACAAACAAACAAACAAACAAACAAACAAACTGTCAAAATCTGTAC','*','MD:Z:70','NM:i:4']]},
       }
     );
-    
+
     my $exp_record_2 = new Sanger::CGP::Pindel::OutputGen::CombinedRecord(
       -type => 'I',
       -idx => 'I1',
@@ -305,14 +306,14 @@ subtest 'Object funcions' => sub {
       		           ['BOB_120:3:83:51:90_r1_I1',0,22,16052145,37,'23M4I47M','*',0,0,'ACAGAGCAAGACTCTATCTCAAAAAACAAACAAACAAACAAACAAACAAACAAACAAACTGTCAAAATCTGTAC','*','MD:Z:70','NM:i:4']]},
         'test-BL'=>{'+'=>[['EAS54_120:3:83:51:90_r1_I1',0,22,16052145,37,'23M4I47M','*',0,0,'ACAGAGCAAGACTCTATCTCAAAAAACAAACAAACAAACAAACAAACAAACAAACAAACTGTCAAAATCTGTAC','*','MD:Z:70','NM:i:4']]}
       },
-      
+
       -p_mt_pos => 2,
       -p_mt_neg => 0,
-      -b_mt_pos => 10, 
-      -b_mt_neg => 3, 
+      -b_mt_pos => 10,
+      -b_mt_neg => 3,
       -d_mt_pos => 34,
       -d_mt_neg => 28,
-      
+
       -rd_mt_pos => 35,
       -rd_mt_neg => 28,
       -uc_mt_pos => 11, ## the pindel mapped read is presant in the mapped bam file but BOB is not...
@@ -320,14 +321,14 @@ subtest 'Object funcions' => sub {
       -call_mt_rg_count => 2,
       -total_mt_rg_count => 52
     );
-    
-    
+
+
     $generator->_process_counts($record_2, $samp_type_key);
     is_deeply($record_2,$exp_record_2,'Check for correct depth and call counts insertion');
- 
+
   };
-  
-  
+
+
   subtest '_process_record' => sub {
     pass('WARNING! _process_record not actually tested, however individual components have been.');
   };
