@@ -536,7 +536,7 @@ sub _parse_read {
 ## These bam files are used in things like gbrowse/jbrowse for display
 
 	my @cig_list = ($left_seq_length, 'M');
-	push @cig_list, $ref_seq_length, 'D' if $ref_seq_length;
+	push @cig_list, $ref_seq_length, 'D' if($ref_seq_length && $record->type ne 'I');
 	push @cig_list, $event_seq_length, 'I' if $event_seq_length;
 	push @cig_list, $right_seq_length, 'M';
 
