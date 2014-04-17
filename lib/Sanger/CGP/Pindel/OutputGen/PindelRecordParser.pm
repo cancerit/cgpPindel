@@ -308,7 +308,7 @@ sub _parse_alignment {
 		my $region_end = $start_pos + $ref_seq_length + length($ref_right) + 5000;
 		$self->{_buffer_region_chr} = $chr;
 		$self->{_buffer_region_start} = $region_start;
-		$self->{_buffer_region} = $fai->fetch($chr.':'.$region_start.'-'.$region_end); ##TODO why not work out the maximum amount of seq to pull back and just do it once - then just subsr?? Will save on IO...
+		$self->{_buffer_region} = uc $fai->fetch($chr.':'.$region_start.'-'.$region_end); ##TODO why not work out the maximum amount of seq to pull back and just do it once - then just subsr?? Will save on IO...
 		$self->{_buffer_region_end} = $region_start + length($self->{_buffer_region});
 	}
 
@@ -614,7 +614,7 @@ sub calmd {
 		## this should grab the event ref seq from the huge ref_string we are holding for this region.....
 		## we then sub string each component from this ref_string... here we assume that the ref string will always be large enough as this should have been worked out elsewhere....
 		## This may mean that we have to bring the function into an object method....
-		$ref_seq = uc substr(${$reference_ref}, ($start-$reference_start), ($final_end - $start+1)) || '';
+		$ref_seq = substr(${$reference_ref}, ($start-$reference_start), ($final_end - $start+1)) || '';
 
 		$start = $new_start;
 		if($type eq 'M') {
