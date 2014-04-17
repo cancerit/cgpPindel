@@ -45,11 +45,16 @@ sub rgs_to_offsets_and_sample_name {
   for my $rg( @{$self->{'header_lines'}} ) {
     my ($rg_id) = $rg =~ m/\tID:([^\t]+)/;
     die "Readgroup line has no ID:\n\n$rg\n" unless(defined $rg_id);
-    my ($median_insert) = $rg =~ m/\tPI:([[:digit:]]+)/;
-    if(!defined $median_insert) {
-      $median_insert = $self->{'bas'}->get($rg_id, 'median_insert_size') if(exists $self->{'bas'});
+    my $median_insert;
+    if(exists $self->{'bas'}) {
+      $median_insert = $self->{'bas'}->get($rg_id, 'median_insert_size');
+      die "BAS file is present but no median_insert_size found for RG:ID $rg_id\n" unless(defined $median_insert);
+      $median_insert = int $median_insert;
+    }
+    else {
+      ($median_insert) = $rg =~ m/\tPI:([[:digit:]]+)/;
       if(!defined $median_insert) {
-        warn "No PI tag found for RG $rg_id in header of *.bam.bas file";
+        warn "No PI tag found for RG:ID $rg_id in BAM header.";
         $median_insert = $DEFAULT_PI;
       }
     }

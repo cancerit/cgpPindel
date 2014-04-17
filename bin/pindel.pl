@@ -20,14 +20,12 @@ use Const::Fast qw(const);
 use PCAP::Cli;
 use Sanger::CGP::Pindel::Implement;
 
-const my @VALID_PROCESS => qw(input pindel pin2vcf flag annot);
+const my @VALID_PROCESS => qw(input split pindel pin2vcf flag);
 my %index_max = ( 'input'   => 2,
                   'split'   => 0,
                   'filter'  => 0,
                   'pindel'  => 0,
-                  'pin2vcf' => 0,
-                  'flag'    => 0,
-                  'annot'   => 0,);
+                  'pin2vcf' => 1,);
 
 {
   my $options = setup();
@@ -51,12 +49,22 @@ my %index_max = ( 'input'   => 2,
   $threads->run($jobs, 'filter', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'filter');
   $threads->run($jobs, 'pindel', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'pindel');
 
+  if(!exists $options->{'process'} || $options->{'process'} eq 'pin2vcf') {
+    Sanger::CGP::Pindel::Implement::pindel_to_vcf($options);
+#    cleanup($options);
+  }
+}
 
+sub cleanup {
+  my $tmpdir = shift->{'tmp'};
+  remove_tree $tmpdir if(-e $tmpdir);
+	return 0;
 }
 
 
 sub setup {
   my %opts;
+  $opts{'cmd'} = join " ", $0, @ARGV;
   GetOptions( 'h|help' => \$opts{'h'},
               'm|man' => \$opts{'m'},
               'c|cpus=i' => \$opts{'threads'},
@@ -67,6 +75,11 @@ sub setup {
               'e|exclude=s' => \$opts{'exclude'},
               'p|process=s' => \$opts{'process'},
               'i|index=i' => \$opts{'index'},
+              # these are specifically for pin2vcf
+              'sp|species=s' => \$opts{'species'},
+              'as|assembly=s' => \$opts{'assembly'},
+              'st|seqtype=s' => \$opts{'seqtype'},
+              'sg|skipgerm' => \$opts{'skipgerm'},
   ) or pod2usage(2);
 
   pod2usage(-message => PCAP::license, -verbose => 1) if(defined $opts{'h'});
@@ -101,6 +114,7 @@ die "No max has been defined for this process type\n" if($index_max{$opts{'proce
 
   # now safe to apply defaults
   $opts{'threads'} = 1 unless(defined $opts{'threads'});
+  $opts{'seqtype'} = 'WGS' unless(defined $opts{'seqtype'});
 
   my $tmpdir = File::Spec->catdir($opts{'outdir'}, 'tmpPindel');
   make_path($tmpdir) unless(-d $tmpdir);
@@ -132,18 +146,20 @@ pindel.pl [options]
     -normal    -n   Normal BAM file
 
   Optional
+    -seqtype   -st  Sequencing protocol, expect all input to match [WGS]
+    -assembly  -as  Name of assembly in use
+                     -  when not available in BAM header SQ line.
+    -species   -sp  Species
+                     -  when not available in BAM header SQ line.
     -exclude   -e   Exclude this list of ref sequences from processing
                      - comma separated, e.g. NC_007605,hs37d5
+    -skipgerm  -sg  Don't output events with more evidence in normal BAM.
     -cpus      -c   Number of cores to use. [1]
-                     - recommend 4 if possible
+                     - recommend max 4 during 'input' process.
 
-  Targeted processing:
+  Targeted processing (further detail under OPTIONS):
     -process   -p   Only process this step then exit, optionally set -index
-                      bwamem - only applicable if input is bam
-                        mark - Run duplicate marking (-index N/A)
-
     -index     -i   Optionally restrict '-p' to single job
-                      bwamem - 1..<lane_count>
 
   Other:
     -help      -h   Brief help message.
@@ -156,8 +172,26 @@ pindel.pl [options]
 
 =head1 OPTIONS
 
-=over 8
+=over 2
 
-=item B<-outdir>
+=item B<-process>
+
+Available processes for this tool are:
+
+  input
+  split
+  filter
+  pindel
+  pin2vcf
+
+=item B<-index>
+
+Possible index ranges for processes above are:
+
+  input   = 1..2
+  split   = 1..<total_refs_less_exclude>
+  filter  = 1..<total_refs_less_exclude>
+  pindel  = 1..<total_refs_less_exclude>
+  pin2vcf = 1
 
 =back

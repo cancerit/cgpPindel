@@ -7,3 +7,6 @@
 /setup.log
 /nytprof.out
 /nytprof
+/bin/filter_pindel_reads
+/bin/pindel
+/testData/genome_22.fa

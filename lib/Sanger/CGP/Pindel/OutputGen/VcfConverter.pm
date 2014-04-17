@@ -1,7 +1,7 @@
 package Sanger::CGP::Pindel::OutputGen::VcfConverter;
 
-use Sanger::CGP::Pindel::OutputGen;
-our $VERSION = Sanger::CGP::Pindel::OutputGen->VERSION;
+use Sanger::CGP::Pindel;
+our $VERSION = Sanger::CGP::Pindel->VERSION;
 
 use strict;
 use Sanger::CGP::Vcf::VcfUtil;
@@ -15,12 +15,12 @@ sub new{
 	my $proto = shift;
 	my (%args) = @_;
 	my $class = ref($proto) || $proto;
-	
+
 	my $self = {};
 	bless $self, $class;
-	
+
 	$self->init(%args);
-	
+
 	return $self;
 }
 
@@ -50,9 +50,9 @@ Generates a Vcf header String for NORMAL/TUMOUR comparisons.
 =cut
 sub gen_header{
 	my($self,$wt_sample, $mt_sample, $process_logs, $s2_presant, $reference_name, $input_source) = @_;
-	
+
 	my $contigs = $self->{_contigs};
-	
+
 	my $info = [
 		{key => 'INFO', ID => 'PC', Number => 1, Type => 'String', Description => 'Pindel call'},
 		{key => 'INFO', ID => 'RS', Number => 1, Type => 'Integer', Description => 'Range start'},
@@ -61,9 +61,9 @@ sub gen_header{
 		{key => 'INFO', ID => 'REP', Number => 1, Type => 'Integer', Description => 'Change repeat count within range'},
 		{key => 'INFO', ID => 'S1', Number => 1, Type => 'Integer', Description => 'S1'}
 	];
-	
+
 	push @{$info}, {key => 'INFO', ID => 'S2', Number => 1, Type => 'Float', Description => 'S2'} if($s2_presant);
-	
+
 	my $format = [
 		{key => 'FORMAT', ID => 'GT', Number => 1, Type => 'String', Description => 'Genotype'},
 		{key => 'FORMAT', ID => 'PP', Number => 1, Type => 'Integer', Description => 'Pindel calls on the positive strand'},
@@ -79,13 +79,13 @@ sub gen_header{
 		{key => 'FORMAT', ID => 'TG', Number => 1, Type => 'Integer', Description => 'Total distinct contributuing read groups'},
 		{key => 'FORMAT', ID => 'VG', Number => 1, Type => 'Integer', Description => 'Variant distinct contributuing read groups'},
 	];
-	
+
 	return Sanger::CGP::Vcf::VcfUtil::gen_tn_vcf_header( $wt_sample, $mt_sample, $contigs, $process_logs, $reference_name, $input_source, $info, $format, []);
 }
 
 sub gen_record{
 	my($self, $record) = @_;
-	
+
 	# CHR POS ID REF ALT QUAL FILTER INFO FORMAT GENO GENO
 
 	my $start = $record->start();
@@ -94,7 +94,7 @@ sub gen_record{
 	my $ret = $record->chro().SEP;
 	$ret .= $start.SEP;
 	$ret .= $record->id().SEP;
-	
+
 	my $ref = uc ($record->lub . $record->ref_seq);
 	my $alt = uc ($record->lub . $record->alt_seq);
 
@@ -102,10 +102,10 @@ sub gen_record{
 	$ret .= $alt.SEP;
 	$ret .= $record->sum_ms().SEP;
 	$ret .= '.'.SEP;
-	
+
 	#use Data::Dumper;
 	#warn Dumper($record) if($record->start == 50923776);
-	
+
 	# INFO
 	#PC=D;RS=19432;RE=19439;LEN=3;S1=4;S2=161.407;REP=2;PRV=1
 	$ret .= 'PC='.$record->type().';';
@@ -116,10 +116,10 @@ sub gen_record{
 	$ret .= 'S2='.$record->s2().';' if(defined $record->s2()); ## not presant in older versions of pindel
 	$ret .= 'REP='.$record->repeats().SEP;
 #	$ret .= 'PRV='.$record->prev_frac().SEP;
-	
+
 	# FORMAT
 	$ret .= $self->{_format}.SEP;
-	
+
 	# 'GT:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU'
 	# NORMAL GENO
 	$ret .= './.:';
@@ -135,7 +135,7 @@ sub gen_record{
 	$ret .= $record->uc_wt_neg().':';
 	$ret .= $record->total_wt_rg_count().':';
 	$ret .= $record->call_wt_rg_count().SEP;
-	
+
 	# TUMOUR GENO
 	$ret .= './.:';
 	$ret .= $record->p_mt_pos().':';
@@ -150,6 +150,6 @@ sub gen_record{
 	$ret .= $record->uc_mt_neg().':';
 	$ret .= $record->total_mt_rg_count().':';
 	$ret .= $record->call_mt_rg_count().NL;
-	
+
 	return $ret;
 }

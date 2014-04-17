@@ -1,7 +1,7 @@
 package Sanger::CGP::Pindel::OutputGen::CombinedRecord;
 
-use Sanger::CGP::Pindel::OutputGen;
-our $VERSION = Sanger::CGP::Pindel::OutputGen->VERSION;
+use Sanger::CGP::Pindel;
+our $VERSION = Sanger::CGP::Pindel->VERSION;
 
 use strict;
 use base qw{Sanger::CGP::Pindel::OutputGen::PindelRecord};
@@ -13,39 +13,39 @@ sub new{
 	my (%args) = @_;
 	my $class = ref($proto) || $proto;
 	my $self = $class->SUPER::new(@_);
-	
+
 	$self->{_valid} = $args{'-valid'};
-	
+
 	$self->{_p_mt_pos} = $args{'-p_mt_pos'};
 	$self->{_p_mt_neg} = $args{'-p_mt_neg'};
 	$self->{_p_wt_pos} = $args{'-p_wt_pos'};
 	$self->{_p_wt_neg} = $args{'-p_wt_neg'};
-	
+
 	$self->{_b_mt_pos} = $args{'-b_mt_pos'};
 	$self->{_b_mt_neg} = $args{'-b_mt_neg'};
 	$self->{_b_wt_pos} = $args{'-b_wt_pos'};
 	$self->{_b_wt_neg} = $args{'-b_wt_neg'};
-	
+
 	$self->{_d_mt_pos} = $args{'-d_mt_pos'};
 	$self->{_d_mt_neg} = $args{'-d_mt_neg'};
 	$self->{_d_wt_pos} = $args{'-d_wt_pos'};
 	$self->{_d_wt_neg} = $args{'-d_wt_neg'};
-	
+
 	$self->{_rd_mt_pos} = $args{'-rd_mt_pos'};
 	$self->{_rd_mt_neg} = $args{'-rd_mt_neg'};
 	$self->{_rd_wt_pos} = $args{'-rd_wt_pos'};
 	$self->{_rd_wt_neg} = $args{'-rd_wt_neg'};
-	
+
 	$self->{_uc_mt_pos} = $args{'-uc_mt_pos'};
 	$self->{_uc_mt_neg} = $args{'-uc_mt_neg'};
 	$self->{_uc_wt_pos} = $args{'-uc_wt_pos'};
 	$self->{_uc_wt_neg} = $args{'-uc_wt_neg'};
-	
+
 	$self->{_call_wt_rg_count} = $args{'-call_wt_rg_count'};
 	$self->{_total_wt_rg_count} = $args{'-total_wt_rg_count'};
 	$self->{_call_mt_rg_count} = $args{'-call_mt_rg_count'};
 	$self->{_total_mt_rg_count} = $args{'-total_mt_rg_count'};
-	
+
     return $self;
 }
 

@@ -10,6 +10,7 @@ use File::Path qw(make_path);
 use File::Temp qw(tempfile);
 use Capture::Tiny;
 use List::Util qw(first);
+use FindBin qw($Bin);
 
 use Sanger::CGP::Pindel;
 our $VERSION = Sanger::CGP::Pindel->VERSION;
@@ -17,10 +18,15 @@ our $VERSION = Sanger::CGP::Pindel->VERSION;
 use PCAP::Threaded;
 use PCAP::Bam;
 
+use Sanger::CGP::Pindel::OutputGen::BamUtil;
+
 const my $PINDEL_GEN_COMM => ' -b %s -o %s -t %s';
 const my $SAMTOOLS_FAIDX => ' faidx %s %s > %s';
 const my $FILTER_PIN_COMM => ' %s %s %s %s';
 const my $PINDEL_COMM => ' %s %s %s %s %s %s';
+const my $PIN_2_VCF => q{ -mt %s -wt %s -r %s -d %s -o %s -so %s -mtp %s -wtp %s -pp '%s'};
+
+my $l_bin = $Bin;
 
 sub prepare {
   my $options = shift;
@@ -51,13 +57,13 @@ sub input {
     make_path($gen_out);
 
     my $command = "$^X ";
-    $command .= which('pindel_input_gen.pl');
+    $command .= _which('pindel_input_gen.pl');
     $command .= sprintf $PINDEL_GEN_COMM, $input, $gen_out, $max_threads;
+
+    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
 
     #
     ## The rest is auto-magical
-
-    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
     PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
   }
   return 1;
@@ -81,15 +87,15 @@ sub split {
     my $gen_out = File::Spec->catdir($tmp, 'refs');
     make_path($gen_out);
 
-    my $command = which('samtools');
+    my $command = _which('samtools');
     $command .= sprintf $SAMTOOLS_FAIDX,  $options->{'reference'},
                                           $seq,
                                           File::Spec->catfile($gen_out, "$seq.fa");
 
+    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
+
     #
     ## The rest is auto-magical
-
-    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
     PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
   }
   return 1;
@@ -115,16 +121,17 @@ sub filter {
 
     my $refs = File::Spec->catdir($tmp, 'refs');
 
-    my $command = which('filter_pindel_reads');
+    my $command = _which('filter_pindel_reads');
     $command .= sprintf $FILTER_PIN_COMM, File::Spec->catfile($refs, "$seq.fa"),
                                           $seq,
                                           File::Spec->catfile($gen_out, $seq),
                                           (join q{ }, @{$options->{'seqs'}->{$seq}});
 
+    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
+
     #
     ## The rest is auto-magical
 
-    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
     PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
   }
   return 1;
@@ -153,7 +160,7 @@ sub pindel {
     my ($bd_fh, $bd_file) = tempfile('pindel_db_XXXX', UNLINK => 1);
     close $bd_fh;
 
-    my $command = which('pindel');
+    my $command = _which('pindel');
     $command .= sprintf $PINDEL_COMM, File::Spec->catfile($refs, "$seq.fa"),
                                       File::Spec->catfile($filtered, $seq),
                                       $gen_out,
@@ -161,13 +168,58 @@ sub pindel {
                                       $bd_file,
                                       5;
 
+    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
+
+    # a little cleanup
+    for my $ext((qw(BP INV LI TD))) {
+      unlink File::Spec->catfile($gen_out, (join '_', $seq, $seq, $ext));
+    }
+    unlink $bd_file;
+
     #
     ## The rest is auto-magical
 
-    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
     PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
   }
   return 1;
+}
+
+sub pindel_to_vcf {
+  my $options = shift;
+
+  my $tmp = $options->{'tmp'};
+  return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
+
+  ## build command for this index
+  #
+
+  my $pg = Sanger::CGP::Pindel::OutputGen::BamUtil::pg_from_caller('pindel', 'cgpPindel indel detection', $VERSION, $options->{'cmd'});
+  $pg =~ s/\t/\\t/g;
+
+  my $command = $^X.' '._which('pindel_2_combined_vcf.pl');
+  $command .= sprintf $PIN_2_VCF, $options->{'tumour'},
+                                  $options->{'normal'},
+                                  $options->{'reference'},
+                                  File::Spec->catdir($tmp, 'pout'), # pindel result dir
+                                  File::Spec->catfile($tmp, 'pindel.vcf'),
+                                  File::Spec->catfile($tmp, 'pindel'),
+                                  $options->{'seqtype'},
+                                  $options->{'seqtype'},
+                                  $pg;
+  # optional items
+  $command .= ' -s' if(defined $options->{'skipgerm'});
+  $command .= ' -as '.$options->{'assembly'} if(defined $options->{'assembly'});
+  $command .= ' -sp '.$options->{'species'}   if(defined $options->{'species'});
+
+  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
+
+  # any cleanup
+
+
+  #
+  ## The rest is auto-magical
+
+  PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
 }
 
 sub sanitised_sample_from_bam {
@@ -205,6 +257,13 @@ sub file_list {
   }
   closedir $dh;
   return @files;
+}
+
+sub _which {
+  my $prog = shift;
+  my $path = File::Spec->catfile($l_bin, $prog);
+  $path = which($prog) unless(-e $path);
+  return $path;
 }
 
 1;

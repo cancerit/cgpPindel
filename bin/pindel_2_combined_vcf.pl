@@ -1,4 +1,4 @@
-#! /usr/bin/perl
+#!/usr/bin/perl
 
 BEGIN {
   use Cwd qw(abs_path);
@@ -22,34 +22,36 @@ use Sanger::CGP::Pindel::OutputGen::CombinedRecordGenerator;
 use Sanger::CGP::Pindel::OutputGen::SequentialIdGenerator;
 use Sanger::CGP::Pindel::OutputGen::UuIdGenerator;
 use Sanger::CGP::Pindel::OutputGen::VcfConverter;
+use Sanger::CGP::Pindel::OutputGen::BamUtil;
 
 use Sanger::CGP::Vcf::Contig;
 use Sanger::CGP::Vcf::Sample;
-use Sanger::CGP::Vcf::BamUtil;
+use Sanger::CGP::Vcf::VcfProcessLog;
 
 {
   my $opts = setup();
-  
+
   my $output;
   my $output_location = '';
   my $current_path = '';
   my @file_paths = ();
-  
+
   if($opts->{input}){
     push(@file_paths, $opts->{input});
   }
-  	
+
   if($opts->{inputdir}){
     opendir(my $dh, $opts->{inputdir}) or die "Cannot open |".$opts->{d}."| for reading: $!";
     push(@file_paths, map {join('/',$opts->{inputdir},$_)} grep {m/.*_((D)|(SI))$/} readdir $dh);
     closedir $dh;
   }
-  	
+
   my $wt_sam = Bio::DB::Sam->new(-bam => $opts->{wt}, -fasta => $opts->{r});
   my $mt_sam = Bio::DB::Sam->new(-bam => $opts->{mt}, -fasta => $opts->{r});
 
   ## combine the header text to get a combined list of contigs.
-  my $contigs    = Sanger::CGP::Pindel::OutputGen::BamUtil::parse_contigs($wt_sam->header->text . $mt_sam->header->text);
+  my $contigs    = Sanger::CGP::Pindel::OutputGen::BamUtil::parse_contigs($wt_sam->header->text . $mt_sam->header->text, $opts->{sp}, $opts->{as});
+
   my $wt_samples = Sanger::CGP::Pindel::OutputGen::BamUtil::parse_samples($wt_sam->header->text,$opts->{wts},$opts->{wtp},$opts->{wta},$opts->{a},'Wild type');
   my $mt_samples = Sanger::CGP::Pindel::OutputGen::BamUtil::parse_samples($mt_sam->header->text,$opts->{mts},$opts->{mtp},$opts->{mta},$opts->{a},'Mutant');
 
@@ -58,7 +60,7 @@ use Sanger::CGP::Vcf::BamUtil;
   die "No samples found in mutant type bam file." if(scalar values %$mt_samples == 0);
   die "Multiple samples found in wild type bam file." if(scalar values %$wt_samples > 1);
   die "Multiple samples found in mutant type bam file." if(scalar values %$mt_samples > 1);
- 
+
   my $wt_sample = (values(%$wt_samples))[0];
   my $mt_sample = (values(%$mt_samples))[0];
   my $fai = Bio::DB::Sam::Fai->load($opts->{r});
@@ -74,7 +76,12 @@ use Sanger::CGP::Vcf::BamUtil;
     $mt_out_sam_path = $base_path . '_mt.sam';
 
     open($wt_out_sam_fh, ">", $wt_out_sam_path) or die "Cannot open |$wt_out_sam_path| for writing: $!";
+    print $wt_out_sam_fh Sanger::CGP::Pindel::OutputGen::BamUtil::pindel_header($opts->{'wt'}, 'wt', $opts->{'pp'}, $opts->{'cmd'}, $opts->{'sp'}, $opts->{'as'});
+    print $wt_out_sam_fh "\n";
+
     open($mt_out_sam_fh, ">", $mt_out_sam_path) or die "Cannot open |$mt_out_sam_path| for writing: $!";
+    print $mt_out_sam_fh Sanger::CGP::Pindel::OutputGen::BamUtil::pindel_header($opts->{'mt'}, 'mt', $opts->{'pp'}, $opts->{'cmd'}, $opts->{'sp'}, $opts->{'as'});
+    print $mt_out_sam_fh "\n";
   }
 
   my $record_converter = new Sanger::CGP::Pindel::OutputGen::VcfConverter(
@@ -117,6 +124,11 @@ use Sanger::CGP::Vcf::BamUtil;
     close $output or die "Unable to close |".$opts->{'output'}."|: $!" if($opts->{'output'});
     close $wt_out_sam_fh or die "Unable to close $wt_out_sam_path|: $!" if(defined $wt_out_sam_fh);
     close $mt_out_sam_fh or die "Unable to close $mt_out_sam_path|: $!" if(defined $mt_out_sam_fh);
+  };
+
+  if(defined $opts->{'samoutput'}) {
+    Sanger::CGP::Pindel::OutputGen::BamUtil::sam_to_bam($wt_out_sam_path);
+    Sanger::CGP::Pindel::OutputGen::BamUtil::sam_to_bam($mt_out_sam_path);
   }
 }
 
@@ -130,48 +142,41 @@ sub _process_fh{
     -fai => $fai,
     -fh => $fh
   );
-  
+
 
   if($header){
     ## write the header... we need to test if S2 is preant first...
-    my $source = basename($0). '_v'. Sanger::CGP::Pindel::OutputGen->VERSION;
+    my $source = basename($0). '_v'. Sanger::CGP::Pindel->VERSION;
     my $include_s2 = $record_generator->version eq 'v01' ? 1 : 0;
-    
+
     my @process_logs = ();
-    
+
     push @process_logs, new Sanger::CGP::Vcf::VcfProcessLog(
 	  -input_vcf_source => 'Pindel',
       -input_vcf_ver => $record_generator->version,
 	);
-	
+
 	push @process_logs, new Sanger::CGP::Vcf::VcfProcessLog(
 	  -input_vcf_source => basename($0),
       -input_vcf_ver => Sanger::CGP::Pindel::OutputGen->VERSION,
       -input_vcf_param => $opts,
 	);
-    
+
     print $output $record_converter->gen_header($wt_sample,$mt_sample, \@process_logs, $include_s2, $ref, $source) or croak("Unable to write VCF header: $!");
   }
-  
+
   my ($active_sam_fh, $sample, $strand);
   while(my $record = $record_generator->next_record){
 
     $record->id($id_gen->next);
 
-    #unless($opts->{s} && ($record->p_wt_pos + $record->p_wt_neg) > ($record->p_mt_pos + $record->p_mt_neg)){
-    #unless($opts->{s} && $record->valid == 0){
-   	
-    unless(
-            $opts->{s} &&
+    unless( $opts->{'s'} &&
             (
               $record->valid == 0 ||
-              (
-                ($record->p_mt_pos + $record->p_mt_neg) < 2 #&&
-                #($record->p_wt_pos + $record->p_wt_neg) < 2
-              )
+              ( ($record->p_mt_pos + $record->p_mt_neg) < 2 )
             )
-          ){
-    	
+          ) {
+
       ## write the record
       print $output $record_converter->gen_record($record) or croak("Unable to write VCF record: $!") ;
 
@@ -180,14 +185,21 @@ sub _process_fh{
       if($mt_out_sam_fh){
         foreach $sample (keys %{$record->reads}){
 
-          $active_sam_fh = $sample eq $mt_sample->name ? $mt_out_sam_fh : $wt_out_sam_fh;
+          if($sample eq $mt_sample->name) {
+            $active_sam_fh = $mt_out_sam_fh;
+          }
+          elsif($sample eq $wt_sample->name) {
+            $active_sam_fh = $wt_out_sam_fh;
+          }
+          else {
+            die "Samples in pindel result files don't match BAM files\n";
+          }
 
           for $strand ('+','-'){
             foreach my $read_arr (@{$record->reads->{$sample}->{$strand}}){
               print $active_sam_fh join("\t",@$read_arr)."\n" or die "Unable to write sam line: $!";
             }
           }
-
         }
       }
     }
@@ -196,6 +208,7 @@ sub _process_fh{
 
 sub setup{
   my %opts;
+  $opts{'cmd'} = join " ", $0, @ARGV;
   my @random_args;
   GetOptions( 'h|help' => \$opts{'h'},
               'm|man' => \$opts{'m'},
@@ -205,17 +218,20 @@ sub setup{
               'so|samoutput=s' => \$opts{'samoutput'},
               'o|output=s' => \$opts{'output'},
               'r|ref=s' => \$opts{'r'},
-              'w|wtbam=s' => \$opts{'wt'},
-              'm|mtbam=s' => \$opts{'mt'},
-              'ws|wtstudy=s' => \$opts{'wts'},
-              'ms|mtstudy=s' => \$opts{'mts'},
-              'wp|wtprot=s' => \$opts{'wtp'},
-              'mp|mtprot=s' => \$opts{'mtp'},
-              'wa|wtacc=s' => \$opts{'wta'},
-              'ma|mtacc=s' => \$opts{'mta'},
+              'wt|wtbam=s' => \$opts{'wt'},
+              'mt|mtbam=s' => \$opts{'mt'},
+              'wts|wtstudy=s' => \$opts{'wts'},
+              'mts|mtstudy=s' => \$opts{'mts'},
+              'wtp|wtprot=s' => \$opts{'wtp'},
+              'mtp|mtprot=s' => \$opts{'mtp'},
+              'wta|wtacc=s' => \$opts{'wta'},
+              'mta|mtacc=s' => \$opts{'mta'},
+              'as|assembly=s' => \$opts{'as'},
+              'sp|species=s' => \$opts{'sp'},
               'a|accsource=s' => \$opts{'a'},
               's|skipwt' => \$opts{'s'},
               'g|idstart=i' => \$opts{'g'},
+              'pp|parent=s' => \$opts{'pp'},
               '<>' => sub{push(@random_args,shift(@_));}
   ) or pod2usage(2);
 
@@ -250,42 +266,45 @@ __END__
 
 =head1 NAME
 
-Pindel2CombinedVcf.pl - Takes a raw Pindel file and a pair of wild type/mutant bam files and produces a combined .vcf file.
+pindel_2_combined_vcf.pl - Takes a raw Pindel file and a pair of wild type/mutant bam files and produces a combined .vcf file.
 
 =head1 SYNOPSIS
 
-Pindel2CombinedVcf.pl [options]
+pindel_2_combined_vcf.pl [options]
 
   Required parameters:
     -output    -o   File path to output. Defaults to STDOUT.
-    -samoutput -so  File path-stub to sam file output. If presant will create two sam files <path-stub>_wt|mt.sam containing the pindel call reads.
+    -samoutput -so  File path-stub to sam file output. If present will create two sam files <path-stub>_wt|mt.sam containing the pindel call reads.
     -wtbam     -wt  File path to the wild type bam file (index must be at the same location).
-    -mtbam     -wt  File path to the mutant bam file (index must be at the same location).
+    -mtbam     -mt  File path to the mutant bam file (index must be at the same location).
     -ref       -r   File path to the reference file used to provide the coordinate system.
-    
+
   Optional parameters:
-    
+
     -input     -i   File path to read in.
     -inputdir  -d   Directory path to read in. All files ending in _D or _SI.
-    
+
     (If neither -i nor -d are set, input will be read from STDIN)
-    
+
     -wtstudy   -wts String representing the wild type sample study.
     -mtstudy   -mts String representing the mutant sample study.
-    -wtprot    -wts String representing the wild type sample sequence protocol (e.g. genomic, targeted, RNA-seq).
-    -mtprot    -mts String representing the mutant sample sequence protocol (e.g. genomic, targeted, RNA-seq).
+    -wtprot    -wtp String representing the wild type sample sequence protocol (e.g. genomic, targeted, RNA-seq).
+    -mtprot    -mtp String representing the mutant sample sequence protocol (e.g. genomic, targeted, RNA-seq).
     -wtacc     -wta String representing the wild type sample accession id.
     -mtacc     -mta String representing the mutant sample accession id.
     -accsource -a   String representing the source of the accession id (e.g. COSMIC_SAMPLE_ID, EGA etc...)
-    -skipwt    -s   If presant, will skip variants where there are more wt calls than mt.
-    -idstart   -g   Will set a sequential id generator to the given integer value. If not presant will assign UUIDs to each variant.
+    -skipwt    -s   If present, will skip variants where there are more wt calls than mt.
+    -idstart   -g   Will set a sequential id generator to the given integer value. If not present will assign UUIDs to each variant.
+    -assembly  -as  Reference assembly name, used when not found in BAM headers.
+    -species   -sp  Species name, used when not found in BAM headers.
+    -parent    -pp  Process information from parent program (where one exists)
 
   Other:
     -help      -h   Brief help message.
     -man       -m   Full documentation.
     -version   -v   Prints the version number.
 
-    Pindel2CombinedVcf.pl -i my.bam -o my.bam.bas -wt wt.bam -mt mt.bam
+    pindel_2_combined_vcf.pl -i my.bam -o my.bam.bas -wt wt.bam -mt mt.bam
 
 =head1 OPTIONS
 
@@ -297,11 +316,12 @@ File path to read. Accepts only raw pindel files.
 
 =item B<-samoutput>
 
-File path-stub to sam file output. If presant will create two sam files <path-stub>_wt|mt.sam containing the pindel call reads. These files are used to display the pindel reads in various browsers.
+File path-stub to sam file output. If present will create two sam files <path-stub>_wt|mt.sam containing
+the pindel call reads. These files are used to display the pindel reads in various browsers.
 
 =item B<-output>
 
-File path to output data. If this option is omitted the script will attempt to write to STDOUT. The
+File path to output data. If this option is omitted the script will attempt to write to STDOUT.
 
 =item B<-wtbam>
 
@@ -339,13 +359,21 @@ String identifying the mutant sample accession identifier.
 
 String identifying the accession source (e.g. COSMIC_SAMPLE_ID, EGA etc...).
 
+=item B<-assembly>
+
+Reference assembly name, used when not found in BAM headers.  Validated against header if both are present.
+
+=item B<-species>
+
+Species name, used when not found in BAM headers.  Validated against header if both are present.
+
 =item B<-skipwt>
 
-If presant, will skip variants where there are more wt calls than mt. Unfortunatelty the variant will still be processed in the background.
+If present, will skip variants where there are more wt calls than mt. Unfortunately the variant will still be processed in the background.
 
 =item B<-idstart>
 
-Will set the id generator to the given integer value. If not presant will assign UUIDs to each variant.
+Will set the id generator to the given integer value. If not present will assign UUIDs to each variant.
 
 =item B<-help>
 
@@ -364,6 +392,6 @@ Prints the version number and exits.
 =head1 DESCRIPTION
 
 B<Pindel2CombinedVcf.pl> will attempt to generate a vcf file from a Pindel output file and bwa pileup information.
-For evey variant called by Pindel a pileup will be performed and the results merged into a single vcf record.
+For every variant called by Pindel a pileup will be performed and the results merged into a single vcf record.
 
 =cut

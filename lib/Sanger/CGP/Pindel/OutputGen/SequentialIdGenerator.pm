@@ -1,7 +1,7 @@
 package Sanger::CGP::Pindel::OutputGen::SequentialIdGenerator;
 
-use Sanger::CGP::Pindel::OutputGen;
-our $VERSION = Sanger::CGP::Pindel::OutputGen->VERSION;
+use Sanger::CGP::Pindel;
+our $VERSION = Sanger::CGP::Pindel->VERSION;
 
 use strict;
 
