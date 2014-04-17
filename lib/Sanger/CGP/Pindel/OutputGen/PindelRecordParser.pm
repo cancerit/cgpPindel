@@ -614,7 +614,7 @@ sub calmd {
 		## this should grab the event ref seq from the huge ref_string we are holding for this region.....
 		## we then sub string each component from this ref_string... here we assume that the ref string will always be large enough as this should have been worked out elsewhere....
 		## This may mean that we have to bring the function into an object method....
-		$ref_seq = substr(${$reference_ref}, ($start-$reference_start), ($final_end - $start+1)) || '';
+		$ref_seq = uc substr(${$reference_ref}, ($start-$reference_start), ($final_end - $start+1)) || '';
 
 		$start = $new_start;
 		if($type eq 'M') {
@@ -656,6 +656,7 @@ sub calmd {
 		}
 
 		if($type eq 'D') {
+		  push (@md_bits, 0) if($was_previous_type_match && $match_count == 0); ## So that we concat 0 to the last bit if it was a sub (i.e. previous_type_match and match_count = 0)
 			push @md_bits, '^'.$ref_seq;
 			$nm += $len;
 			$was_previous_type_match = 0;
