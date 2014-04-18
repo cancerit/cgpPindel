@@ -485,7 +485,7 @@ sub _parse_read {
 	my ($read_group) = $bits[-1] =~ /\/[12]_RG(.+)$/;
 	$read_group = '' unless $read_group;
 
-	my ($name, $RG_pair) = split /\//, $bits[-1];
+	my ($name, $rg_pair) = split /\//, $bits[-1];
 	$name = substr($name,1) if substr($name,0,1) eq '@';
 
 	# need this to force uniqness in reads that have multiple events
