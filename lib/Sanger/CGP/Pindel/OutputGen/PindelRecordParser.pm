@@ -276,7 +276,9 @@ sub _parse_alignment {
 
 	# In the case of large deletions pindel replaces the deleted seq with a range <240> because of this we need to collect
 	# the deleted seq from the reference. Also DIs do not display the deleted seq.....
-	if($record_type eq 'DI' || $ref_change =~ m/^[ACGT]+\<\d+\>[ACGT]+$/i) {
+	if($record_type eq 'I') {
+	  $ref_change = q{}; ## $ref_change =~ s/\s//; ##remove all white space as there is no deleted ref_seq
+	}elsif($record_type eq 'DI' || $ref_change =~ m/^[ACGT]+\<\d+\>[ACGT]+$/i) {
 		my $start = $record->start || $record->range_start;
 		my $end = $record->end || $record->range_end;
 		$ref_change = $fai->fetch("$chr:$start-$end");
@@ -536,7 +538,7 @@ sub _parse_read {
 ## These bam files are used in things like gbrowse/jbrowse for display
 
 	my @cig_list = ($left_seq_length, 'M');
-	push @cig_list, $ref_seq_length, 'D' if($ref_seq_length && $record->type ne 'I');
+	push @cig_list, $ref_seq_length, 'D' if $ref_seq_length;
 	push @cig_list, $event_seq_length, 'I' if $event_seq_length;
 	push @cig_list, $right_seq_length, 'M';
 
