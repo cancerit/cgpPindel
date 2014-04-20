@@ -622,7 +622,6 @@ sub calmd {
 		if($type eq 'M') {
 			$match_count = 0;
 			foreach my $ref_seq_pos (0..length($ref_seq)-1) {
-
 				$ref_base = substr($ref_seq,$ref_seq_pos,1);
 				$read_base = substr(${$seq_ref},$read_seq_idx++,1);
 				#warn "$ref_base, $read_base";
@@ -630,36 +629,34 @@ sub calmd {
 					## If we get to this point we have found a single base pair difference between the reference and the M part of the read.
 					## Mark it and carry on with the rest of the match length....
 					$nm++;
-					if($match_count > 0){
-						if($was_previous_type_match){
-							$md_bits[-1] += $match_count; ## ok the previous type was a match so we need to merge them (skipping Ns?...);
-					                                      ## THIS BIT ALONE MEANS WE CANNOT SIMPLY CONCAT A STRING...
-						}else{
-							push @md_bits, $match_count;
-						}
+					## stash the previous count...
+					if($was_previous_type_match){
+						$md_bits[-1] += $match_count; ## ok the previous type was a match so we need to merge them (skipping Ns?...);
+					                                ## THIS BIT ALONE MEANS WE CANNOT SIMPLY CONCAT A STRING...
 					}else{
-						push @md_bits, 0 ## if the previous base was also a sub put a zero infront of it
+						push @md_bits, $match_count;
 					}
 
-					push @md_bits, $ref_base; ## This is a sub...
 					$match_count = 0;
+					push @md_bits, $ref_base, $match_count; ## This is a sub... start the next match region
+					$was_previous_type_match = 1; ## The last thing in the md_bits array will now be a number so may need to append
 				}else{
 					$match_count++;
 				}
 			}
+
+			## finally add the remaining match count to the md_bits array..
 			if($was_previous_type_match){
 				$md_bits[-1] += $match_count; ## ok the previous type was a match so we need to merge them (skipping Ns?...);
-				                              ## THIS BIT ALONE MEANS WE CANNOT SIMPLY CONCAT A STRING...
 			}else{
-				push @md_bits, $match_count if($match_count > 0);
+				push @md_bits, $match_count;# if($match_count > 0);
 				$was_previous_type_match = 1;
 			}
 			next;
 		}
 
 		if($type eq 'D') {
-		  push (@md_bits, 0) if($was_previous_type_match && $match_count == 0); ## So that we concat 0 to the last bit if it was a sub (i.e. previous_type_match and match_count = 0)
-			push @md_bits, '^'.$ref_seq;
+		  push @md_bits, '^'.$ref_seq;
 			$nm += $len;
 			$was_previous_type_match = 0;
 			next;
@@ -668,11 +665,7 @@ sub calmd {
 		die "Cigar contains unhandled type ($type): $cigar";
 	}
 
-	push @md_bits, 0 if($was_previous_type_match && $match_count == 0);
-
 	my $md = join q{}, @md_bits;
-	#warn $md;
-
 	return ('MD:Z:'.$md, 'NM:i:'.$nm, $final_end);
 }
 
@@ -685,7 +678,7 @@ sub calmd_orig {
 
 	my @md_bits;
 	my $nm = 0;
-	my ($fai_fetch, $type, $len, @ref, $new_start, $ref_seq, $ref_base, $read_base, $match_count, $final_end);
+	my ($type, $len, @ref, $new_start, $ref_seq, $ref_base, $read_base, $match_count, $final_end);
 	my @read_seq = split //xms, ${$seq_ref};
 	for my $e(0..((scalar @c_lengths)-1)) {
 	$type = $c_types[$e];

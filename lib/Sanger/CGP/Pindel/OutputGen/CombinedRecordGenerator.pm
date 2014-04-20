@@ -308,9 +308,10 @@ sub _count_sam_event_reads{
 
 			if($pos >= $g_r_start && $pos <= $g_r_end) {
 				##2
+				## no critic
 				foreach $pu (@{$pileup}) {
  					$value = $pu->indel;
-
+        ## use critic
  					next if($value == 0); ## we are not interested in non-call reads...
  					next if($g_e_type eq 'D'  && $value > 0);
 					next if($g_e_type eq 'I'  && $value < 0);
