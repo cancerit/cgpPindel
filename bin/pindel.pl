@@ -34,7 +34,7 @@ my %index_max = ( 'input'   => 2,
   my $threads = PCAP::Threaded->new($options->{'threads'});
 
   # register any process that can run in parallel here
-  $threads->add_function('input', \&Sanger::CGP::Pindel::Implement::input);
+  $threads->add_function('input', \&Sanger::CGP::Pindel::Implement::input, 2);
   $threads->add_function('split', \&Sanger::CGP::Pindel::Implement::split);
   $threads->add_function('filter', \&Sanger::CGP::Pindel::Implement::filter);
   $threads->add_function('pindel', \&Sanger::CGP::Pindel::Implement::pindel);

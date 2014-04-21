@@ -50,7 +50,7 @@ sub input {
     ## build command for this index
     #
 
-    my $max_threads = ($options->{'threads'} > 3) ? 2 : 1;
+    my $max_threads = int ($options->{'threads'} / scalar @inputs);
 
     my $sample = sanitised_sample_from_bam($input);
     my $gen_out = File::Spec->catdir($tmp, $sample);
