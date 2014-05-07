@@ -3,7 +3,7 @@
 BEGIN {
   use Cwd qw(abs_path);
   use File::Basename;
-  push (@INC,dirname(abs_path($0)).'/../lib');
+  unshift (@INC,dirname(abs_path($0)).'/../lib');
 };
 
 use strict;
@@ -16,28 +16,27 @@ use File::Spec;
 use Pod::Usage qw(pod2usage);
 use List::Util qw(first);
 use Const::Fast qw(const);
+use File::Copy;
 
 use PCAP::Cli;
 use Sanger::CGP::Pindel::Implement;
 
-const my @VALID_PROCESS => qw(input split pindel pin2vcf flag);
+const my @VALID_PROCESS => qw(input pindel pin2vcf merge);
 my %index_max = ( 'input'   => 2,
-                  'split'   => 0,
-                  'filter'  => 0,
-                  'pindel'  => 0,
-                  'pin2vcf' => 1,);
+                  'pindel'  => -1,
+                  'pin2vcf'  => -1,
+                  'merge'   => 1);
 
 {
   my $options = setup();
   Sanger::CGP::Pindel::Implement::prepare($options);
-
   my $threads = PCAP::Threaded->new($options->{'threads'});
+  &PCAP::Threaded::disable_out_err if(exists $options->{'index'});
 
   # register any process that can run in parallel here
-  $threads->add_function('input', \&Sanger::CGP::Pindel::Implement::input, 2);
-  $threads->add_function('split', \&Sanger::CGP::Pindel::Implement::split);
-  $threads->add_function('filter', \&Sanger::CGP::Pindel::Implement::filter);
+  $threads->add_function('input', \&Sanger::CGP::Pindel::Implement::input, exists $options->{'index'} ? 1 : 2);
   $threads->add_function('pindel', \&Sanger::CGP::Pindel::Implement::pindel);
+  $threads->add_function('pin2vcf', \&Sanger::CGP::Pindel::Implement::pindel_to_vcf);
 
   # start processes here (in correct order obviously), add conditions for skipping based on 'process' option
   $threads->run(2, 'input', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'input');
@@ -45,22 +44,22 @@ my %index_max = ( 'input'   => 2,
   # count the valid input files, gives constant job count for downstream
   my $jobs = Sanger::CGP::Pindel::Implement::determine_jobs($options);
 
-  $threads->run($jobs, 'split', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'split');
-  $threads->run($jobs, 'filter', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'filter');
   $threads->run($jobs, 'pindel', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'pindel');
+  $threads->run($jobs, 'pin2vcf', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'pin2vcf');
 
-  if(!exists $options->{'process'} || $options->{'process'} eq 'pin2vcf') {
-    Sanger::CGP::Pindel::Implement::pindel_to_vcf($options);
-#    cleanup($options);
+  if(!exists $options->{'process'} || $options->{'process'} eq 'merge') {
+    Sanger::CGP::Pindel::Implement::merge_and_bam($options);
+    cleanup($options);
   }
 }
 
 sub cleanup {
-  my $tmpdir = shift->{'tmp'};
+  my $options = shift;
+  my $tmpdir = $options->{'tmp'};
+  move(File::Spec->catdir($tmpdir, 'logs'), File::Spec->catdir($options->{'outdir'}, 'logs')) || die $!;
   remove_tree $tmpdir if(-e $tmpdir);
 	return 0;
 }
-
 
 sub setup {
   my %opts;
@@ -97,15 +96,26 @@ sub setup {
 
   delete $opts{'process'} unless(defined $opts{'process'});
   delete $opts{'index'} unless(defined $opts{'index'});
-  delete $opts{'exclude'} unless(defined $opts{'exclude'});
+
+  unless(defined $opts{'exclude'}) {
+    delete $opts{'exclude'};
+  }
 
   if(exists $opts{'process'}) {
     PCAP::Cli::valid_process('process', $opts{'process'}, \@VALID_PROCESS);
     if(exists $opts{'index'}) {
-die "info from fai file and '-e' needed to do this";
+      my @valid_seqs = Sanger::CGP::Pindel::Implement::valid_seqs(\%opts);
+      my $refs = scalar @valid_seqs;
+
+      my $max = $index_max{$opts{'process'}};
+      $max = $refs if($max == -1);
+
+      die "ERROR: based on reference and exclude option index must be between 1 and $refs\n" if($opts{'index'} < 1 || $opts{'index'} > $max);
       PCAP::Cli::opt_requires_opts('index', \%opts, ['process']);
-die "No max has been defined for this process type\n" if($index_max{$opts{'process'}} == 0);
-      PCAP::Cli::valid_index_by_factor('index', $opts{'index'}, $index_max{$opts{'process'}}, 1);
+
+      die "No max has been defined for this process type\n" if($max == 0);
+
+      PCAP::Cli::valid_index_by_factor('index', $opts{'index'}, $max, 1);
     }
   }
   elsif(exists $opts{'index'}) {
@@ -151,8 +161,8 @@ pindel.pl [options]
                      -  when not available in BAM header SQ line.
     -species   -sp  Species
                      -  when not available in BAM header SQ line.
-    -exclude   -e   Exclude this list of ref sequences from processing
-                     - comma separated, e.g. NC_007605,hs37d5
+    -exclude   -e   Exclude this list of ref sequences from processing, wildcard '%'
+                     - comma separated, e.g. NC_007605,hs37d5,GL%
     -skipgerm  -sg  Don't output events with more evidence in normal BAM.
     -cpus      -c   Number of cores to use. [1]
                      - recommend max 4 during 'input' process.
@@ -179,19 +189,17 @@ pindel.pl [options]
 Available processes for this tool are:
 
   input
-  split
-  filter
   pindel
   pin2vcf
+  merge
 
 =item B<-index>
 
 Possible index ranges for processes above are:
 
   input   = 1..2
-  split   = 1..<total_refs_less_exclude>
-  filter  = 1..<total_refs_less_exclude>
   pindel  = 1..<total_refs_less_exclude>
-  pin2vcf = 1
+  pin2vcf = 1..<total_refs_less_exclude>
+  merge   = 1
 
 =back
