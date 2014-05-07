@@ -3,7 +3,7 @@
 BEGIN {
   use Cwd qw(abs_path);
   use File::Basename;
-  push (@INC,dirname(abs_path($0)).'/../lib');
+  unshift (@INC,dirname(abs_path($0)).'/../lib');
 };
 
 use strict;
@@ -36,12 +36,10 @@ use Sanger::CGP::Vcf::VcfProcessLog;
   my $current_path = '';
   my @file_paths = ();
 
-  if($opts->{input}){
-    push(@file_paths, $opts->{input});
-  }
+  @file_paths = @{$opts->{input}} if($opts->{input});
 
   if($opts->{inputdir}){
-    opendir(my $dh, $opts->{inputdir}) or die "Cannot open |".$opts->{d}."| for reading: $!";
+    opendir(my $dh, $opts->{inputdir}) or die "Cannot open |".$opts->{inputdir}."| for reading: $!";
     push(@file_paths, map {join('/',$opts->{inputdir},$_)} grep {m/.*_((D)|(SI))$/} readdir $dh);
     closedir $dh;
   }
@@ -125,11 +123,6 @@ use Sanger::CGP::Vcf::VcfProcessLog;
     close $wt_out_sam_fh or die "Unable to close $wt_out_sam_path|: $!" if(defined $wt_out_sam_fh);
     close $mt_out_sam_fh or die "Unable to close $mt_out_sam_path|: $!" if(defined $mt_out_sam_fh);
   };
-
-  if(defined $opts->{'samoutput'}) {
-    Sanger::CGP::Pindel::OutputGen::BamUtil::sam_to_bam($wt_out_sam_path);
-    Sanger::CGP::Pindel::OutputGen::BamUtil::sam_to_bam($mt_out_sam_path);
-  }
 }
 
 sub _process_fh{
@@ -168,37 +161,31 @@ sub _process_fh{
   my ($active_sam_fh, $sample, $strand);
   while(my $record = $record_generator->next_record){
 
+    next if($opts->{'s'} && ($record->p_mt_pos + $record->p_mt_neg) < 3);
+
     $record->id($id_gen->next);
 
-    unless( $opts->{'s'} &&
-            (
-              $record->valid == 0 ||
-              ( ($record->p_mt_pos + $record->p_mt_neg) < 2 )
-            )
-          ) {
+    ## write the record
+    print $output $record_converter->gen_record($record) or croak("Unable to write VCF record: $!") ;
 
-      ## write the record
-      print $output $record_converter->gen_record($record) or croak("Unable to write VCF record: $!") ;
+    ## only write to sam files if they have been defined.
+    ## these can be used for viewing in g/jbrowse.
+    if($mt_out_sam_fh){
+      foreach $sample (keys %{$record->reads}){
 
-      ## only write to sam files if they have been defined.
-      ## these can be used for viewing in g/jbrowse.
-      if($mt_out_sam_fh){
-        foreach $sample (keys %{$record->reads}){
+        if($sample eq $mt_sample->name) {
+          $active_sam_fh = $mt_out_sam_fh;
+        }
+        elsif($sample eq $wt_sample->name) {
+          $active_sam_fh = $wt_out_sam_fh;
+        }
+        else {
+          die "Samples in pindel result files don't match BAM files\n";
+        }
 
-          if($sample eq $mt_sample->name) {
-            $active_sam_fh = $mt_out_sam_fh;
-          }
-          elsif($sample eq $wt_sample->name) {
-            $active_sam_fh = $wt_out_sam_fh;
-          }
-          else {
-            die "Samples in pindel result files don't match BAM files\n";
-          }
-
-          for $strand ('+','-'){
-            foreach my $read_arr (@{$record->reads->{$sample}->{$strand}}){
-              print $active_sam_fh join("\t",@$read_arr)."\n" or die "Unable to write sam line: $!";
-            }
+        for $strand ('+','-'){
+          foreach my $read_arr (@{$record->reads->{$sample}->{$strand}}){
+            print $active_sam_fh join("\t",@$read_arr)."\n" or die "Unable to write sam line: $!";
           }
         }
       }
@@ -213,7 +200,7 @@ sub setup{
   GetOptions( 'h|help' => \$opts{'h'},
               'm|man' => \$opts{'m'},
               'v|version' => \$opts{'v'},
-              'i|input=s' => \$opts{'input'},
+              'i|input=s@' => \$opts{'input'},
               'd|inputdir=s' => \$opts{'inputdir'},
               'so|samoutput=s' => \$opts{'samoutput'},
               'o|output=s' => \$opts{'output'},

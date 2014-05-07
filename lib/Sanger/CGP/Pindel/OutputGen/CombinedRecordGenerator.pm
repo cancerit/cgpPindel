@@ -41,7 +41,8 @@ sub init{
 	$self->SUPER::init(%args);## this has to be at the end because we are overriding the next record method with our own
 }
 
-=head next_record
+=head2 next_record
+
 Grabs the next record from the pindel output file.
 Overrides next_record in 'Sanger::CGP::Pindel::OutputGen::PindelRecordParser'.
 
@@ -55,7 +56,8 @@ sub next_record{
 	return $ret;
 }
 
-=head _process_record
+=head2 _process_record
+
 Overrides _process_record in 'Sanger::CGP::Pindel::OutputGen::PindelRecordParser'.
 
 @param1 record - requires an empty Sanger::CGP::Pindel::OutputGen::CombinedRecord object.
@@ -69,22 +71,14 @@ sub _process_record{
 	# Process the pindel part of the record.
 	return undef unless $self->SUPER::_process_record($record);
 
-	# If the mutant name has been set skip processing any records that do not contain reads from that sample.
-	## TODO this is SOMATIC behaviour..... DO WE REALY WANT THIS HERE?!?!?!
-	unless ($self->{_mutant_sample_name} && exists $record->reads->{$self->{_mutant_sample_name}}){
-		$record->valid(0);
-		#return $record;
-	}else{
-		$record->valid(1);
-	}
-
 	$self->_process_counts($record,'mt');
 	$self->_process_counts($record,'wt');
 
 	return $record;
 }
 
-=head _process_counts
+=head2 _process_counts
+
 Use the internal sam object to generate counts for the BWA calls and depth for a given record.
 
 @param1 record    - A Sanger::CGP::Pindel::OutputGen::CombinedRecord object.
@@ -213,7 +207,8 @@ sub _process_counts{
 	return $record;
 }
 
-=head _read_depth
+=head2 _read_depth
+
 Performs a pileup for a given location and returns a hash of al the reads and their read groups by strand.
 
 @param1 sam    - A Bio::DB:Sam object.

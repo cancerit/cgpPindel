@@ -15,16 +15,18 @@ use File::Which qw(which);
 use Const::Fast qw(const);
 
 const my $PG_TEMPLATE => "\@PG\tID:%s\tPN:%s\tCL:%s\tPP:%s\tDS:%s\tVN:%s";
+const my $BAMSORT => ' inputformat=%s index=1 md5=1 O=%s indexfilename=%s md5filename=%s I=';
 
-sub sam_to_bam {
-  my $sam = shift;
-  my $bam = $sam;
-  $bam =~ s/\.sam$/\.bam/;
-  my $command = which('samtools');
-  $command .= " view -b -o $bam -S $sam";
-  die "Failed to convert $sam to $bam\n" if(system($command) != 0);
-  unlink $sam;
-  return;
+sub sam_to_sorted_bam {
+  my ($path_prefix, $sam_files) = @_;
+  my $bam_file = $path_prefix.'.bam';
+  my $bai_file = $bam_file.'.bai';
+  my $md5_file = $bam_file.'.md5';
+  my $command = which('bamsort');
+  $command .= sprintf $BAMSORT, 'sam', $bam_file, $bai_file, $md5_file;
+  $command .= join q{ I=}, @{$sam_files};
+  system($command);
+  return 1;
 }
 
 sub pindel_header {
@@ -42,25 +44,30 @@ sub pindel_header {
     }
     $last_pg = $idx if($h_line =~ m/^\@PG/);
   }
+
   if(defined $last_pg) {
-    my ($last_id) = $last_pg =~ m/\tID:[^\t]+/;
+    my ($last_id) = $h_lines[$last_pg] =~ m/\tID:([^\t]+)/;
+    my $preceeding_id;
     if($parent_pg) {
+      ($preceeding_id) = $parent_pg =~ m|\\tID:([^\\]+)\\t|;
       $parent_pg =~ s/\\t/\t/g;
       $parent_pg =~ s/\tPP:\./\tPP:$last_id/;
       push @h_lines, $parent_pg;
       ($last_id) = $h_lines[-1] =~ m/\tID:[^\t]+/;
     }
-    push @h_lines, pg_from_caller('pindel_to_combined_vcf', 'Converts text output of pindel to VCF and BAM alinments', $VERSION, $cmd);
+    push @h_lines, pg_from_caller('pindel_to_combined_vcf', 'Converts text output of pindel to VCF and BAM alinments', $VERSION, $cmd, $preceeding_id);
   }
   return join "\n", @h_lines;
 }
 
 sub pg_from_caller {
-  my ($id, $desc, $version, $cmd) = @_;
+  my ($id, $desc, $version, $cmd, $pp_id) = @_;
+  $cmd =~ s/\t/\\t/g;
+
   return sprintf $PG_TEMPLATE,  $id,
                                 $0, # program name
                                 $cmd,
-                                q{.}, # substitute at insert
+                                $pp_id || q{.},
                                 $desc,
                                 $version;
 }
