@@ -13,7 +13,7 @@ use_ok 'Sanger::CGP::Vcf::Sample';
 use_ok 'Sanger::CGP::Vcf::Contig';
 use_ok 'Sanger::CGP::Pindel::OutputGen::CombinedRecord';
 
-my $test_data = "$Bin/../testData";
+my $test_data = "$Bin/data";
 my $ref_file = File::Spec->catfile($test_data,'genome_22.fa');
 my $pin_file = File::Spec->catfile($test_data,'test.txt_22');
 
