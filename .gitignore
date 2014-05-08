@@ -1,6 +1,6 @@
 /Makefile
 /blib
-/docs
+/perl/docs
 /pm_to_blib
 /MANIFEST.bak
 /install_tmp
@@ -9,4 +9,3 @@
 /nytprof
 /bin/filter_pindel_reads
 /bin/pindel
-/testData/genome_22.fa
