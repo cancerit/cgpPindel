@@ -7,5 +7,5 @@
 /setup.log
 /nytprof.out
 /nytprof
-/bin/filter_pindel_reads
-/bin/pindel
+/perl/bin/filter_pindel_reads
+/perl/bin/pindel
