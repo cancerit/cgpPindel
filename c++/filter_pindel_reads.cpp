@@ -1,3 +1,24 @@
+/*
+ * This File is part of Pindel; a program to locate genomic variation.
+ * https://trac.nbic.nl/pindel/
+ * This is a CGP variant of 2.0.
+ *
+ *   Copyright (C) 2011 Kai Ye
+ *
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -11,7 +32,6 @@
 #include <math.h>
 #include <time.h>
 #include <bits/basic_string.h>
-//#include <omp.h>
 
 using namespace std;
 
@@ -33,7 +53,7 @@ double Const_I = 0.0;
 const unsigned int BoxSize = 10000;
 const double Min_Filter_Ratio = 0.5;
 unsigned int SPACERSIZE = 1;
-unsigned int OriginalNumRead = 0; 
+unsigned int OriginalNumRead = 0;
 const string NonACGT = "$";
 short MIN_Len_Match = 4;
 unsigned int NumberOfSIsInstances = 0;
@@ -79,15 +99,15 @@ short MAX_ALLOWED_MISMATCHES = TOTAL_SNP_ERROR_CHECKED_Minus + 5;
 
 // #########################################################
 short Min_Perfect_Match_Around_BP = 3;                   //#
-const short MIN_IndelSize_NT = 3;                        //#  
+const short MIN_IndelSize_NT = 3;                        //#
 const short MIN_IndelSize_Inversion = 3;                 //#
-float Seq_Error_Rate = 0.05;                             //# 
-float Seq_Error_Rate_1 = 0.05;                           //# 
+float Seq_Error_Rate = 0.05;                             //#
+float Seq_Error_Rate_1 = 0.05;                           //#
 float Seq_Error_Rate_2 = 0.02;                           //#
 float Seq_Error_Rate_3 = 0.00;                           //#
 unsigned int BalanceCutoff = 50;                         //#
 short RangeMaxSensivity = 9;       // 3                  //#
-short RangeMediumSensivity = 9;    // 5                  //# 
+short RangeMediumSensivity = 9;    // 5                  //#
 //short RangeLowSensivity = 7;                           //#
                                                          //#
 const unsigned int NumRead2ReportCutOff = 3;             //#
@@ -101,19 +121,19 @@ unsigned int Distance = 300;
  short MinFar_I = MinClose + 1;//atoi(argv[2]);
 //cout << "For short insertion: " << MinClose << "\t" << MinFar_I << endl;
  short MinFar_D = 8;//atoi(argv[3]);
-const short MaxDI = 30; 
+const short MaxDI = 30;
 const short FirstBase = 1;
 
 //struct Fragment {
-//   unsigned int Start; 
-//   unsigned int End;  
+//   unsigned int Start;
+//   unsigned int End;
 //};
 
 
 
 struct UniquePoint {
 	short LengthStr;
-	unsigned int AbsLoc; 
+	unsigned int AbsLoc;
 	char Direction; // forward reverse
 	char Strand; // sense antisense
 	short Mismatches;
@@ -133,7 +153,7 @@ struct SPLIT_READ {
 	char MatchedD;
 	int MatchedRelPos;
 	short MS;
-	short InsertSize;	
+	short InsertSize;
 	string Tag;
 	vector <UniquePoint> UP_Close; // partial alignment of the unmapped reads close to the mapped read
 	vector <UniquePoint> UP_Far;
@@ -149,7 +169,7 @@ struct SPLIT_READ {
 	bool OK;
 	double score;
 	string InsertedStr;
-	string NT_str;	
+	string NT_str;
 	short NT_size;
 	//string NT_2str;
 	//short NT_2size;
@@ -192,38 +212,38 @@ vector <string> ReverseComplement(const vector <string> & input);
 string Reverse(const string & InputPattern);
 string ReverseComplement(const string & InputPattern);
 string Cap2Low(const string & input);
-void CheckLeft_Close(const string & TheInput, 
-               const string & CurrentReadSeq, 
-               const vector <unsigned int> Left_PD[], 
-               const short & BP_Left_Start, 
-               const short & BP_Left_End, 
+void CheckLeft_Close(const string & TheInput,
+               const string & CurrentReadSeq,
+               const vector <unsigned int> Left_PD[],
+               const short & BP_Left_Start,
+               const short & BP_Left_End,
                const short & CurrentLength,
                vector <UniquePoint> & LeftUP);
-               
-void CheckRight_Close(const string & TheInput, 
-                const string & CurrentReadSeq, 
-                const vector <unsigned int> Right_PD[], 
-                const short & BP_Right_Start, 
-                const short & BP_Right_End, 
-                const short & CurrentPos, 
+
+void CheckRight_Close(const string & TheInput,
+                const string & CurrentReadSeq,
+                const vector <unsigned int> Right_PD[],
+                const short & BP_Right_Start,
+                const short & BP_Right_End,
+                const short & CurrentPos,
                 vector <UniquePoint> & RightUP);
 
-bool CheckMismatches(const string & TheInput, 
-                     const string & CurrentReadSeq, 
+bool CheckMismatches(const string & TheInput,
+                     const string & CurrentReadSeq,
                      //const unsigned int & Start,
 							const UniquePoint & UP);
-                     
+
 void CleanUniquePoints (vector <UniquePoint> & Input_UP);
 int main (int argc, char *argv[]) {
-	
+
 	if (NumRead2ReportCutOff == 1) BalanceCutoff = 3000000000;
-	
+
 	// ################### module 1: define input and output #####################
   if (argc < 4) {
     cout << "\nFiltering Pindel reads, developed by Kai Ye, k.ye@lumc.nl\n\n"
          << "at least 4 parameters are required here:\n"
          << "1. Input: the reference genome sequences in fasta format;\n"
-	      << "2. Which chr/fragment\n"    
+	      << "2. Which chr/fragment\n"
 	      << "3. Output file name\n"
   	      << "4. Input(s): the unmapped reads in a modified fastq format;\n"
          << endl;
@@ -232,17 +252,17 @@ int main (int argc, char *argv[]) {
 
   // #################################################################
 	const string WhichChr = argv[2];
-	
+
 	ifstream  inf_Seq(argv[1]);   // input file name
-	
+
 	string OutputFile = argv[3];
 	ofstream Output(OutputFile.c_str());
 	if (!Output) {
 		cout << "Sorry, cannot write to the file: " << OutputFile << endl;
 		return 1;
 	}
-	
-	
+
+
 	Match[(short)'A'] = 'A';
 	Match[(short)'C'] = 'C';
 	Match[(short)'G'] = 'G';
@@ -272,7 +292,7 @@ int main (int argc, char *argv[]) {
 	Cap2LowArray[(short)'T'] = 't';
 	Cap2LowArray[(short)'N'] = 'n';
 	Cap2LowArray[(short)'$'] = 'n';
-	
+
    string CurrentChr;
 
        ReadInOneChr(inf_Seq, CurrentChr, WhichChr);
@@ -281,7 +301,7 @@ int main (int argc, char *argv[]) {
 			 return 1;
 		 }
 	    CONS_Chr_Size = CurrentChr.size() - 2 * SpacerBeforeAfter;
-	
+
 	for (int FileIndex = 4; FileIndex <= argc; FileIndex++) {
 		cout << "processing file: " << argv[FileIndex] << endl;
 		ifstream  inf_ReadsSeq(argv[FileIndex]);   // input file name
@@ -306,7 +326,7 @@ void ReadInOneChr(ifstream & inf_Seq, string & TheInput, const string & ChrName)
 		cout << "Processing chromosome " << TempChrName << endl;
 		if (!TheInput.empty()) {
 		   cout << "Skip the rest of chromosomes.\n";
-			break;	
+			break;
 		}
 		if (TempChrName == ChrName) {
 			getline(inf_Seq, TempLine);
@@ -337,7 +357,7 @@ void ReadInOneChr(ifstream & inf_Seq, string & TheInput, const string & ChrName)
 						break;
 					}
 					else {
-						
+
 					} // else TempChar
 				}
 			}
@@ -354,7 +374,7 @@ void ReadInOneChr(ifstream & inf_Seq, string & TheInput, const string & ChrName)
 }
 
 short ReadInRead(ifstream & inf_ReadSeq, const string & CurrentChr, const string & FragName, ofstream & Outf) {
-	cout << "Scanning and processing reads anchored in " << FragName << endl; 
+	cout << "Scanning and processing reads anchored in " << FragName << endl;
 	//short ADDITIONAL_MISMATCH = 1;
 	ADDITIONAL_MISMATCH = 1;
 	Seq_Error_Rate = 0.05;
@@ -392,7 +412,7 @@ short ReadInRead(ifstream & inf_ReadSeq, const string & CurrentChr, const string
 			cout << "+/-" << endl;
 			return 1;
 		}
-		//   >> TempInt 
+		//   >> TempInt
 		inf_ReadSeq >> Temp_One_Read.FragName
 		>> Temp_One_Read.MatchedRelPos
 		>> Temp_One_Read.MS
@@ -402,12 +422,12 @@ short ReadInRead(ifstream & inf_ReadSeq, const string & CurrentChr, const string
 		//Temp_One_Read.MS = 1;
 		//Temp_One_Read.InsertSize = 300;
 		getline(inf_ReadSeq, TempLine);
-		
-		
+
+
 		if (Temp_One_Read.FragName == FragName/* && Temp_One_Read.MatchedRelPos > 10000000 && Temp_One_Read.MatchedRelPos < 15000000*/) {
 			NumReadInChr++;
 			MAX_SNP_ERROR = (short)(Temp_One_Read.UnmatchedSeq.size() * Seq_Error_Rate);
-			
+
 			TOTAL_SNP_ERROR_CHECKED = MAX_SNP_ERROR + ADDITIONAL_MISMATCH + 1;
 			TOTAL_SNP_ERROR_CHECKED_Minus = MAX_SNP_ERROR + ADDITIONAL_MISMATCH;
 			MinClose = short(log((double)(Temp_One_Read.InsertSize * 3))/log(4.0) + 0.8) + 3;// + MAX_SNP_ERROR;//atoi(argv[1]);
@@ -427,9 +447,9 @@ short ReadInRead(ifstream & inf_ReadSeq, const string & CurrentChr, const string
 				//cout << Temp_One_Read.MatchedD << "\t" << Temp_One_Read.UP_Close.size() << "\t";
 				CleanUniquePoints(Temp_One_Read.UP_Close);
 				//cout << Temp_One_Read.UP_Close.size() << "\t" << Temp_One_Read.UP_Close[0].Direction << endl;
-				Temp_One_Read.CloseEndLength = 
+				Temp_One_Read.CloseEndLength =
 				Temp_One_Read.UP_Close[Temp_One_Read.UP_Close.size() - 1].LengthStr;
-				
+
 				//if (Temp_One_Read.UP_Close.size()) {
 					//Reads.push_back(Temp_One_Read);
 				Outf << Temp_One_Read.Name << "\n"
@@ -443,13 +463,13 @@ short ReadInRead(ifstream & inf_ReadSeq, const string & CurrentChr, const string
 				   if (Temp_One_Read.MatchedD == Plus) GetPlus++;
 					else GetMinus++;
 				//}
-				//if (NumReadScanned % 1000 == 0) 
+				//if (NumReadScanned % 1000 == 0)
 				//cout << "NumReadScanned: " << NumReadScanned << "\n"
 				//     << "NumReadInChr: " << NumReadInChr << "\n"
 				//     << "NumReadStored: " << Reads.size() << "\n"
-				//     << InChrPlus << "\t" << InChrMinus << "\t" 
-				//	  << GetPlus << "\t" << GetMinus << "\t" << GetPlus * 2.0 / NumReadInChr 
-				//     << "\t" << GetMinus * 2.0 / NumReadInChr 
+				//     << InChrPlus << "\t" << InChrMinus << "\t"
+				//	  << GetPlus << "\t" << GetMinus << "\t" << GetPlus * 2.0 / NumReadInChr
+				//     << "\t" << GetMinus * 2.0 / NumReadInChr
 				//     << "\t" << Reads.size() * 1.0 / NumReadInChr << endl;
 			}
 		}
@@ -458,9 +478,9 @@ short ReadInRead(ifstream & inf_ReadSeq, const string & CurrentChr, const string
 	cout << "NumReadScanned:\t" << NumReadScanned << endl;
 	cout << "NumReadInChr:\t" << NumReadInChr << endl;
 	cout << "NumReadStored:\t" << GetPlus + GetMinus << endl;
-	cout << "NumReadStored / NumReadInChr = " << (GetPlus + GetMinus) * 100.0 / NumReadInChr << " %\n" 
-	<< "InChrPlus \t" << InChrPlus << "\tGetPlus \t" << GetPlus << "\t" << GetPlus * 100.0 / InChrPlus 
-	<< " %\n" << "InChrMinus\t" << InChrMinus  << "\tGetMinus\t" << GetMinus 
+	cout << "NumReadStored / NumReadInChr = " << (GetPlus + GetMinus) * 100.0 / NumReadInChr << " %\n"
+	<< "InChrPlus \t" << InChrPlus << "\tGetPlus \t" << GetPlus << "\t" << GetPlus * 100.0 / InChrPlus
+	<< " %\n" << "InChrMinus\t" << InChrMinus  << "\tGetMinus\t" << GetMinus
 	<< "\t" << GetMinus * 100.0 / InChrMinus << " %\n" << endl;
 	inf_ReadSeq.close();
 	//if (Reads.size() == 0) return 0;
@@ -475,8 +495,8 @@ vector <string> ReverseComplement(const vector <string> & InputPatterns) {
    unsigned int NumPattern = InputPatterns.size();
    OutputPatterns.resize(NumPattern);
    for (unsigned int i = 0; i < NumPattern; i++) {
-      OutputPatterns[i] = ReverseComplement(InputPatterns[i]);    
-   }    
+      OutputPatterns[i] = ReverseComplement(InputPatterns[i]);
+   }
    return OutputPatterns;
 }
 
@@ -497,7 +517,7 @@ string ReverseComplement(const string & InputPattern) {
    return OutputPattern;
 }
 
-void CheckLeft_Close(const string & TheInput, 
+void CheckLeft_Close(const string & TheInput,
 							const string & CurrentReadSeq,
 							const vector <unsigned int> Left_PD[],
 							const short & BP_Left_Start,
@@ -510,18 +530,18 @@ void CheckLeft_Close(const string & TheInput,
 		for (short i = 0; i <= MAX_SNP_ERROR; i++) {
 			if (Left_PD[i].size() == 1 && CurrentLength >= BP_Left_Start + i) {
 				Sum = 0;
-				if (ADDITIONAL_MISMATCH) 
-		   		for (short j = 1; j <= ADDITIONAL_MISMATCH; j++) 
+				if (ADDITIONAL_MISMATCH)
+		   		for (short j = 1; j <= ADDITIONAL_MISMATCH; j++)
 			   		Sum += Left_PD[i + j].size();
-				
+
 				if (Sum == 0 && i <= (short)(CurrentLength * Seq_Error_Rate + 1)) {
 					UniquePoint TempOne;
 					TempOne.LengthStr = CurrentLength;
-					TempOne.AbsLoc = Left_PD[i][0]; 
+					TempOne.AbsLoc = Left_PD[i][0];
 					TempOne.Direction = FORWARD;
 					TempOne.Strand = ANTISENSE;
 					TempOne.Mismatches = i;
-					LeftUP.push_back(TempOne);	
+					LeftUP.push_back(TempOne);
 					break;
 				}
 			}
@@ -542,34 +562,34 @@ void CheckLeft_Close(const string & TheInput,
 					pos =  Left_PD[i][j] + 1;
 					if (Match2N[(short)TheInput[pos]] == 'N')
 						Left_PD_Output[i].push_back(pos);
-				}         
+				}
 			}
 			else {
 				for (int j = 0; j < SizeOfCurrent; j++) {
 					pos =  Left_PD[i][j] + 1;
 					if (TheInput[pos] == CurrentChar)
 						Left_PD_Output[i].push_back(pos);
-					else Left_PD_Output[i + 1].push_back(pos); 
-				}         
-			}			
+					else Left_PD_Output[i + 1].push_back(pos);
+				}
+			}
 		}
-		
+
 		int SizeOfCurrent = Left_PD[TOTAL_SNP_ERROR_CHECKED_Minus].size();
 		if (CurrentChar == 'N') {
 			for (int j = 0; j < SizeOfCurrent; j++) {
 				pos =  Left_PD[TOTAL_SNP_ERROR_CHECKED_Minus][j] + 1;
 				if (Match2N[(short)TheInput[pos]] == 'N')
 					Left_PD_Output[TOTAL_SNP_ERROR_CHECKED_Minus].push_back(pos);
-			}         
+			}
 		}
 		else {
 			for (int j = 0; j < SizeOfCurrent; j++) {
 				pos =  Left_PD[TOTAL_SNP_ERROR_CHECKED_Minus][j] + 1;
 				if (TheInput[pos] == CurrentChar)
 					Left_PD_Output[TOTAL_SNP_ERROR_CHECKED_Minus].push_back(pos);
-				//else Left_PD_Output[i + 1].push_back(pos); 
-			}         
-		}	
+				//else Left_PD_Output[i + 1].push_back(pos);
+			}
+		}
 		Sum = 0;
 		for (int i = 0; i <= MAX_SNP_ERROR; i++) {
 			Sum += Left_PD_Output[i].size();
@@ -578,10 +598,10 @@ void CheckLeft_Close(const string & TheInput,
          const short CurrentLengthOutput = CurrentLength + 1;
          CheckLeft_Close(TheInput, CurrentReadSeq, Left_PD_Output,
 								 BP_Left_Start, BP_Left_End,
-								 CurrentLengthOutput, LeftUP);         
+								 CurrentLengthOutput, LeftUP);
       }
       else return;
-   }   
+   }
    else return;
 }
 
@@ -593,30 +613,30 @@ void CheckRight_Close(const string & TheInput,
 							 const short & CurrentLength,
 							 vector <UniquePoint> & RightUP) {
 	//cout << CurrentLength << "\t" << RightUP.size() << "\t" << Right_PD[0].size() << "\t" << Right_PD[1].size() << endl;
-   short ReadLengthMinus = CurrentReadSeq.size() - 1;      
+   short ReadLengthMinus = CurrentReadSeq.size() - 1;
 	int Sum;
    if (CurrentLength >= BP_Right_Start && CurrentLength <= BP_Right_End) {
 	   for (short i = 0; i <= MAX_SNP_ERROR; i++) {
 		   if (Right_PD[i].size() == 1 && CurrentLength >= BP_Right_Start + i) {
 				Sum = 0;
-				if (ADDITIONAL_MISMATCH) 
-					for (short j = 1; j <= ADDITIONAL_MISMATCH; j++) 
+				if (ADDITIONAL_MISMATCH)
+					for (short j = 1; j <= ADDITIONAL_MISMATCH; j++)
 						Sum += Right_PD[i + j].size();
-				
+
 				if (Sum == 0 && i <= (short)(CurrentLength * Seq_Error_Rate + 1)) {
 					UniquePoint TempOne;
 					TempOne.LengthStr = CurrentLength;
-					TempOne.AbsLoc = Right_PD[i][0];   
+					TempOne.AbsLoc = Right_PD[i][0];
 					TempOne.Direction = BACKWARD;
 					TempOne.Strand = SENSE;
 					TempOne.Mismatches = i;
-					RightUP.push_back(TempOne);	
+					RightUP.push_back(TempOne);
 					break;
 				}
 			}
 		}
    }
-	
+
    if (CurrentLength < BP_Right_End) {
       vector <unsigned int> Right_PD_Output[TOTAL_SNP_ERROR_CHECKED];
 		for (int CheckedIndex = 0; CheckedIndex < TOTAL_SNP_ERROR_CHECKED; CheckedIndex++) {
@@ -624,7 +644,7 @@ void CheckRight_Close(const string & TheInput,
 		}
       const char CurrentChar = CurrentReadSeq[ReadLengthMinus - CurrentLength];
       unsigned int pos;
-		
+
 		for (int i = 0; i < TOTAL_SNP_ERROR_CHECKED_Minus; i++) {
 			int SizeOfCurrent = Right_PD[i].size();
 			if (CurrentChar == 'N') {
@@ -632,35 +652,35 @@ void CheckRight_Close(const string & TheInput,
 					pos =  Right_PD[i][j] - 1;
 					if (Match2N[(short)TheInput[pos]] == 'N')
 						Right_PD_Output[i].push_back(pos);
-				}         
+				}
 			}
 			else {
 				for (int j = 0; j < SizeOfCurrent; j++) {
 					pos =  Right_PD[i][j] - 1;
 					if (TheInput[pos] == CurrentChar)
 						Right_PD_Output[i].push_back(pos);
-					else Right_PD_Output[i + 1].push_back(pos); 
-				}         
-			}			
+					else Right_PD_Output[i + 1].push_back(pos);
+				}
+			}
 		}
-		
+
 		int SizeOfCurrent = Right_PD[TOTAL_SNP_ERROR_CHECKED_Minus].size();
 		if (CurrentChar == 'N') {
 			for (int j = 0; j < SizeOfCurrent; j++) {
 				pos =  Right_PD[TOTAL_SNP_ERROR_CHECKED_Minus][j] - 1;
 				if (Match2N[(short)TheInput[pos]] == 'N')
 					Right_PD_Output[TOTAL_SNP_ERROR_CHECKED_Minus].push_back(pos);
-			}         
+			}
 		}
 		else {
 			for (int j = 0; j < SizeOfCurrent; j++) {
 				pos =  Right_PD[TOTAL_SNP_ERROR_CHECKED_Minus][j] - 1;
 				if (TheInput[pos] == CurrentChar)
 					Right_PD_Output[TOTAL_SNP_ERROR_CHECKED_Minus].push_back(pos);
-				//else Left_PD_Output[i + 1].push_back(pos); 
-			}         
-		}	
-		
+				//else Left_PD_Output[i + 1].push_back(pos);
+			}
+		}
+
 		Sum = 0;
 		for (int i = 0; i <= MAX_SNP_ERROR; i++) {
 			Sum += Right_PD_Output[i].size();
@@ -679,27 +699,27 @@ void CheckRight_Close(const string & TheInput,
 string Cap2Low(const string & input) {
    string output = input;
    for (unsigned int i = 0; i < output.size(); i++) {
-      output[i] = Cap2LowArray[(short)input[i]];   
+      output[i] = Cap2LowArray[(short)input[i]];
    }
    return output;
 }
 
-bool CheckMismatches(const string & TheInput, 
-                     const string & InputReadSeq, 
+bool CheckMismatches(const string & TheInput,
+                     const string & InputReadSeq,
                      //const unsigned int & Start,
 							const UniquePoint & UP
 							) {
 	//return true; 	short LengthStr;
-	//unsigned int AbsLoc; 
+	//unsigned int AbsLoc;
 	string CurrentReadSeq;
 	if (UP.Strand == SENSE) CurrentReadSeq = InputReadSeq;
 	else CurrentReadSeq = ReverseComplement(InputReadSeq);
 	short CurrentReadLength = CurrentReadSeq.size();
 	unsigned int Start = 0;
-	
+
 	string BP_On_Read, BP_On_Ref;
 	if (UP.Direction == FORWARD) {
-		Start = UP.AbsLoc - UP.LengthStr + 1; 
+		Start = UP.AbsLoc - UP.LengthStr + 1;
 		BP_On_Read = CurrentReadSeq.substr(UP.LengthStr - Min_Perfect_Match_Around_BP, Min_Perfect_Match_Around_BP);
 		BP_On_Ref = TheInput.substr(UP.AbsLoc - Min_Perfect_Match_Around_BP + 1, Min_Perfect_Match_Around_BP);
 		if (BP_On_Read != BP_On_Ref) return false;
@@ -710,27 +730,27 @@ bool CheckMismatches(const string & TheInput,
 		BP_On_Ref = TheInput.substr(UP.AbsLoc, Min_Perfect_Match_Around_BP);
 		if (BP_On_Read != BP_On_Ref) return false;
 	}
-	
-	MAX_ALLOWED_MISMATCHES = (short)(CurrentReadSeq.size() * MaximumAllowedMismatchRate + 1); // 
 
-   short NumMismatches = 0;                 // Match2N[(short)'A'] = 'N';    
-   
+	MAX_ALLOWED_MISMATCHES = (short)(CurrentReadSeq.size() * MaximumAllowedMismatchRate + 1); //
+
+   short NumMismatches = 0;                 // Match2N[(short)'A'] = 'N';
+
    for (short i = 0; i < CurrentReadLength; i++) {
       if (CurrentReadSeq[i] == N_char) {
-         if (Match2N[(short)TheInput[Start + i]] != N_char)  
+         if (Match2N[(short)TheInput[Start + i]] != N_char)
             NumMismatches++;
       }
       else {
          if (TheInput[Start + i] != CurrentReadSeq[i])
             NumMismatches++;
-      }   
-   }   
+      }
+   }
    if (NumMismatches > MAX_ALLOWED_MISMATCHES) return true;
-   else return false;                     
+   else return false;
 }
 
 void GetCloseEnd(const string & CurrentChr, SPLIT_READ & Temp_One_Read) {
-	
+
 	Temp_One_Read.ReadLength = Temp_One_Read.UnmatchedSeq.size();
 	Temp_One_Read.ReadLengthMinus = Temp_One_Read.ReadLength - 1;
 	char LeftChar, RightChar;
@@ -744,7 +764,7 @@ void GetCloseEnd(const string & CurrentChr, SPLIT_READ & Temp_One_Read) {
 	int Start, End;
 	short BP_Start;// = MinClose;
 	short BP_End;// = ReadLength - MinClose;
-	
+
 	//for (int i = 0; i < TOTAL_SNP_ERROR_CHECKED; i++) {
 	//	PD[i].clear();
 	//}
@@ -815,7 +835,7 @@ void GetCloseEnd(const string & CurrentChr, SPLIT_READ & Temp_One_Read) {
 				if (CheckMismatches(CurrentChr, Temp_One_Read.UnmatchedSeq, UP[RightUP_index])) {
 					Temp_One_Read.Used = false;
 					Temp_One_Read.UP_Close.push_back(UP[RightUP_index]);
-				} 
+				}
 			}
 			UP.clear();
 		}
@@ -881,7 +901,7 @@ void GetCloseEnd(const string & CurrentChr, SPLIT_READ & Temp_One_Read) {
 				if (CheckMismatches(CurrentChr, Temp_One_Read.UnmatchedSeq, UP[RightUP_index])) {
 					Temp_One_Read.Used = false;
 					Temp_One_Read.UP_Close.push_back(UP[RightUP_index]);
-				} 
+				}
 			}
 			UP.clear();
 		}
@@ -895,12 +915,12 @@ void CleanUniquePoints (vector <UniquePoint> & Input_UP) {
 	char LastDirection = LastUP.Direction;
 	char LastStrand = LastUP.Strand;
 	unsigned int Terminal;
-	
+
 	if (LastDirection == FORWARD) {
 		Terminal = LastUP.AbsLoc - LastUP.LengthStr;
 		for (unsigned i = 0; i < Input_UP.size(); i++) {
 			if (Input_UP[i].Direction == LastDirection && Input_UP[i].Strand == LastStrand) {
-				if (Terminal == Input_UP[i].AbsLoc - Input_UP[i].LengthStr) 
+				if (Terminal == Input_UP[i].AbsLoc - Input_UP[i].LengthStr)
 					TempUP.push_back(Input_UP[i]);
 			}
 		}
@@ -909,10 +929,10 @@ void CleanUniquePoints (vector <UniquePoint> & Input_UP) {
 		Terminal = LastUP.AbsLoc + LastUP.LengthStr;
 		for (unsigned i = 0; i < Input_UP.size(); i++) {
 			if (Input_UP[i].Direction == LastDirection && Input_UP[i].Strand == LastStrand) {
-				if (Terminal == Input_UP[i].AbsLoc + Input_UP[i].LengthStr) 
+				if (Terminal == Input_UP[i].AbsLoc + Input_UP[i].LengthStr)
 					TempUP.push_back(Input_UP[i]);
 			}
-		}			
+		}
 	}
    Input_UP.clear();
 	Input_UP = TempUP;
