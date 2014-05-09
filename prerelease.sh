@@ -22,7 +22,7 @@ cd $MY_PATH
 echo '### Running perl tests ###'
 
 export HARNESS_PERL_SWITCHES=-MDevel::Cover=-db,perl/reports,-ignore,'t/.*\.t'
-rm -rf docs
+rm -rf perl/docs
 mkdir -p perl/docs/reports_text
 prove --nocolor -I perl/lib perl/t| sed 's/^/  /' # indent output of prove
 if [[ $? -ne 0 ]] ; then
@@ -44,7 +44,7 @@ mkdir -p perl/docs/pod_html
 perl -MPod::Simple::HTMLBatch -e 'Pod::Simple::HTMLBatch::go' perl/lib:perl/bin perl/docs/pod_html > /dev/null
 
 echo '### Archiving docs folder ###'
-tar cz -C $INIT_DIR/perl -f docs.tar.gz docs
+tar cz -C $INIT_DIR/perl -f perl/docs.tar.gz docs
 
 # generate manifest, and cleanup
 echo '### Generating MANIFEST ###'
