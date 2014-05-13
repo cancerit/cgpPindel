@@ -28,8 +28,6 @@ const my $PINDEL_COMM => ' %s %s %s %s %s %s';
 const my $PIN_2_VCF => q{ -mt %s -wt %s -r %s -o %s -so %s -mtp %s -wtp %s -pp '%s' -i %s};
 const my $PIN_MERGE => q{ -o %s %s %s %s};
 
-my $l_bin = $Bin;
-
 sub input {
   my ($index, $options) = @_;
   return 1 if(exists $options->{'index'} && $index != $options->{'index'});
@@ -109,7 +107,7 @@ sub pindel {
     make_path($gen_out) unless(-e $gen_out);
 
     my $filtered = File::Spec->catdir($tmp, 'filter');
-    my ($bd_fh, $bd_file) = tempfile('pindel_db_XXXX', UNLINK => 1);
+    my ($bd_fh, $bd_file) = tempfile(File::Spec->catfile($tmp, 'pindel_db_XXXX'), UNLINK => 1);
     close $bd_fh;
 
     my $pindel_comm = _which('pindel');
@@ -279,6 +277,7 @@ sub file_list {
 
 sub _which {
   my $prog = shift;
+  my $l_bin = $Bin;
   my $path = File::Spec->catfile($l_bin, $prog);
   $path = which($prog) unless(-e $path);
   return $path;
