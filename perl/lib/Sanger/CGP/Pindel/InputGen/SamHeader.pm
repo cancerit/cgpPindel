@@ -61,7 +61,7 @@ sub rgs_to_offsets_and_sample_name {
     die "BAM file has multiple RG lines with ID of: $rg_id" if(exists $rgs{$rg_id});
     $rgs{$rg_id} = $median_insert;
 
-    my ($sample_tmp) = $rg =~ m/\SM:([^\t]+)/;
+    my ($sample_tmp) = $rg =~ m/\tSM:([^\t]+)/;
     if(defined $sample_name) {
       die "Different sample names found in RG lines, $sample_name vs. $sample_tmp" if($sample_name ne $sample_tmp);
     }
