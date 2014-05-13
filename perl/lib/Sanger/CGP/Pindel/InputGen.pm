@@ -101,7 +101,7 @@ sub run {
         if($pair_count == $PAIRS_PER_THREAD) {
           my $collate_took = time - $collate_start;
           warn "Collated $pair_count readpairs (in $collate_took sec.)\n";
-          $self->process_set($rg_pis, $sample_name, \@this_batch);
+          $self->_process_set($rg_pis, $sample_name, \@this_batch);
           @this_batch = ();
           $pair_count = 0;
           $collate_start = time;
@@ -121,27 +121,27 @@ sub run {
     my $collate_took = time - $collate_start;
     warn "Collated $pair_count readpairs (${collate_took}s)\n";
 
-    $self->process_set($rg_pis, $sample_name, \@this_batch);
-    $self->completed_threads if($threads > 1);
+    $self->_process_set($rg_pis, $sample_name, \@this_batch);
+    $self->_completed_threads if($threads > 1);
   }
   catch {
     die qq{An error occurred while running:\n\t$command\nERROR: $_};
   };
 }
 
-sub process_set {
+sub _process_set {
   my ($self, $rg_pis, $sample_name, $pairs) = @_;
   my $max_threads = $self->{'threads'};
   if($max_threads > 1) {
     my $existing_threads = threads->list(threads::all);
     if(@{$pairs} == 0) {
-      $self->completed_threads;
+      $self->_completed_threads;
       return 1;
     }
     # first clear all old processing
     if($existing_threads == $max_threads) {
       sleep 1 while(threads->list(threads::joinable) < $max_threads);
-      $self->completed_threads;
+      $self->_completed_threads;
     }
     # start new thread
     my ($thr) = threads->create(\&reads_to_pindel, $existing_threads, $rg_pis, $sample_name, @{$pairs});
@@ -151,7 +151,7 @@ sub process_set {
   }
 }
 
-sub completed_threads {
+sub _completed_threads {
   my $self = shift;
   my @output_objects;
   my $all_threads = threads->list(threads::all);
