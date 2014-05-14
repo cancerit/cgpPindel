@@ -41,6 +41,7 @@ sub merge_vcf {
   $command = which('tabix');
   $command .= sprintf ' -p vcf %s', $vcf_gz;
   system($command);
+  unlink $new_vcf; # remove the VCF you created prior to compression
   return 1;
 }
 
