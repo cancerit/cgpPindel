@@ -1,7 +1,6 @@
 package Sanger::CGP::Pindel::OutputGen::PindelRecord;
 
 use Sanger::CGP::Pindel;
-our $VERSION = Sanger::CGP::Pindel->VERSION;
 
 use strict;
 
@@ -32,6 +31,8 @@ sub new{
 		_s2 => $args{'-s2'},
 		_type => $args{'-type'},
 		_repeats => $args{'-repeats'},
+		_num_samples => $args{'-num_samples'},
+		_sample_contrib => $args{'-sample_contrib'},
 	};
     bless $self, $class;
     return $self;
@@ -177,6 +178,18 @@ sub sum_ms{
 	my($self,$value) = @_;
 	$self->{_sum_ms} = $value if defined $value;
 	return $self->{_sum_ms};
+}
+
+sub num_samples {
+	my($self,$value) = @_;
+	$self->{_num_samples} = $value if defined $value;
+	return $self->{_num_samples};
+}
+
+sub sample_contrib {
+	my($self,$value) = @_;
+	$self->{_sample_contrib} = $value if defined $value;
+	return $self->{_sample_contrib};
 }
 
 sub s1{

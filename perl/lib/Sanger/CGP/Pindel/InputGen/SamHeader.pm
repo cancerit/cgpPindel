@@ -8,7 +8,6 @@ use Const::Fast qw(const);
 use Carp qw( croak );
 
 use Sanger::CGP::Pindel;
-our $VERSION = Sanger::CGP::Pindel->VERSION;
 
 use PCAP::Bam::Bas;
 

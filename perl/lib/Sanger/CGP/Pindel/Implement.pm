@@ -14,7 +14,6 @@ use FindBin qw($Bin);
 use Capture::Tiny qw(capture_stdout);
 
 use Sanger::CGP::Pindel;
-our $VERSION = Sanger::CGP::Pindel->VERSION;
 
 use PCAP::Threaded;
 use PCAP::Bam;

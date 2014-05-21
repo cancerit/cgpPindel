@@ -9,7 +9,6 @@ use List::Util qw(sum sum0);
 use List::MoreUtils qw(first_index last_index);
 
 use Sanger::CGP::Pindel;
-our $VERSION = Sanger::CGP::Pindel->VERSION;
 
 # remove before release
 use Carp qw(croak);

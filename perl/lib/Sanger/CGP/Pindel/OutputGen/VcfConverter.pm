@@ -1,7 +1,6 @@
 package Sanger::CGP::Pindel::OutputGen::VcfConverter;
 
 use Sanger::CGP::Pindel;
-our $VERSION = Sanger::CGP::Pindel->VERSION;
 
 use strict;
 use Sanger::CGP::Vcf::VcfUtil;

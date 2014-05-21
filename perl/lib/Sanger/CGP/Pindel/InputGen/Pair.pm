@@ -7,7 +7,6 @@ use warnings FATAL => 'all';
 use Const::Fast qw(const);
 
 use Sanger::CGP::Pindel;
-our $VERSION = Sanger::CGP::Pindel->VERSION;
 
 use Sanger::CGP::Pindel::InputGen::Read;
 

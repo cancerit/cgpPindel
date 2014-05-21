@@ -1,7 +1,6 @@
 package Sanger::CGP::Pindel::OutputGen::CombinedRecord;
 
 use Sanger::CGP::Pindel;
-our $VERSION = Sanger::CGP::Pindel->VERSION;
 
 use strict;
 use base qw{Sanger::CGP::Pindel::OutputGen::PindelRecord};

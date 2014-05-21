@@ -1,7 +1,6 @@
 package Sanger::CGP::Pindel::OutputGen::UuIdGenerator;
 
 use Sanger::CGP::Pindel;
-our $VERSION = Sanger::CGP::Pindel->VERSION;
 
 use strict;
 use Data::UUID;

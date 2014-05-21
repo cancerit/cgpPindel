@@ -13,7 +13,6 @@ use File::Spec;
 use Data::Dumper;
 
 use Sanger::CGP::Pindel;
-our $VERSION = Sanger::CGP::Pindel->VERSION;
 
 # add signal handler for any interrupt so that cleanup of temp is handled correctly.
 use File::Temp;

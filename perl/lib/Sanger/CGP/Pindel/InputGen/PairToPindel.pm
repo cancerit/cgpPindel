@@ -8,7 +8,6 @@ use Const::Fast qw(const);
 use Carp qw(croak);
 
 use Sanger::CGP::Pindel;
-our $VERSION = Sanger::CGP::Pindel->VERSION;
 
 const my $I_SIZE => 500;
 const my $PINDEL_REC => qq{\@%s/%s_RG%s\n%s\n%s\t%s\t%s\t%s\t%s\t%s};

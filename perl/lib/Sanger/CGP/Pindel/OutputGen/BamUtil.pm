@@ -3,7 +3,6 @@ package Sanger::CGP::Pindel::OutputGen::BamUtil;
 use Sanger::CGP::Pindel;
 use Sanger::CGP::Vcf::Contig;
 use Sanger::CGP::Vcf::Sample;
-our $VERSION = Sanger::CGP::Pindel->VERSION;
 
 use strict;
 use autodie qw(:all);

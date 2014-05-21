@@ -1,7 +1,6 @@
 package Sanger::CGP::Pindel::OutputGen::PindelRecordParser;
 
 use Sanger::CGP::Pindel;
-our $VERSION = Sanger::CGP::Pindel->VERSION;
 
 use strict;
 use Carp;
@@ -179,12 +178,19 @@ sub _parse_header {
 	$record->s1((split / /, shift @head_bits)[1]);
 	$record->s2((split / /, shift @head_bits)[1]) if($type ne 'DI') ;
 	$record->sum_ms((split / /, shift @head_bits)[1]);
+	$record->num_samples((split / /, shift @head_bits)[1]);
+	my %sample_contrib;
+	while(scalar @head_bits) {
+	  my ($sample, $count) = split / /, shift @head_bits;
+	  $sample_contrib{$sample} = $count;
+	}
+	$record->sample_contrib(\%sample_contrib);
 
 	# remainder of data is obtained from aligments
 	return $record;
 }
 
-=head _parse_header
+=head _parse_header_v02
 Processes the header component of a pindel record.
 
 @param1 record    - a empty Sanger::CGP::Pindel::OutputGen::PindelRecord object.
