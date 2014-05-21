@@ -36,6 +36,7 @@ for my $mod(@modules) {
 }
 
 for my $mod(@modules) {
+  ok($mod->VERSION, "Check version inheritance exists ($mod)");
   if($mod->can('new')) { # only try new on things that have new defined
     new_ok($mod) unless( first {$mod eq $_} MODULE_SKIP );
   }
