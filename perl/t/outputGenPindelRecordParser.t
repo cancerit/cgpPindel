@@ -93,6 +93,9 @@ subtest 'Non-object funcions' => sub {
       -end => 16060485,
       -range_start => 16060479,
       -range_end => 16060525,
+      -num_samples => 2,
+      -sample_contrib => {'test'    => '4',
+                          'test-BL' => '2'},
       -s1 => 12,
       -s2 => 234.764,
       -sum_ms => 202
@@ -111,6 +114,9 @@ subtest 'Non-object funcions' => sub {
       -end => 16052167,
       -range_start => 16052167,
       -range_end => 16052200,
+      -num_samples => 2,
+      -sample_contrib => {'test'    => '9',
+                          'test-BL' => '6'},
       -s1 => 16,
       -s2 => 550.185,
       -sum_ms => 533
@@ -129,6 +135,9 @@ subtest 'Non-object funcions' => sub {
       -end => 51154519,
       -range_start => 51154501,
       -range_end => 51154520,
+      -num_samples => 2,
+      -sample_contrib => {'test'    => '2',
+                          'test-BL' => '1'},
       -s1 => 4,
       -sum_ms => 180
     );
