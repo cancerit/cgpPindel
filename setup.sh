@@ -68,7 +68,8 @@ echo > $INIT_DIR/setup.log
 
 PCAP=`perl -le 'eval "require $ARGV[0]" and print $ARGV[0]->VERSION' PCAP`
 if [[ "x$PCAP" == "x" ]] ; then
-  echo "PREREQUISITE: Please install PCAP-core before proceeding:\thttps://github.com/ICGC-TCGA-PanCancer/PCAP-core/releases"
+  echo "PREREQUISITE: Please install PCAP-core before proceeding:"
+  echo "  https://github.com/ICGC-TCGA-PanCancer/PCAP-core/releases"
   exit 1;
 fi
 
@@ -79,6 +80,9 @@ echo -n "Compiling pindel binaries ..."
   g++ -O3 -o $SETUP_DIR/filter_pindel_reads c++/filter_pindel_reads.cpp
   cp $SETUP_DIR/pindel $INST_PATH/bin/.
   cp $SETUP_DIR/filter_pindel_reads $INST_PATH/bin/.
+  # convenience for testing
+  cp $SETUP_DIR/pindel $INIT_DIR/bin/.
+  cp $SETUP_DIR/filter_pindel_reads $INIT_DIR/bin/.
 ) >>$INIT_DIR/setup.log 2>&1
 done_message "" "Failed during compilation of pindel."
 
@@ -118,7 +122,6 @@ echo "Please add the following to beginning of path:"
 echo "  $INST_PATH/bin"
 echo "Please add the following to beginning of PERL5LIB:"
 echo "  $PERLROOT"
-echo "  $PERLARCH"
 echo
 
 exit 0

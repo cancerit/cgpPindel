@@ -1,9 +1,11 @@
 /Makefile
 /blib
-/docs
+/perl/docs
 /pm_to_blib
 /MANIFEST.bak
 /install_tmp
 /setup.log
 /nytprof.out
 /nytprof
+/perl/bin/filter_pindel_reads
+/perl/bin/pindel
