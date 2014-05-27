@@ -3,10 +3,13 @@ c++/pindel.cpp
 Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
+perl/bin/filter_pindel_reads
+perl/bin/pindel
 perl/bin/pindel.pl
 perl/bin/pindel_2_combined_vcf.pl
 perl/bin/pindel_input_gen.pl
 perl/bin/pindel_merge_vcf_bam.pl
+perl/bin/pindel_np_from_vcf.pl
 perl/docs.tar.gz
 perl/docs/pod_html/_blkbluw.css
 perl/docs/pod_html/_blkcynw.css
@@ -24,6 +27,7 @@ perl/docs/pod_html/pindel.html
 perl/docs/pod_html/pindel_2_combined_vcf.html
 perl/docs/pod_html/pindel_input_gen.html
 perl/docs/pod_html/pindel_merge_vcf_bam.html
+perl/docs/pod_html/pindel_np_from_vcf.html
 perl/docs/pod_html/Sanger/CGP/Pindel/Implement.html
 perl/docs/pod_html/Sanger/CGP/Pindel/InputGen.html
 perl/docs/pod_html/Sanger/CGP/Pindel/InputGen/Pair.html
