@@ -81,6 +81,7 @@ echo -n "Compiling pindel binaries ..."
   cp $SETUP_DIR/pindel $INST_PATH/bin/.
   cp $SETUP_DIR/filter_pindel_reads $INST_PATH/bin/.
   # convenience for testing
+  mkdir -p $INIT_DIR/bin
   cp $SETUP_DIR/pindel $INIT_DIR/bin/.
   cp $SETUP_DIR/filter_pindel_reads $INIT_DIR/bin/.
 ) >>$INIT_DIR/setup.log 2>&1
@@ -89,7 +90,7 @@ done_message "" "Failed during compilation of pindel."
 #add bin path for install tests
 export PATH="$INST_PATH/bin:$PATH"
 
-cd $INIT_DIR
+cd $INIT_DIR/perl
 
 echo -n "Installing Perl prerequisites ..."
 if ! ( perl -MExtUtils::MakeMaker -e 1 >/dev/null 2>&1); then
@@ -103,15 +104,14 @@ fi
 ) >>$INIT_DIR/setup.log 2>&1
 done_message "" "Failed during installation of core dependencies."
 
-echo -n "Installing PCAP ..."
+echo -n "Installing cgpPindel ..."
 (
-  cd $INIT_DIR
   perl Makefile.PL INSTALL_BASE=$INST_PATH
   make
   make test
   make install
 ) >>$INIT_DIR/setup.log 2>&1
-done_message "" "PCAP install failed."
+done_message "" "cgpPindel install failed."
 
 # cleanup all junk
 rm -rf $SETUP_DIR

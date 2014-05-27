@@ -4,9 +4,9 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
   NAME          => 'cgpPindel',
-  VERSION_FROM  => 'perl/lib/Sanger/CGP/Pindel.pm',
-  EXE_FILES     => [qw( perl/bin/pindel.pl
-                        perl/bin/pindel_input_gen.pl)],
+  VERSION_FROM  => 'lib/Sanger/CGP/Pindel.pm',
+  EXE_FILES     => [qw( bin/pindel.pl
+                        bin/pindel_input_gen.pl)],
   PREREQ_PM     => {
                      'Const::Fast' => 0.014,
                      'Try::Tiny' => 0.19,
