@@ -18,6 +18,7 @@ use strict;
 use Carp;
 use English qw( -no_match_vars );
 use Sanger::CGP::Pindel;
+use Sanger::CGP::PindelPostProcessing::FilterRules;
 
 1;
 
@@ -151,8 +152,14 @@ sub reformat_header {
 sub _parse_user_defined_filters
 {
 	my ($self,$vcf,$file,$root_filter_set_name) = @_;
-	my $filters = [ do $file ];
-	if ( $@ ) { croak("do $file: $@"); }
+
+  my $filters = [];
+  open my $IN, '<', $file or croak "Failed to read $file: $!";
+  while(my $flag = <$IN>) {
+    chomp $flag;
+    push @{$filters}, Sanger::CGP::PindelPostProcessing::FilterRules::rule($flag);
+  }
+  close $IN;
 
 	my $info_descs = [];
 
@@ -206,7 +213,7 @@ sub _parse_user_defined_filters
 sub apply_user_defined_filters{
 	my ($self,$vcf,$line,$root_filter_set_name) = @_;
 
-	our($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF);
+	my($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF);
 	$CHROM  = $$line[0];
 	$POS	= $$line[1];
 	$FAIL   = 0;
@@ -243,12 +250,14 @@ sub apply_user_defined_filters{
 				$MATCH = $vcf->get_sample_field($line,$idx);
 			}
 
+			my $result = &{$$filter{test}}($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF);
+
 			if($root_filter_set_name eq 'udef_flags'){
-				if(&{$$filter{test}} == $PASS){
+				if($result == $PASS){
 					$apply{ $$filter{name} } = '';
 				}
 			}else{
-				$apply{ $$filter{name} } = &{$$filter{test}} == $PASS ? 0 : 1;
+				$apply{ $$filter{name} } = $result == $PASS ? 0 : 1;
 			}
 		}
 	}

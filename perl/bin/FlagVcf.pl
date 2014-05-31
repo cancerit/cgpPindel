@@ -10,9 +10,8 @@ BEGIN {
 	use Cwd qw(abs_path);
 	use File::Basename;
 	my $prog_path = abs_path($0);
-	$config_path = dirname($prog_path).'/../modules/';
+	unshift @INC, dirname($prog_path).'/../lib';
 };
-use lib ($config_path);
 use strict;
 use English qw( -no_match_vars );
 use warnings;
@@ -25,7 +24,7 @@ use File::Temp qw(tempfile);
 use File::Spec::Functions qw(splitpath);
 use Vcf;
 use Tabix;
-#use Sanger::CGP::PindelPostProcessing::VcfPindelFlagger;
+
 use Sanger::CGP::PindelPostProcessing::VcfSoftFlagger;
 use Sanger::CGP::PindelPostProcessing::AbstractExe qw(get_version);
 

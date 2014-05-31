@@ -10,8 +10,6 @@ use Cwd 'abs_path';
 use Test::More;
 use Data::Dumper;
 
-use_ok('Sanger::CGP::PindelPostProcessing::VcfPindelFlagger');
-
 main(@ARGV);
 sub main{
 	_test_flags();
