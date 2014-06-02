@@ -74,8 +74,12 @@ our $vcf_flagging_repeats_tabix;
 our $vcf_flagging_unmatched_normals_tabix;
 
 sub rule {
-  my $rule = shift;
+  my (undef, $rule) = @_; # being called like an object function so throw away first varaible
   return $RULE_DESCS{$rule};
+}
+
+sub available_rules {
+  return sort keys %RULE_DESCS;
 }
 
 sub use_prev {

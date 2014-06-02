@@ -18,7 +18,6 @@ use strict;
 use Carp;
 use English qw( -no_match_vars );
 use Sanger::CGP::Pindel;
-use Sanger::CGP::PindelPostProcessing::FilterRules;
 
 1;
 
@@ -155,9 +154,12 @@ sub _parse_user_defined_filters
 
   my $filters = [];
   open my $IN, '<', $file or croak "Failed to read $file: $!";
+  my $module = <$IN>;
+  chomp $module;
+  eval "require $module";
   while(my $flag = <$IN>) {
     chomp $flag;
-    push @{$filters}, Sanger::CGP::PindelPostProcessing::FilterRules::rule($flag);
+    push @{$filters}, $module->rule($flag);
   }
   close $IN;
 
