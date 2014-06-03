@@ -63,6 +63,7 @@ sub cleanup {
 
 sub setup {
   my %opts;
+  pod2usage(-msg  => "\nERROR: Option must be defined.\n", -verbose => 1,  -output => \*STDERR) if(scalar @ARGV == 0);
   $opts{'cmd'} = join " ", $0, @ARGV;
   GetOptions( 'h|help' => \$opts{'h'},
               'm|man' => \$opts{'m'},
@@ -83,11 +84,6 @@ sub setup {
 
   pod2usage(-verbose => 1) if(defined $opts{'h'});
   pod2usage(-verbose => 2) if(defined $opts{'m'});
-
-  # then check for no args:
-  my $defined;
-  for(keys %opts) { $defined++ if(defined $opts{$_}); }
-  pod2usage(-msg  => "\nERROR: Options must be defined.\n", -verbose => 1,  -output => \*STDERR) unless($defined);
 
   PCAP::Cli::file_for_reading('reference', $opts{'reference'});
   PCAP::Cli::file_for_reading('tumour', $opts{'tumour'});
