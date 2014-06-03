@@ -13,16 +13,6 @@ done_message () {
     fi
 }
 
-get_distro () {
-  if hash curl 2>/dev/null; then
-    curl -sS -o $1.tar.gz -L $2
-  else
-    wget -nv -O $1.tar.gz $2
-  fi
-  mkdir -p $1
-  tar --strip-components 1 -C $1 -zxf $1.tar.gz
-}
-
 if [ "$#" -ne "1" ] ; then
   echo "Please provide an installation path  such as /opt/ICGC"
   exit 0
@@ -73,6 +63,13 @@ if [[ "x$PCAP" == "x" ]] ; then
   exit 1;
 fi
 
+
+CGPVCF=`perl -le 'eval "require $ARGV[0]" and print $ARGV[0]->VERSION' Sanger::CGP::Vcf`
+if [[ "x$CGPVCF" == "x" ]] ; then
+  echo "PREREQUISITE: Please install cgpVcf before proceeding:"
+  echo "  https://github.com/cancerit/cgpVcf/releases"
+  exit 1;
+fi
 echo -n "Compiling pindel binaries ..."
 (
   set -x
