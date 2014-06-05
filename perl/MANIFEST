@@ -28,6 +28,7 @@ lib/Sanger/CGP/PindelPostProcessing/VcfSoftFlagger.pm
 Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
+rules/allRules.lst
 rules/followupRules.lst
 rules/genomicRules.lst
 rules/pulldownRules.lst

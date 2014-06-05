@@ -20,12 +20,13 @@ use PCAP::Bam;
 
 use Sanger::CGP::Pindel::OutputGen::BamUtil;
 
-const my $PINDEL_GEN_COMM => ' -b %s -o %s -t %s';
-const my $SAMTOOLS_FAIDX => ' faidx %s %s > %s';
-const my $FILTER_PIN_COMM => ' %s %s %s %s';
-const my $PINDEL_COMM => ' %s %s %s %s %s %s';
+const my $PINDEL_GEN_COMM => q{ -b %s -o %s -t %s};
+const my $SAMTOOLS_FAIDX => q{ faidx %s %s > %s};
+const my $FILTER_PIN_COMM => q{ %s %s %s %s};
+const my $PINDEL_COMM => q{ %s %s %s %s %s %s};
 const my $PIN_2_VCF => q{ -mt %s -wt %s -r %s -o %s -so %s -mtp %s -wtp %s -pp '%s' -i %s};
 const my $PIN_MERGE => q{ -o %s %s %s %s};
+const my $FLAG => q{ -a %s -u %s -s %s -i %s -o %s -r %s};
 
 sub input {
   my ($index, $options) = @_;
@@ -203,6 +204,50 @@ sub merge_and_bam {
   $command .= sprintf $PIN_MERGE, $outstub, $search_vcf, $search_mt, $search_wt;
 
   PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
+
+  PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
+}
+
+sub flag {
+  my $options = shift;
+
+  my $tmp = $options->{'tmp'};
+  return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
+
+# FlagVcf.pl
+# -r ~kr2/GitHub/cgpPindel/perl/rules/genomicRules.lst
+# -sr ~kr2/GitHub/cgpPindel/perl/rules/softRules.lst
+# -a /lustre/scratch112/sanger/cgppipe/nst_pipe/test_ref/human/37/e58/vagrent/codingexon_regions.indel.bed.gz
+# -u /lustre/scratch112/sanger/kr2/pan_cancer_test_sets/pindel_np_gen/huge_file.gff3.gz
+# -s /lustre/scratch112/sanger/cgppipe/nst_pipe/test_ref/human/37/gsm_reference_repeat.gff.gz
+# -i pindel_farm/PD13371a_vs_PD13371b.vcf.gz
+# -o pindel_farm/PD13371a_vs_PD13371b.flag_new_np.github.vcf
+
+  my $stub = File::Spec->catfile($options->{'outdir'}, $options->{'tumour_name'}.'_vs_'.$options->{'normal_name'});
+
+  my $new_vcf = "$stub.flagged.vcf";
+  my $command = "$^X ";
+  $command .= _which('FlagVcf.pl');
+  $command .= sprintf $FLAG,  $options->{'genes'},
+                              $options->{'unmatched'},
+                              $options->{'simrep'},
+                              "$stub.vcf.gz", # input
+                              $new_vcf, # output,
+                              $options->{'filters'};
+  $command .= ' -sr '.$options->{'softfil'} if(exists $options->{'softfil'} && defined $options->{'softfil'});
+
+  my $vcf_gz = $new_vcf.'.gz';
+  my $bgzip = _which('bgzip');
+  $bgzip .= sprintf ' -c %s > %s', $new_vcf, $vcf_gz;
+
+  my $tabix = _which('tabix');
+  $tabix .= sprintf ' -p vcf %s', $vcf_gz;
+
+  my @commands = ($command, $bgzip, $tabix);
+
+  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), \@commands, 0);
+
+  unlink $new_vcf;
 
   PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
 }

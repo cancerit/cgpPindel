@@ -70,6 +70,7 @@ if [[ "x$CGPVCF" == "x" ]] ; then
   echo "  https://github.com/cancerit/cgpVcf/releases"
   exit 1;
 fi
+
 echo -n "Compiling pindel binaries ..."
 (
   set -x
