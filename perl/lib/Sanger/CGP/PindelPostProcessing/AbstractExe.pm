@@ -1,4 +1,4 @@
-package Sanger::CGP::Pindel;
+package Sanger::CGP::PindelPostProcessing::AbstractExe;
 
 ########## LICENCE ##########
 # Copyright (c) 2014 Genome Research Ltd.
@@ -21,12 +21,13 @@ package Sanger::CGP::Pindel;
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ########## LICENCE ##########
 
+use FindBin;
+use Sanger::CGP::Pindel;
+use Exporter 'import';
+@EXPORT_OK = qw( get_version );
 
-use strict;
-use Const::Fast qw(const);
-
-use base 'Exporter';
-our $VERSION = '1.0';
-our @EXPORT = qw($VERSION);
+sub get_version {
+  return $VERSION;
+}
 
 1;

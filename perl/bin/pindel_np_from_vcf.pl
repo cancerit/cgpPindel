@@ -1,5 +1,27 @@
 #!/usr/bin/perl
 
+########## LICENCE ##########
+# Copyright (c) 2014 Genome Research Ltd.
+#
+# Author: Keiran Raine <cgpit@sanger.ac.uk>
+#
+# This file is part of cgpPindel.
+#
+# cgpPindel is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation; either version 3 of the License, or (at your option) any
+# later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+########## LICENCE ##########
+
+
 BEGIN {
   use Cwd qw(abs_path);
   use File::Basename;
@@ -126,12 +148,18 @@ sub get_options {
   $opts{'cmd'} = join " ", $0, @ARGV;
   GetOptions( 'h|help'      => \$opts{'h'},
               'm|man'       => \$opts{'m'},
+              'v|version'       => \$opts{'v'},
               'o|output=s'  => \$opts{'output'},
               's|samp_id=s' => \$opts{'samp_id'},
   ) or pod2usage(2);
 
   pod2usage(-verbose => 1) if(defined $opts{'h'});
   pod2usage(-verbose => 2) if(defined $opts{'m'});
+
+  if(defined $opts{'v'}){
+    print 'Version: ',Sanger::CGP::Pindel->VERSION,"\n";
+    exit;
+  }
 
   pod2usage(-message => q{ERROR: 'output' must be defined.}, -verbose => 1) unless(defined $opts{'output'});
   pod2usage(-message => q{ERROR: 'samp_id' must be defined.}, -verbose => 1) unless(defined $opts{'samp_id'});
@@ -172,3 +200,4 @@ pindel_np_from_vcf.pl [options] *.vcf[.gz]
   Other:
     -help     -h  Brief help message.
     -man      -m  Full documentation.
+    -version  -v  Version

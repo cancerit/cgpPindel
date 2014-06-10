@@ -50,13 +50,12 @@ sub setup {
   $opts{'cmd'} = join " ", $0, @ARGV;
   GetOptions( 'h|help' => \$opts{'h'},
               'm|man' => \$opts{'m'},
+              'v|version' => \$opts{'v'},
               'o|out=s' => \$opts{'out'},
   ) or pod2usage(2);
 
-  my $version = Sanger::CGP::Pindel::OutputGen->VERSION;
-
   if(defined $opts{'v'}){
-    print "Version: $version\n";
+    print 'Version: ',Sanger::CGP::Pindel::OutputGen::BamUtil->VERSION,"\n";
     exit;
   }
 
