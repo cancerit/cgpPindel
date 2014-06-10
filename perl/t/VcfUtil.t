@@ -1,3 +1,24 @@
+########## LICENCE ##########
+# Copyright (c) 2014 Genome Research Ltd. 
+#  
+# Author: Keiran Raine <cgpit@sanger.ac.uk> 
+#  
+# This file is part of cgpPindel.
+#  
+# cgpPindel is free software: you can redistribute it and/or modify it under 
+# the terms of the GNU Affero General Public License as published by the Free 
+# Software Foundation; either version 3 of the License, or (at your option) any 
+# later version. 
+#  
+# This program is distributed in the hope that it will be useful, but WITHOUT 
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more 
+# details. 
+#  
+# You should have received a copy of the GNU Affero General Public License 
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+########## LICENCE ##########
+
 use strict;
 use Test::More;
 use Test::Fatal;
@@ -17,9 +38,9 @@ subtest 'Non-object funcions' => sub {
 
 
   subtest 'add_vcf_sample' => sub {
-  	
+
   	my $wt_sample = new Sanger::CGP::Vcf::Sample(-name => 'test_wt');
-  	
+
     my $exp7 = q{##fileformat=VCFv4.1
 ##SAMPLE=<ID=test_wt,SampleName=test_wt>
 ##SAMPLE=<ID=test_wt_2,SampleName=test_wt_2,Study=test_study>
@@ -32,80 +53,80 @@ subtest 'Non-object funcions' => sub {
 };
 
 	my $vcf = new Vcf;
-  	
+
   	Sanger::CGP::Vcf::VcfUtil::add_vcf_sample($vcf,$wt_sample);
 
     $wt_sample->name('test_wt_2');
     $wt_sample->study('test_study');
   	Sanger::CGP::Vcf::VcfUtil::add_vcf_sample($vcf,$wt_sample);
-    
+
     $wt_sample->name('test_wt_3');
   	$wt_sample->seq_protocol('protocol1');
   	Sanger::CGP::Vcf::VcfUtil::add_vcf_sample($vcf,$wt_sample);
-  	
+
   	$wt_sample->name('test_wt_4');
   	$wt_sample->accession_source('COSMIC');
   	Sanger::CGP::Vcf::VcfUtil::add_vcf_sample($vcf,$wt_sample);
-  	
+
   	$wt_sample->name('test_wt_5');
   	$wt_sample->description('Blah Blah Blah');
   	Sanger::CGP::Vcf::VcfUtil::add_vcf_sample($vcf,$wt_sample);
-  	
+
   	$wt_sample->name('test_wt_6');
   	$wt_sample->accession('COS_123');
   	Sanger::CGP::Vcf::VcfUtil::add_vcf_sample($vcf,$wt_sample);
-  	
+
   	$wt_sample->name('test_wt_7');
   	$wt_sample->platform('plat1');
   	Sanger::CGP::Vcf::VcfUtil::add_vcf_sample($vcf,$wt_sample);
-  	
-  	
+
+
   	my $header_samples = $vcf->format_header;
     my @header_samples_bits = split "\n", $header_samples;
    	my $header_samples_columns = pop @header_samples_bits;
    	my @exp1_bits = split "\n", $exp7;
    	my $exp7_columns = pop @exp1_bits;
-   	
+
    	is($header_samples_columns,$exp7_columns,'Check samples columns line');
    	is(scalar @header_samples_bits, scalar @exp1_bits,'Check correct number of lines');
-   	
+
    	foreach my $got_line (@header_samples_bits){
    		my $expected_line = shift @exp1_bits;
    		is_deeply(header_to_hash($got_line),header_to_hash($got_line),'Checking header line');
    	}
   	#is_deeply([split "\n", $vcf->format_header],[split "\n",$exp7],'Check Sample on header string');
-  	
+
   };
 
 
 
   subtest 'gen_tn_vcf_header' => sub {
-  	
+
   	my $wt_sample = new Sanger::CGP::Vcf::Sample(-name => 'test_wt');
   	my $mt_sample = new Sanger::CGP::Vcf::Sample(-name => 'test_mt');
-  	
+
   	my $contig_1 = new Sanger::CGP::Vcf::Contig(-name => '1', -length => 10, -species => 'jelly fish', -assembly => '25');
   	my $contig_x = new Sanger::CGP::Vcf::Contig(-name => 'x', -length => 10, -species => 'jelly fish', -assembly => '25');
-  	
+
   	my $contigs = [$contig_1,$contig_x];
-  	
+
   	my @process_logs = ();
-    
+
     push @process_logs, new Sanger::CGP::Vcf::VcfProcessLog(
 	  -input_vcf_source => 'banana',
       -input_vcf_ver => 'test_version1',
 	);
-	
+
 	push @process_logs, new Sanger::CGP::Vcf::VcfProcessLog(
 	  -input_vcf_source => 'Jeff K',
       -input_vcf_ver => 'test_version2',
       -input_vcf_params => {'o'=>'my_file'},
 	);
-  	
+
   	my $reference_name = 'BOB_ref';
     my $input_source = 'BOB';
   	my $date = DateTime->now->strftime('%Y%m%d');
-  	
+
 	my $format = [
 		{key => 'FORMAT', ID => 'GT', Number => 1, Type => 'String', Description => 'Genotype'},
 		{key => 'FORMAT', ID => 'PP', Number => 1, Type => 'Integer', Description => 'Pindel calls on the positive strand'},
@@ -120,8 +141,8 @@ subtest 'Non-object funcions' => sub {
 		{key => 'random', value => 'This is random'},
 		{key => 'VERY_RANDOM', value => 'So is this'},
 	];
-  	
-  	my $exp1 = 
+
+  	my $exp1 =
 qq{##fileformat=VCFv4.1
 ##fileDate=$date
 ##source_$date.1=BOB
@@ -141,36 +162,36 @@ qq{##fileformat=VCFv4.1
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NORMAL	TUMOUR
 };
 	is_deeply([split "\n", Sanger::CGP::Vcf::VcfUtil::gen_tn_vcf_header($wt_sample, $mt_sample, $contigs, \@process_logs, $reference_name, $input_source, $info, $format, $other, "\n")],[split "\n",$exp1],'Header string construction');
-  
+
   };
-  
+
 };
 
 ## breaks up a header line into manageable chunks for comparison. This way order shouldnt matter....
 sub header_to_hash{
 	my($line) = @_;
-	
+
 	my ($k,$data) = $line =~ /^##(.+)=<()>^/;
-	
+
 	my $ret = {key => $k};
-	
-	
+
+
 	my @bits = split(/,/,$data);
-	
+
 	my $fragments = [];
-	
+
 	my $key_gen = 0;
-	
+
 	foreach my $pair (@bits){
 		my($key,$val) = split /=/, $pair;
-		
+
 		unless($val){
 			push @$fragments, $fragments;
 		}else{
 			$ret->{$key} = $val;
 		}
 	}
-	
+
 	$ret->{'frag'} = $fragments;
 }
 

@@ -1,5 +1,26 @@
 #!/usr/bin/perl
 
+########## LICENCE ##########
+# Copyright (c) 2014 Genome Research Ltd.
+#
+# Author: Keiran Raine <cgpit@sanger.ac.uk>
+#
+# This file is part of cgpPindel.
+#
+# cgpPindel is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation; either version 3 of the License, or (at your option) any
+# later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+########## LICENCE ##########
+
 BEGIN {
   use Cwd qw(abs_path);
   use File::Basename;
@@ -17,8 +38,6 @@ use Carp;
 use Pod::Usage qw(pod2usage);
 
 use Sanger::CGP::Pindel::OutputGen::BamUtil;
-
-#Sanger::CGP::Pindel::OutputGen::BamUtil::sam_to_sorted_bam();
 
 {
   my $options = setup();
@@ -50,13 +69,12 @@ sub setup {
   $opts{'cmd'} = join " ", $0, @ARGV;
   GetOptions( 'h|help' => \$opts{'h'},
               'm|man' => \$opts{'m'},
+              'v|version' => \$opts{'v'},
               'o|out=s' => \$opts{'out'},
   ) or pod2usage(2);
 
-  my $version = Sanger::CGP::Pindel::OutputGen->VERSION;
-
   if(defined $opts{'v'}){
-    print "Version: $version\n";
+    print 'Version: ',Sanger::CGP::Pindel::OutputGen::BamUtil->VERSION,"\n";
     exit;
   }
 

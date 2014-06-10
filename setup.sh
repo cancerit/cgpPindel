@@ -1,3 +1,24 @@
+########## LICENCE ##########
+# Copyright (c) 2014 Genome Research Ltd. 
+#  
+# Author: Keiran Raine <cgpit@sanger.ac.uk> 
+#  
+# This file is part of cgpPindel.
+#  
+# cgpPindel is free software: you can redistribute it and/or modify it under 
+# the terms of the GNU Affero General Public License as published by the Free 
+# Software Foundation; either version 3 of the License, or (at your option) any 
+# later version. 
+#  
+# This program is distributed in the hope that it will be useful, but WITHOUT 
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more 
+# details. 
+#  
+# You should have received a copy of the GNU Affero General Public License 
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+########## LICENCE ##########
+
 #!/bin/bash
 
 done_message () {
@@ -11,16 +32,6 @@ done_message () {
         echo "    Please check INSTALL file for items that should be installed by a package manager"
         exit 1
     fi
-}
-
-get_distro () {
-  if hash curl 2>/dev/null; then
-    curl -sS -o $1.tar.gz -L $2
-  else
-    wget -nv -O $1.tar.gz $2
-  fi
-  mkdir -p $1
-  tar --strip-components 1 -C $1 -zxf $1.tar.gz
 }
 
 if [ "$#" -ne "1" ] ; then
@@ -73,6 +84,14 @@ if [[ "x$PCAP" == "x" ]] ; then
   exit 1;
 fi
 
+
+CGPVCF=`perl -le 'eval "require $ARGV[0]" and print $ARGV[0]->VERSION' Sanger::CGP::Vcf`
+if [[ "x$CGPVCF" == "x" ]] ; then
+  echo "PREREQUISITE: Please install cgpVcf before proceeding:"
+  echo "  https://github.com/cancerit/cgpVcf/releases"
+  exit 1;
+fi
+
 echo -n "Compiling pindel binaries ..."
 (
   set -x
@@ -81,6 +100,7 @@ echo -n "Compiling pindel binaries ..."
   cp $SETUP_DIR/pindel $INST_PATH/bin/.
   cp $SETUP_DIR/filter_pindel_reads $INST_PATH/bin/.
   # convenience for testing
+  mkdir -p $INIT_DIR/bin
   cp $SETUP_DIR/pindel $INIT_DIR/bin/.
   cp $SETUP_DIR/filter_pindel_reads $INIT_DIR/bin/.
 ) >>$INIT_DIR/setup.log 2>&1
@@ -89,7 +109,7 @@ done_message "" "Failed during compilation of pindel."
 #add bin path for install tests
 export PATH="$INST_PATH/bin:$PATH"
 
-cd $INIT_DIR
+cd $INIT_DIR/perl
 
 echo -n "Installing Perl prerequisites ..."
 if ! ( perl -MExtUtils::MakeMaker -e 1 >/dev/null 2>&1); then
@@ -103,15 +123,14 @@ fi
 ) >>$INIT_DIR/setup.log 2>&1
 done_message "" "Failed during installation of core dependencies."
 
-echo -n "Installing PCAP ..."
+echo -n "Installing cgpPindel ..."
 (
-  cd $INIT_DIR
   perl Makefile.PL INSTALL_BASE=$INST_PATH
   make
   make test
   make install
 ) >>$INIT_DIR/setup.log 2>&1
-done_message "" "PCAP install failed."
+done_message "" "cgpPindel install failed."
 
 # cleanup all junk
 rm -rf $SETUP_DIR
