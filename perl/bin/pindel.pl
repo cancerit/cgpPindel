@@ -1,23 +1,23 @@
 #!/usr/bin/perl
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd. 
-#  
-# Author: Keiran Raine <cgpit@sanger.ac.uk> 
-#  
+# Copyright (c) 2014 Genome Research Ltd.
+#
+# Author: Keiran Raine <cgpit@sanger.ac.uk>
+#
 # This file is part of cgpPindel.
-#  
-# cgpPindel is free software: you can redistribute it and/or modify it under 
-# the terms of the GNU Affero General Public License as published by the Free 
-# Software Foundation; either version 3 of the License, or (at your option) any 
-# later version. 
-#  
-# This program is distributed in the hope that it will be useful, but WITHOUT 
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
-# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more 
-# details. 
-#  
-# You should have received a copy of the GNU Affero General Public License 
+#
+# cgpPindel is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation; either version 3 of the License, or (at your option) any
+# later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ########## LICENCE ##########
 
@@ -100,6 +100,7 @@ sub setup {
               'e|exclude=s' => \$opts{'exclude'},
               'p|process=s' => \$opts{'process'},
               'i|index=i' => \$opts{'index'},
+              'v|version' => \$opts{'version'},
               # these are specifically for pin2vcf
               'sp|species=s' => \$opts{'species'},
               'as|assembly=s' => \$opts{'assembly'},
@@ -115,6 +116,11 @@ sub setup {
 
   pod2usage(-verbose => 1) if(defined $opts{'h'});
   pod2usage(-verbose => 2) if(defined $opts{'m'});
+
+  if($opts{'version'}) {
+    print 'Version: ',Sanger::CGP::Pindel::Implement->VERSION,"\n";
+    exit 0;
+  }
 
   PCAP::Cli::file_for_reading('reference', $opts{'reference'});
   PCAP::Cli::file_for_reading('tumour', $opts{'tumour'});
@@ -212,6 +218,7 @@ pindel.pl [options]
   Other:
     -help      -h   Brief help message.
     -man       -m   Full documentation.
+    -version   -v   Version
 
   File list can be full file names or wildcard, e.g.
     pindel.pl -c 4 -r some/genome.fa[.gz] -o myout -t tumour.bam -n normal.bam

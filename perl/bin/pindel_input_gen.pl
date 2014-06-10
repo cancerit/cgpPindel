@@ -1,23 +1,23 @@
 #!/usr/bin/perl
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd. 
-#  
-# Author: Keiran Raine <cgpit@sanger.ac.uk> 
-#  
+# Copyright (c) 2014 Genome Research Ltd.
+#
+# Author: Keiran Raine <cgpit@sanger.ac.uk>
+#
 # This file is part of cgpPindel.
-#  
-# cgpPindel is free software: you can redistribute it and/or modify it under 
-# the terms of the GNU Affero General Public License as published by the Free 
-# Software Foundation; either version 3 of the License, or (at your option) any 
-# later version. 
-#  
-# This program is distributed in the hope that it will be useful, but WITHOUT 
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
-# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more 
-# details. 
-#  
-# You should have received a copy of the GNU Affero General Public License 
+#
+# cgpPindel is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation; either version 3 of the License, or (at your option) any
+# later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ########## LICENCE ##########
 
@@ -55,6 +55,7 @@ sub setup {
   my %opts;
   GetOptions( 'h|help' => \$opts{'h'},
               'm|man' => \$opts{'m'},
+              'v|version' => \$opts{'version'},
               't|threads=i' => \$opts{'threads'},
               'o|outdir=s' => \$opts{'outdir'},
               'b|bam=s' => \$opts{'bam'},
@@ -67,6 +68,11 @@ sub setup {
   my $defined;
   for(keys %opts) { $defined++ if(defined $opts{$_}); }
   pod2usage(-msg  => "\nERROR: Options must be defined.\n", -verbose => 2,  -output => \*STDERR) unless($defined);
+
+  if($opts{'version'}) {
+    print 'Version: ',Sanger::CGP::Pindel::InputGen->VERSION,"\n";
+    exit 0;
+  }
 
   pod2usage(-msg  => "\nERROR: 'outdir' must be defined.\n", -verbose => 2,  -output => \*STDERR) unless(defined $opts{'outdir'});
   pod2usage(-msg  => "\nERROR: 'bam' must be defined.\n", -verbose => 2,  -output => \*STDERR) unless(defined $opts{'bam'});
@@ -99,6 +105,7 @@ pindel_input_gen.pl [options]
   Other:
     -help      -h   Brief help message.
     -man       -m   Full documentation.
+    -version   -v   Version
 
   File list can be full file names or wildcard, e.g.
     pindel_input_gen.pl -t 16 -o myout -b some.bam

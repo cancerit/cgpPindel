@@ -68,10 +68,16 @@ sub option_builder{
 		'u|unmatched=s' => \$opts{'u'},
 		's|simrep=s' => \$opts{'s'},
 		'p|processid=s' => \$opts{'p'},
+		'v|version' => \$opts{'v'},
 		'<>' => sub{push(@random_args,shift(@_));}
 	);
 
 	pod2usage(0) if $opts{'h'};
+
+  if($opts{'v'}) {
+    print 'Version: ',Sanger::CGP::PindelPostProcessing::VcfSoftFlagger->VERSION,"\n";
+    exit 0;
+  }
 
 	pod2usage("Unrecognised command line arguments: ".join(",",@random_args)) if(scalar(@random_args));
 
@@ -170,6 +176,7 @@ FlagVcf.pl - Takes a Pindel VCF file and applies a set of flags through a system
   General Options:
 
     --help        (-h)       Brief documentation
+    --version     (-v)       Version
 
   (REQUIRED)
     --rules       (-r)       Full path to a rules file.
