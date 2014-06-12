@@ -51,4 +51,3 @@ t/outputGenCombinedRecordGenerator.t
 t/outputGenPindelRecordParser.t
 t/outputGenVcfConverter.t
 t/vcfPindelFlagger.t
-t/VcfUtil.t
