@@ -1,5 +1,7 @@
 /Makefile
-/blib
+/bin/pindel
+/bin/filter_pindel_reads
+/perl/blib
 /perl/docs
 /pm_to_blib
 /MANIFEST.bak
