@@ -1,23 +1,23 @@
 #!/usr/bin/perl
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd. 
-#  
-# Author: Keiran Raine <cgpit@sanger.ac.uk> 
-#  
+# Copyright (c) 2014 Genome Research Ltd.
+#
+# Author: Keiran Raine <cgpit@sanger.ac.uk>
+#
 # This file is part of cgpPindel.
-#  
-# cgpPindel is free software: you can redistribute it and/or modify it under 
-# the terms of the GNU Affero General Public License as published by the Free 
-# Software Foundation; either version 3 of the License, or (at your option) any 
-# later version. 
-#  
-# This program is distributed in the hope that it will be useful, but WITHOUT 
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
-# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more 
-# details. 
-#  
-# You should have received a copy of the GNU Affero General Public License 
+#
+# cgpPindel is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation; either version 3 of the License, or (at your option) any
+# later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ########## LICENCE ##########
 
@@ -28,7 +28,11 @@ WriteMakefile(
   NAME          => 'cgpPindel',
   VERSION_FROM  => 'lib/Sanger/CGP/Pindel.pm',
   EXE_FILES     => [qw( bin/pindel.pl
-                        bin/pindel_input_gen.pl)],
+                        bin/pindel_input_gen.pl
+                        bin/pindel_2_combined_vcf.pl
+                        bin/FlagVcf.pl
+                        bin/pindel_merge_vcf_bam.pl
+                        bin/pindel_np_from_vcf.pl)],
   PREREQ_PM     => {
                      'Const::Fast' => 0.014,
                      'Try::Tiny' => 0.19,
