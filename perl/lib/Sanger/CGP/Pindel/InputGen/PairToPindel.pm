@@ -1,23 +1,23 @@
 package Sanger::CGP::Pindel::InputGen::PairToPindel;
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd. 
-#  
-# Author: Keiran Raine <cgpit@sanger.ac.uk> 
-#  
+# Copyright (c) 2014 Genome Research Ltd.
+#
+# Author: Keiran Raine <cgpit@sanger.ac.uk>
+#
 # This file is part of cgpPindel.
-#  
-# cgpPindel is free software: you can redistribute it and/or modify it under 
-# the terms of the GNU Affero General Public License as published by the Free 
-# Software Foundation; either version 3 of the License, or (at your option) any 
-# later version. 
-#  
-# This program is distributed in the hope that it will be useful, but WITHOUT 
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
-# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more 
-# details. 
-#  
-# You should have received a copy of the GNU Affero General Public License 
+#
+# cgpPindel is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation; either version 3 of the License, or (at your option) any
+# later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ########## LICENCE ##########
 
@@ -48,7 +48,7 @@ sub setup_rg_inserts {
   my %rgs;
   my @rg_sets = split /,/, $rg_pis;
   for (@rg_sets) {
-    my ($rg, $pi) = split /:/, $_;
+    my ($rg, $pi) = $_ =~ m/^(.*):([[:digit:]]+)$/;
     $rgs{$rg} = $pi;
   }
   $self->{'rgs'} = \%rgs;
@@ -87,7 +87,9 @@ sub pair_to_pindel {
 
 sub _anchored_to_pindel {
   my ($self, $anchor, $query) = @_;
-  my $isize = $self->{'rgs'}->{$query->get('rg')};
+  my $rg = $query->get('rg');
+  my $isize = $self->{'rgs'}->{$rg};
+  die "Failed to get insert size for readgroup: '$rg'\n" unless($isize);
   my $anchor_pos;
   if($anchor->strand eq '+') {
     $anchor_pos = $anchor->get('pos');
@@ -97,7 +99,7 @@ sub _anchored_to_pindel {
   }
   return sprintf $PINDEL_REC, $query->get('qname')
                             , $query->read_end
-                            , $query->get('rg') || 0
+                            , $rg
                             , $query->seq_for_pindel
                             , $anchor->strand
                             , $anchor->get('rname')
@@ -109,7 +111,9 @@ sub _anchored_to_pindel {
 
 sub _self_anchored_to_pindel {
   my ($self, $query) = @_;
-  my $isize = $self->{'rgs'}->{$query->get('rg')};
+  my $rg = $query->get('rg');
+  my $isize = $self->{'rgs'}->{$rg};
+  die "Failed to get insert size for readgroup: '$rg'\n" unless($isize);
   my $anchor_strand = ($query->strand eq '+') ? '-' : '+';
   my $anchor_pos;
   if($anchor_strand eq '+') {
@@ -122,7 +126,7 @@ sub _self_anchored_to_pindel {
   }
   return sprintf $PINDEL_REC, $query->get('qname')
                             , $query->read_end
-                            , $query->get('rg') || 0
+                            , $rg
                             , $query->seq_for_pindel
                             , $anchor_strand
                             , $query->get('rname')
