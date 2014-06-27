@@ -38,6 +38,7 @@ WriteMakefile(
                      'Try::Tiny' => 0.19,
                      'File::Which' => 0.05,
                      'List::Util' => 1.38,
+                     'List::MoreUtils' => 0.33,
                      'Test::Fatal' => 0.013,
                      'Devel::Cover' => 1.09,
                      'Pod::Coverage' => 0.23,
