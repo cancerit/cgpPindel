@@ -83,6 +83,11 @@ sub cleanup {
   my $tmpdir = $options->{'tmp'};
   move(File::Spec->catdir($tmpdir, 'logs'), File::Spec->catdir($options->{'outdir'}, 'logs')) || die $!;
   remove_tree $tmpdir if(-e $tmpdir);
+  opendir(my $dh, $options->{'outdir'});
+  while(readdir $dh) {
+    unlink $_ if($_ =~ /\.vcf\.gz(\.tbi)?$/ && $_ !~ /\.flagged\.vcf\.gz(\.tbi)?$/);
+  }
+  closedir $dh;
 	return 0;
 }
 
