@@ -85,7 +85,7 @@ sub cleanup {
   remove_tree $tmpdir if(-e $tmpdir);
   opendir(my $dh, $options->{'outdir'});
   while(readdir $dh) {
-    unlink $_ if($_ =~ /\.vcf\.gz(\.tbi)?$/ && $_ !~ /\.flagged\.vcf\.gz(\.tbi)?$/);
+    unlink File::Spec->catfile($options->{'outdir'}, $_) if($_ =~ /\.vcf\.gz(\.tbi)?$/ && $_ !~ /\.flagged\.vcf\.gz(\.tbi)?$/);
   }
   closedir $dh;
 	return 0;
