@@ -35,6 +35,7 @@
             "Const::Fast" : "0.014",
             "Devel::Cover" : "1.09",
             "File::Which" : "0.05",
+            "List::MoreUtils" : "0.33",
             "List::Util" : "1.38",
             "Pod::Coverage" : "0.23",
             "Test::Fatal" : "0.013",
@@ -43,5 +44,5 @@
       }
    },
    "release_status" : "stable",
-   "version" : "v1.0.2"
+   "version" : "v1.0.3"
 }
