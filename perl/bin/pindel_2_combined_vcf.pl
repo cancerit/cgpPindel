@@ -41,14 +41,14 @@ use Data::Dumper;
 use Bio::DB::Sam;
 
 use Sanger::CGP::Pindel::OutputGen::CombinedRecordGenerator;
-use Sanger::CGP::Pindel::OutputGen::SequentialIdGenerator;
-use Sanger::CGP::Pindel::OutputGen::UuIdGenerator;
 use Sanger::CGP::Pindel::OutputGen::VcfConverter;
 use Sanger::CGP::Pindel::OutputGen::BamUtil;
 
 use Sanger::CGP::Vcf::Contig;
 use Sanger::CGP::Vcf::Sample;
 use Sanger::CGP::Vcf::VcfProcessLog;
+use Sanger::CGP::Vcf::OutputGen::SequentialIdGenerator;
+use Sanger::CGP::Vcf::OutputGen::UuIdGenerator;
 
 {
   my $opts = setup();
@@ -110,9 +110,9 @@ use Sanger::CGP::Vcf::VcfProcessLog;
 
   my $id_gen;
   if(defined $opts->{'g'}){
-    $id_gen = new Sanger::CGP::Pindel::OutputGen::SequentialIdGenerator(-start => $opts->{'g'});
+    $id_gen = new Sanger::CGP::Vcf::OutputGen::SequentialIdGenerator(-start => $opts->{'g'});
   }else{
-  	$id_gen = new Sanger::CGP::Pindel::OutputGen::UuIdGenerator();
+  	$id_gen = new Sanger::CGP::Vcf::OutputGen::UuIdGenerator();
   }
 
   try{
