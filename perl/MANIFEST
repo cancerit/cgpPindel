@@ -3,6 +3,7 @@ bin/FlagVcf.pl
 bin/pindel
 bin/pindel.pl
 bin/pindel_2_combined_vcf.pl
+bin/pindel_germ_bed.pl
 bin/pindel_input_gen.pl
 bin/pindel_merge_vcf_bam.pl
 bin/pindel_np_from_vcf.pl

@@ -32,7 +32,8 @@ WriteMakefile(
                         bin/pindel_2_combined_vcf.pl
                         bin/FlagVcf.pl
                         bin/pindel_merge_vcf_bam.pl
-                        bin/pindel_np_from_vcf.pl)],
+                        bin/pindel_np_from_vcf.pl
+                        bin/pindel_germ_bed.pl)],
   PREREQ_PM     => {
                      'Const::Fast' => 0.014,
                      'Try::Tiny' => 0.19,

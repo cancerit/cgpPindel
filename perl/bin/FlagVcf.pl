@@ -39,7 +39,6 @@ use File::Basename qw(fileparse);
 use File::Temp qw(tempfile);
 use File::Spec::Functions qw(splitpath);
 use Vcf;
-use Tabix;
 
 use Sanger::CGP::PindelPostProcessing::VcfSoftFlagger;
 use Sanger::CGP::PindelPostProcessing::AbstractExe qw(get_version);
