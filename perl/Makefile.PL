@@ -26,6 +26,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
   NAME          => 'cgpPindel',
+  LICENSE       => 'agpl_3', # http://search.cpan.org/~dagolden/CPAN-Meta-2.142690/lib/CPAN/Meta/Spec.pm#license
   VERSION_FROM  => 'lib/Sanger/CGP/Pindel.pm',
   EXE_FILES     => [qw( bin/pindel.pl
                         bin/pindel_input_gen.pl

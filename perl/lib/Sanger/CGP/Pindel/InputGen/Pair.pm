@@ -37,11 +37,11 @@ const my $SINGLE_END_MIN_MAPQ => 6;
 const my $SOFTCLIP_MAX => 10;
 
 sub new {
-  my ($class, $r1, $r2) = @_;
+  my ($class, $r1, $r2, $tabix) = @_;
   my $self = {};
   bless $self, $class;
-  $self->{'r1'} = Sanger::CGP::Pindel::InputGen::Read->new($r1, 1);
-  $self->{'r2'} = Sanger::CGP::Pindel::InputGen::Read->new($r2, 2);
+  $self->{'r1'} = Sanger::CGP::Pindel::InputGen::Read->new($r1, 1, $tabix);
+  $self->{'r2'} = Sanger::CGP::Pindel::InputGen::Read->new($r2, 2, $tabix);
   return $self;
 }
 

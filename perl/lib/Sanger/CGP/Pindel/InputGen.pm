@@ -1,23 +1,23 @@
 package Sanger::CGP::Pindel::InputGen;
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd. 
-#  
-# Author: Keiran Raine <cgpit@sanger.ac.uk> 
-#  
+# Copyright (c) 2014 Genome Research Ltd.
+#
+# Author: Keiran Raine <cgpit@sanger.ac.uk>
+#
 # This file is part of cgpPindel.
-#  
-# cgpPindel is free software: you can redistribute it and/or modify it under 
-# the terms of the GNU Affero General Public License as published by the Free 
-# Software Foundation; either version 3 of the License, or (at your option) any 
-# later version. 
-#  
-# This program is distributed in the hope that it will be useful, but WITHOUT 
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
-# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more 
-# details. 
-#  
-# You should have received a copy of the GNU Affero General Public License 
+#
+# cgpPindel is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation; either version 3 of the License, or (at your option) any
+# later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ########## LICENCE ##########
 
@@ -33,6 +33,11 @@ use File::Which qw(which);
 use Try::Tiny qw(try catch finally);
 use File::Spec;
 use Data::Dumper;
+
+BEGIN {
+  $SIG{__WARN__} = sub {warn $_[0] unless( $_[0] =~ m/^Subroutine Tabix.* redefined/)};
+};
+use Tabix;
 
 use Sanger::CGP::Pindel;
 
@@ -52,11 +57,12 @@ const my $PAIRS_PER_THREAD => 500_000;
 const my $BAMCOLLATE => q{%s outputformat=sam colsbs=268435456 collate=1 classes=F,F2 exclude=DUP,SECONDARY,QCFAIL,SUPPLEMENTARY T=%s filename=%s};
 
 sub new {
-  my ($class, $bam) = @_;
+  my ($class, $bam, $exclude) = @_;
   my $self = {'rname_fhs' => {},
               'threads' => 1, };
   bless $self, $class;
   $self->set_input($bam) if(defined $bam);
+  $self->set_exclude($exclude) if(defined $exclude);
   return $self;
 }
 
@@ -68,6 +74,20 @@ sub set_input {
   die "File appears to be empty : $bam" unless(-s _);
   $self->{'bam'} = $bam;
   return $self->{'bam'};
+}
+
+sub set_exclude {
+  my ($self, $bed_tabix) = @_;
+  croak "set_input requires a value for 'bam'" unless(defined $bed_tabix);
+  die "Does not appear to be a bed.gz file: $bed_tabix" unless($bed_tabix =~ m/\.bed\.gz$/);
+  if($bed_tabix !~ m/^(http|ftp)/) {
+    die "File does not exist : $bed_tabix" unless(-e $bed_tabix);
+    die "File appears to be empty : $bed_tabix" unless(-s _);
+    die "Tabix index does not exist : $bed_tabix.tbi" unless(-e "$bed_tabix.tbi");
+    die "Tabix index appears to be empty : $bed_tabix.tbi" unless(-s _);
+  }
+  $self->{'bed'} = $bed_tabix;
+  return $self->{'bed'};
 }
 
 sub set_threads {
@@ -102,7 +122,7 @@ sub run {
 
   # ensure that commands containing pipes give appropriate errors
   my $command .= sprintf $BAMCOLLATE, $collate, File::Spec->catfile($tmpdir, 'collate_tmp'), $self->{'bam'};
-    try {
+  try {
     my ($rg_pis, $sample_name);
     my $head_ob = Sanger::CGP::Pindel::InputGen::SamHeader->new($self->{'bam'});
     my $collate_start = time;
@@ -165,10 +185,10 @@ sub _process_set {
       $self->_completed_threads;
     }
     # start new thread
-    my ($thr) = threads->create(\&reads_to_pindel, $existing_threads, $rg_pis, $sample_name, @{$pairs});
+    my ($thr) = threads->create(\&reads_to_pindel, $existing_threads, $rg_pis, $sample_name, $self->{'bed'}, @{$pairs});
   }
   else {
-    $self->reads_to_disk([reads_to_pindel(-1,  $rg_pis, $sample_name, $pairs)]);
+    $self->reads_to_disk([reads_to_pindel(-1,  $rg_pis, $sample_name, $self->{'bed'}, $pairs)]);
   }
 }
 
@@ -176,7 +196,8 @@ sub _completed_threads {
   my $self = shift;
   my @output_objects;
   my $all_threads = threads->list(threads::all);
-  sleep 1 while(threads->list(threads::joinable) != $all_threads);
+  # this seems to be an optimal sleep
+  sleep 4 while(threads->list(threads::joinable) != $all_threads);
   for my $thr(threads->list(threads::joinable)) {
     my @data = $thr->join;
     if(my $err = $thr->error) { die "Converter thread error: $err\n"; }
@@ -186,7 +207,7 @@ sub _completed_threads {
 }
 
 sub reads_to_pindel {
-  my ($thread, $rg_pis, $sample_name, @reads) = @_;
+  my ($thread, $rg_pis, $sample_name, $bed, @reads) = @_;
   my $tid = 0;
   $tid = threads->tid unless($thread == -1);
   warn "Thread Worker $tid: started\n";
@@ -198,8 +219,14 @@ sub reads_to_pindel {
   my @records;
   my $to_pindel = Sanger::CGP::Pindel::InputGen::PairToPindel->new($sample_name, $rg_pis);
   my $total_pairs = $total_reads / 2;
+
+  my $tabix;
+  if(defined $bed) {
+    $tabix = new Tabix(-data => $bed);
+  }
+
   for(1..$total_pairs) {
-    my $pair = Sanger::CGP::Pindel::InputGen::Pair->new(\shift @reads, \shift @reads);
+    my $pair = Sanger::CGP::Pindel::InputGen::Pair->new(\shift @reads, \shift @reads, $tabix);
     next unless($pair->keep_pair);
     $to_pindel->set_pair($pair);
     push @records, @{$to_pindel->pair_to_pindel};

@@ -76,6 +76,7 @@ sub input {
     my $command = "$^X ";
     $command .= _which('pindel_input_gen.pl');
     $command .= sprintf $PINDEL_GEN_COMM, $input, $gen_out, $max_threads;
+    $command .= " -e $options->{badloci}" if(exists $options->{'badloci'});
 
     PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
 
@@ -268,10 +269,11 @@ sub flag {
   $tabix .= sprintf ' -p vcf %s', $vcf_gz;
 
   my $germ_bed = "$stub.germline.bed";
-  my $germ = _which('pindel_germ_bed.pl');
+  my $germ = "$^X ";
+  $germ .= _which('pindel_germ_bed.pl');
   $germ .= sprintf $PIN_GERM, $vcf_gz, $germ_bed;
 
-  my @commands = ($command, $bgzip, $tabix);
+  my @commands = ($command, $bgzip, $tabix, $germ);
 
   PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), \@commands, 0);
 

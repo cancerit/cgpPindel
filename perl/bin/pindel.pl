@@ -103,6 +103,7 @@ sub setup {
               't|tumour=s' => \$opts{'tumour'},
               'n|normal=s' => \$opts{'normal'},
               'e|exclude=s' => \$opts{'exclude'},
+              'b|badloci=s' => \$opts{'badloci'},
               'p|process=s' => \$opts{'process'},
               'i|index=i' => \$opts{'index'},
               'v|version' => \$opts{'version'},
@@ -140,9 +141,8 @@ sub setup {
   delete $opts{'process'} unless(defined $opts{'process'});
   delete $opts{'index'} unless(defined $opts{'index'});
 
-  unless(defined $opts{'exclude'}) {
-    delete $opts{'exclude'};
-  }
+  delete $opts{'exclude'} unless(defined $opts{'exclude'});
+  delete $opts{'badloci'} unless(defined $opts{'badloci'});
 
   if(exists $opts{'process'}) {
     PCAP::Cli::valid_process('process', $opts{'process'}, \@VALID_PROCESS);
@@ -211,6 +211,8 @@ pindel.pl [options]
                      -  when not available in BAM header SQ line.
     -exclude   -e   Exclude this list of ref sequences from processing, wildcard '%'
                      - comma separated, e.g. NC_007605,hs37d5,GL%
+    -badloci   -b   Tabix indexed BED file of locations to not accept as anchors
+                     - e.g. hi-seq depth from UCSC
     -skipgerm  -sg  Don't output events with more evidence in normal BAM.
     -cpus      -c   Number of cores to use. [1]
                      - recommend max 4 during 'input' process.

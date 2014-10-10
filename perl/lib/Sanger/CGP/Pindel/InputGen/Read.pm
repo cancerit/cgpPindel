@@ -55,7 +55,7 @@ const my $MAX_CIGAR_OPS_FOR_ANCHOR => 7*2; #cigar operations array both elements
 
 
 sub new {
-  my ($class, $sam, $end) = @_;
+  my ($class, $sam, $end, $tabix) = @_;
 #  my @elements = (split /\t/, ${$sam})[0,1,2,3,4,5,8,9,10];
   my ($qname, $flag, $rname, $pos, $mapq, $cigar, $seq, $qual) = (split /\t/, ${$sam})[0,1,2,3,4,5,9,10];
   # just clean this up as it is of no use
@@ -72,8 +72,9 @@ sub new {
               'end' => int $end,
               'rg' => $rg || '.',
               };
+  $self->{'tabix'} = $tabix if(defined $tabix);
   bless $self, $class;
-  return $self;
+  $self;
 }
 
 sub get {
@@ -81,9 +82,7 @@ sub get {
   if(exists $self->{$key}) {
     return $self->{$key};
   }
-  else {
-    return undef;
-  }
+  return undef;
 }
 
 sub read_end {
@@ -95,17 +94,17 @@ sub read_end {
 
 sub unmapped {
   my $self = shift;
-  return (($self->{'flag'} | $UNMAPPED) == $self->{'flag'}) ? 1 : 0;
+  (($self->{'flag'} | $UNMAPPED) == $self->{'flag'}) ? 1 : 0;
 }
 
 sub reversed {
   my $self = shift;
-  return (($self->{'flag'} | $READ_REVERSED) == $self->{'flag'}) ? 1 : 0;
+  (($self->{'flag'} | $READ_REVERSED) == $self->{'flag'}) ? 1 : 0;
 }
 
 sub strand {
   my $self = shift;
-  return $self->reversed ? '-' : '+';
+  $self->reversed ? '-' : '+';
 }
 
 sub exact {
@@ -120,7 +119,7 @@ sub exact {
   else {
     $self->{'_exact'} = 1;
   }
-  return $self->{'_exact'};
+  $self->{'_exact'};
 }
 
 sub _softclip_cal {
@@ -134,14 +133,14 @@ sub _softclip_cal {
   $self->{'_softclip_leading'} ||= 0;
   $self->{'_softclip_trailing'} ||= 0;
 
-  return 1;
+  1;
 }
 
 sub good_anchor {
   my $self = shift;
   return $self->{'_good_anchor'} if(exists $self->{'_good_anchor'});
   $self->{'_good_anchor'} = $self->_good_anchor;
-  return $self->{'_good_anchor'};
+  $self->{'_good_anchor'};
 }
 
 sub _good_anchor {
@@ -151,8 +150,18 @@ sub _good_anchor {
   return 0 if($self->mapped_seq <= $MIN_ANCHOR_MAPPED);
   return 0 if((scalar @{$self->_cigar_operations}) > $MAX_CIGAR_OPS_FOR_ANCHOR);
   return 0 if($self->frac_pbq_poor > $MAX_POOR_PBQ_FRAC);
+  return 0 if(exists $self->{'tabix'} && $self->_tabix_hit);
+  1;
+}
 
-  return 1;
+sub _tabix_hit {
+  my $self = shift;
+  my $tabix = $self->{'tabix'};
+  my $res = $tabix->query($self->{'rname'}, $self->{'pos'}-1, $self->{'pos'});
+  if(defined $res->get) {
+    return 1 if(defined $tabix->read($res));
+  }
+  0;
 }
 
 sub frac_pbq_poor {
@@ -165,31 +174,31 @@ sub frac_pbq_poor {
     }
     $self->{'_frac_pbq_poor'} = $bad / (scalar @{$quals});
   }
-  return $self->{'_frac_pbq_poor'};
+  $self->{'_frac_pbq_poor'};
 }
 
 sub full_qual_array {
   my $self = shift;
   $self->{'_full_qual_array'} = [map{ord($_)- 33 } split //, $self->{'qual'}] unless(exists $self->{'_full_qual_array'});
-  return $self->{'_full_qual_array'};
+  $self->{'_full_qual_array'};
 }
 
 sub good_query {
   my $self = shift;
   $self->{'_good_query'} = $self->_good_query unless(exists $self->{'_good_query'});
-  return $self->{'_good_query'};
+  $self->{'_good_query'};
 }
 
 sub _good_query {
   my $self = shift;
+  return 0 if(index($self->{'seq'},'NN') >= 0);
   return 0 if($self->frac_pbq_poor > $MAX_POOR_PBQ_FRAC);
   unless($self->unmapped) {
     return 0 if($self->exact);
     return 0 if($self->softclip_frac > $MAX_SOFTCLIP_FRAC);
-#    return 0 if($self->poor_qual_until_match);
   }
 
-  return 1;
+  1;
 }
 
 # only use when deciding on anchor usage
@@ -200,7 +209,7 @@ sub softclip_frac {
   unless(exists $self->{'_softclip_frac'}) {
     $self->{'_softclip_frac'} = $self->softclip_total / $self->mappable_seq;
   }
-  return $self->{'_softclip_frac'};
+  $self->{'_softclip_frac'};
 }
 
 sub softclip_total {
@@ -208,31 +217,31 @@ sub softclip_total {
   unless(exists $self->{'_softclip_total'}) {
     $self->{'_softclip_total'} = $self->softclip_leading + $self->softclip_trailing;
   }
-  return $self->{'_softclip_total'};
+  $self->{'_softclip_total'};
 }
 
 sub softclip_leading {
   my $self = shift;
   $self->_softclip_cal unless(exists $self->{'_softclip_leading'});
-  return $self->{'_softclip_leading'};
+  $self->{'_softclip_leading'};
 }
 
 sub softclip_trailing {
   my $self = shift;
   $self->_softclip_cal unless(exists $self->{'_softclip_trailing'});
-  return $self->{'_softclip_trailing'};
+  $self->{'_softclip_trailing'};
 }
 
 sub mappable_seq {
   my $self = shift;
   $self->{'_mappable_seq'} = length $self->{'seq'} unless(exists $self->{'_mappable_seq'});
-  return $self->{'_mappable_seq'};
+  $self->{'_mappable_seq'};
 }
 
 sub mapped_seq {
   my $self = shift;
   $self->{'_mapped_seq'} = (length $self->{'seq'}) - $self->softclip_total unless(exists $self->{'_mapped_seq'});
-  return $self->{'_mapped_seq'};
+  $self->{'_mapped_seq'};
 }
 
 sub qual_trim_seq {
@@ -261,7 +270,7 @@ sub qual_trim_seq {
   return $self->{'seq'} if($first_good == 0 && $last_good + 1 == scalar @full_qual);
   my $capture = ($last_good - $first_good)+1;
   my $new_seq = substr($self->{'seq'}, $first_good, $capture);
-  return $new_seq;
+  $new_seq;
 }
 
 sub seq_for_pindel {
@@ -274,14 +283,14 @@ sub seq_for_pindel {
     }
     $self->{'_seq_for_pindel'} = $new_seq;
   }
-  return $self->{'_seq_for_pindel'};
+  $self->{'_seq_for_pindel'};
 }
 
 sub _cigar_operations {
   my $self = shift;
   # need to write test for '=' as cigar op
   $self->{'_cigar_operations'} = [$self->{'cigar'} =~ m/([[:digit:]]+)([[:upper:]=])/g] unless(exists $self->{'_cigar_operations'});
-  return $self->{'_cigar_operations'};
+  $self->{'_cigar_operations'};
 }
 
 1;
