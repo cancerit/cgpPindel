@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Cgppindel : Cancer Genome Project Insertion/Deletion detection pipeline based around Pindel">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Cgppindel</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/cancerit/cgpPindel">View on GitHub</a>
+
+          <h1 id="project_title">Cgppindel</h1>
+          <h2 id="project_tagline">Cancer Genome Project Insertion/Deletion detection pipeline based around Pindel</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/cancerit/cgpPindel/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/cancerit/cgpPindel/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a name="cgppindel" class="anchor" href="#cgppindel"><span class="octicon octicon-link"></span></a>cgpPindel</h1>
+
+<p>cgpPindel contains the Cancer Genome Projects workflow for <a href="http://gmt.genome.wustl.edu/pindel/current/">pindel</a>.</p>
+
+<p>The is a slightly modified version of pindel v2.0 with CGP specific processing for:</p>
+
+<ul>
+<li>Input file generation</li>
+<li>Conversion from pindel text output to:
+
+<ul>
+<li>tumour and normal BAM alignment files</li>
+<li>VCF</li>
+</ul>
+</li>
+<li>Application of VCF filters.</li>
+</ul>
+
+<p>The installed <code>pindel.pl</code> script will run the complete workflow for you.  You can opt to run each element of the flow separately in a more efficient manner on a farm environment by adding only the <code>-p</code> and <code>-i</code> options.</p>
+
+<p>Please see <code>pindel -h</code> or <code>pindel.pl -m</code> for the most up-to-date usage information.</p>
+
+<hr>
+
+<h3>
+<a name="dependenciesinstall" class="anchor" href="#dependenciesinstall"><span class="octicon octicon-link"></span></a>Dependencies/Install</h3>
+
+<p>Please install the following first:</p>
+
+<ul>
+<li><a href="http://github.com/ICGC-TCGA-PanCancer/PCAP-core/releases">PCAP-core</a></li>
+<li><a href="http://github.com/cancerit/cgpVcf/releases">cgpVcf</a></li>
+</ul>
+
+<p>Please see these for any child dependencies.</p>
+
+<p>Once complete please run:</p>
+
+<p>./setup.sh /some/install/location</p>
+
+<p>Please be aware that this expects basic C compilation libraries and tools to be available,
+most are listed in <code>INSTALL</code>.</p>
+
+<hr>
+
+<h1>
+<a name="licence" class="anchor" href="#licence"><span class="octicon octicon-link"></span></a>LICENCE</h1>
+
+<p>Copyright (c) 2014 Genome Research Ltd.</p>
+
+<p>Author: Cancer Genome Project <a href="mailto:cgpit@sanger.ac.uk">cgpit@sanger.ac.uk</a></p>
+
+<p>This file is part of cgpPindel.</p>
+
+<p>cgpPindel is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation; either version 3 of the License, or (at your option) any
+later version.</p>
+
+<p>This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+details.</p>
+
+<p>You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>.</p>
+
+<ol>
+<li>The usage of a range of years within a copyright statement contained within
+this distribution should be interpreted as being equivalent to a list of years
+including the first and last year specified and all consecutive years between
+them. For example, a copyright statement that reads ‘Copyright (c) 2005, 2007-
+2009, 2011-2012’ should be interpreted as being identical to a statement that
+reads ‘Copyright (c) 2005, 2007, 2008, 2009, 2011, 2012’ and a copyright
+statement that reads ‘Copyright (c) 2005-2012’ should be interpreted as being
+identical to a statement that reads ‘Copyright (c) 2005, 2006, 2007, 2008,
+2009, 2010, 2011, 2012’."</li>
+</ol>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Cgppindel maintained by <a href="https://github.com/cancerit">cancerit</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
