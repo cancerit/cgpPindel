@@ -45,7 +45,7 @@ use Sanger::CGP::Pindel::InputGen;
 {
   my $options = setup();
 
-  my $generator = Sanger::CGP::Pindel::InputGen->new($options->{'bam'});
+  my $generator = Sanger::CGP::Pindel::InputGen->new($options->{'bam'}, $options->{'exclude'});
   $generator->set_threads($options->{'threads'});
   $generator->set_outdir($options->{'outdir'});
   $generator->run;
@@ -57,6 +57,7 @@ sub setup {
               'm|man' => \$opts{'m'},
               'v|version' => \$opts{'version'},
               't|threads=i' => \$opts{'threads'},
+              'e|exclude=s' => \$opts{'exclude'},
               'o|outdir=s' => \$opts{'outdir'},
               'b|bam=s' => \$opts{'bam'},
   ) or pod2usage(2);
@@ -101,6 +102,11 @@ pindel_input_gen.pl [options]
     -bam       -b   BAM file to process.
     -outdir    -o   Folder to output result to.
     -threads   -t   Number of threads to use. [1]
+                     - 2 is optimum
+
+  Optional:
+    -exclude   -e   Tabix indexed BED file of locations to not accept as anchors
+                     - e.g. hi-seq depth from UCSC
 
   Other:
     -help      -h   Brief help message.

@@ -26,13 +26,15 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
   NAME          => 'cgpPindel',
+  LICENSE       => 'agpl_3', # http://search.cpan.org/~dagolden/CPAN-Meta-2.142690/lib/CPAN/Meta/Spec.pm#license
   VERSION_FROM  => 'lib/Sanger/CGP/Pindel.pm',
   EXE_FILES     => [qw( bin/pindel.pl
                         bin/pindel_input_gen.pl
                         bin/pindel_2_combined_vcf.pl
                         bin/FlagVcf.pl
                         bin/pindel_merge_vcf_bam.pl
-                        bin/pindel_np_from_vcf.pl)],
+                        bin/pindel_np_from_vcf.pl
+                        bin/pindel_germ_bed.pl)],
   PREREQ_PM     => {
                      'Const::Fast' => 0.014,
                      'Try::Tiny' => 0.19,

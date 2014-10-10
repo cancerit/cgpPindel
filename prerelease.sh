@@ -74,7 +74,7 @@ rm -f MANIFEST
 # cleanup things which could break the manifest
 rm -rf install_tmp
 perl Makefile.PL > /dev/null
-make manifest &> /dev/null
+make manifest >& /dev/null
 rm -f Makefile MANIFEST.bak pm_to_blib
 
 # change back to original dir

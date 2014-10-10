@@ -49,6 +49,7 @@ const my $PINDEL_COMM => q{ %s %s %s %s %s %s};
 const my $PIN_2_VCF => q{ -mt %s -wt %s -r %s -o %s -so %s -mtp %s -wtp %s -pp '%s' -i %s};
 const my $PIN_MERGE => q{ -o %s %s %s %s};
 const my $FLAG => q{ -a %s -u %s -s %s -i %s -o %s -r %s};
+const my $PIN_GERM => q{ -f F012 -i %s -o %s};
 
 sub input {
   my ($index, $options) = @_;
@@ -75,6 +76,7 @@ sub input {
     my $command = "$^X ";
     $command .= _which('pindel_input_gen.pl');
     $command .= sprintf $PINDEL_GEN_COMM, $input, $gen_out, $max_threads;
+    $command .= " -e $options->{badloci}" if(exists $options->{'badloci'});
 
     PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
 
@@ -266,7 +268,12 @@ sub flag {
   my $tabix = _which('tabix');
   $tabix .= sprintf ' -p vcf %s', $vcf_gz;
 
-  my @commands = ($command, $bgzip, $tabix);
+  my $germ_bed = "$stub.germline.bed";
+  my $germ = "$^X ";
+  $germ .= _which('pindel_germ_bed.pl');
+  $germ .= sprintf $PIN_GERM, $vcf_gz, $germ_bed;
+
+  my @commands = ($command, $bgzip, $tabix, $germ);
 
   PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), \@commands, 0);
 

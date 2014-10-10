@@ -3,6 +3,7 @@ bin/FlagVcf.pl
 bin/pindel
 bin/pindel.pl
 bin/pindel_2_combined_vcf.pl
+bin/pindel_germ_bed.pl
 bin/pindel_input_gen.pl
 bin/pindel_merge_vcf_bam.pl
 bin/pindel_np_from_vcf.pl
@@ -19,8 +20,6 @@ lib/Sanger/CGP/Pindel/OutputGen/CombinedRecord.pm
 lib/Sanger/CGP/Pindel/OutputGen/CombinedRecordGenerator.pm
 lib/Sanger/CGP/Pindel/OutputGen/PindelRecord.pm
 lib/Sanger/CGP/Pindel/OutputGen/PindelRecordParser.pm
-lib/Sanger/CGP/Pindel/OutputGen/SequentialIdGenerator.pm
-lib/Sanger/CGP/Pindel/OutputGen/UuIdGenerator.pm
 lib/Sanger/CGP/Pindel/OutputGen/VcfConverter.pm
 lib/Sanger/CGP/PindelPostProcessing/AbstractExe.pm
 lib/Sanger/CGP/PindelPostProcessing/FilterRules.pm
@@ -28,6 +27,7 @@ lib/Sanger/CGP/PindelPostProcessing/VcfSoftFlagger.pm
 Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
+perltidy.LOG
 rules/allRules.lst
 rules/followupRules.lst
 rules/genomicRules.lst

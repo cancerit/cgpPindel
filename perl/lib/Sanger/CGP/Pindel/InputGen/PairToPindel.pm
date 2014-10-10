@@ -66,6 +66,7 @@ sub pair_to_pindel {
   my $r1 = $self->{'pair'}->{'r1'};
   my $r2 = $self->{'pair'}->{'r2'};
   my @pindel_records;
+
   if($r1->good_query) {
     if($r2->good_anchor) {
       push @pindel_records, $self->_anchored_to_pindel($r2, $r1);
