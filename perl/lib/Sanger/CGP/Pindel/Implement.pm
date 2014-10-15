@@ -66,7 +66,10 @@ sub input {
     ## build command for this index
     #
 
-    my $max_threads = int ($options->{'threads'} / scalar @inputs);
+    my $max_threads = $options->{'threads'};
+    unless (exists $options->{'index'}) {
+      $max_threads = int ($max_threads / scalar @inputs);
+    }
     $max_threads = 1 if($max_threads == 0);
 
     my $sample = sanitised_sample_from_bam($input);
