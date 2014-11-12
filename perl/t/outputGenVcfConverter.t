@@ -1,21 +1,21 @@
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd. 
-#  
-# Author: Keiran Raine <cgpit@sanger.ac.uk> 
-#  
+# Copyright (c) 2014 Genome Research Ltd.
+#
+# Author: Keiran Raine <cgpit@sanger.ac.uk>
+#
 # This file is part of cgpPindel.
-#  
-# cgpPindel is free software: you can redistribute it and/or modify it under 
-# the terms of the GNU Affero General Public License as published by the Free 
-# Software Foundation; either version 3 of the License, or (at your option) any 
-# later version. 
-#  
-# This program is distributed in the hope that it will be useful, but WITHOUT 
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
-# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more 
-# details. 
-#  
-# You should have received a copy of the GNU Affero General Public License 
+#
+# cgpPindel is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation; either version 3 of the License, or (at your option) any
+# later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ########## LICENCE ##########
 
@@ -42,37 +42,37 @@ subtest 'Initialisation checks' => sub {
 };
 
 subtest 'Object funcions' => sub {
-	
+
   subtest 'gen_header' => sub {
-  	
+
   	my $wt_sample = new Sanger::CGP::Vcf::Sample(-name => 'test_wt');
   	my $mt_sample = new Sanger::CGP::Vcf::Sample(-name => 'test_mt');
-  	
+
   	my $contig_1 = new Sanger::CGP::Vcf::Contig(-name => '1', -length => 10, -species => 'jelly fish', -assembly => '25');
   	my $contig_x = new Sanger::CGP::Vcf::Contig(-name => 'x', -length => 10, -species => 'jelly fish', -assembly => '25');
-  	
+
   	my @process_logs = ();
-    
+
     push @process_logs, new Sanger::CGP::Vcf::VcfProcessLog(
 	  -input_vcf_source => 'Pindel',
       -input_vcf_ver => 'test_version1',
 	);
-	
+
 	push @process_logs, new Sanger::CGP::Vcf::VcfProcessLog(
 	  -input_vcf_source => 'Jeff K',
       -input_vcf_ver => 'test_version2',
       -input_vcf_params => {'o'=>'my_file'},
 	);
-  	
+
   	my $contigs = [$contig_1,$contig_x];
-  	
+
   	my $converter = new Sanger::CGP::Pindel::OutputGen::VcfConverter(-contigs => $contigs);
-  	
+
   	my $reference_name = 'BOB_ref';
     my $input_source = 'BOB';
   	my $date = DateTime->now->strftime('%Y%m%d');
-  	
-  	my $exp1 = 
+
+  	my $exp1 =
 qq{##fileformat=VCFv4.1
 ##fileDate=$date
 ##source_$date.1=BOB
@@ -105,7 +105,7 @@ qq{##fileformat=VCFv4.1
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NORMAL	TUMOUR
 };
 
-  	my $exp2 = 
+  	my $exp2 =
 qq{##fileformat=VCFv4.1
 ##fileDate=$date
 ##source_$date.1=BOB
@@ -139,47 +139,47 @@ qq{##fileformat=VCFv4.1
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NORMAL	TUMOUR
 };
 
-    
+
     my $header_string_no_s2 = $converter->gen_header($wt_sample, $mt_sample, \@process_logs, 0, $reference_name, $input_source);
     my @header_string_no_s2_bits = split "\n", $header_string_no_s2;
    	my $header_string_no_s2_columns = pop @header_string_no_s2_bits;
    	my @exp1_bits = split "\n", $exp1;
    	my $exp1_columns = pop @exp1_bits;
-   	
+
    	is($header_string_no_s2_columns,$exp1_columns,'Check no S2 columns line');
    	is(scalar @header_string_no_s2_bits, scalar @exp1_bits,'Check no S2 correct number of lines');
-   	
+
    	foreach my $got_line (@header_string_no_s2_bits){
    		my $expected_line = shift @exp1_bits;
-   		is_deeply(header_to_hash($got_line),header_to_hash($got_line),'Checking no S2 header line');
+   		is_deeply(header_to_hash($got_line),header_to_hash($expected_line),'Checking no S2 header line');
    	}
-   
+
     my $header_string_s2 = $converter->gen_header($wt_sample, $mt_sample, \@process_logs, 1, $reference_name, $input_source);
-    
+
     my @header_string_s2_bits = split "\n", $header_string_s2;
    	my $header_string_s2_columns = pop @header_string_s2_bits;
    	my @exp2_bits = split "\n", $exp2;
    	my $exp2_columns = pop @exp2_bits;
-   	
+
    	is($header_string_s2_columns,$exp2_columns,'Check with S2 columns line');
    	is(scalar @header_string_s2_bits, scalar @exp2_bits,'Check with S2 correct number of lines');
-   	
+
    	foreach my $got_line (@header_string_s2_bits){
    		my $expected_line = shift @exp2_bits;
-   		is_deeply(header_to_hash($got_line),header_to_hash($got_line),'Checking with S2 header line');
+   		is_deeply(header_to_hash($got_line),header_to_hash($expected_line),'Checking with S2 header line');
    	}
-   
+
   };
-  
+
   subtest 'gen_record' => sub {
-	
+
 	my $contig_1 = new Sanger::CGP::Vcf::Contig(-name => '1', -length => 10, -species => 'jelly fish', -assembly => '25');
   	my $contig_x = new Sanger::CGP::Vcf::Contig(-name => 'x', -length => 10, -species => 'jelly fish', -assembly => '25');
-  	
+
   	my $contigs = [$contig_1,$contig_x];
-  	
+
   	my $converter = new Sanger::CGP::Pindel::OutputGen::VcfConverter(-contigs => $contigs);
-	
+
 	my $record_1 = new Sanger::CGP::Pindel::OutputGen::CombinedRecord(
 	  -id => 'id1',
 	  -idx => 'D12',
@@ -225,9 +225,9 @@ qq{##fileformat=VCFv4.1
 	  -total_mt_rg_count => 9,
 	  -call_mt_rg_count => 7,
 	);
-	
+
 	my $exp1 = qq{x	30	id1	C	CATG	234	.	PC=I;RS=25;RE=40;LEN=5;S1=3;S2=4;REP=1	GT:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU:TG:VG	./.:3:4:7:8:11:12:15:16:19:20:5:1	./.:1:2:5:6:9:10:13:14:17:18:9:7\n};
-	
+
 	is($converter->gen_record($record_1),$exp1,'gen_record');
   };
 };
@@ -236,28 +236,28 @@ qq{##fileformat=VCFv4.1
 ## breaks up a header line into manageable chunks for comparison. This way order shouldnt matter....
 sub header_to_hash{
 	my($line) = @_;
-	
+
 	my ($k,$data) = $line =~ /^##(.+)=<()>^/;
-	
+
 	my $ret = {key => $k};
-	
-	
+
+
 	my @bits = split(/,/,$data);
-	
+
 	my $fragments = [];
-	
+
 	my $key_gen = 0;
-	
+
 	foreach my $pair (@bits){
 		my($key,$val) = split /=/, $pair;
-		
+
 		unless($val){
 			push @$fragments, $fragments;
 		}else{
 			$ret->{$key} = $val;
 		}
 	}
-	
+
 	$ret->{'frag'} = $fragments;
 }
 

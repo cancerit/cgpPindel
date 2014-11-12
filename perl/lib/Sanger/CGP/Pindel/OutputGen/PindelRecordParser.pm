@@ -1,23 +1,23 @@
 package Sanger::CGP::Pindel::OutputGen::PindelRecordParser;
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd. 
-#  
-# Author: Keiran Raine <cgpit@sanger.ac.uk> 
-#  
+# Copyright (c) 2014 Genome Research Ltd.
+#
+# Author: Keiran Raine <cgpit@sanger.ac.uk>
+#
 # This file is part of cgpPindel.
-#  
-# cgpPindel is free software: you can redistribute it and/or modify it under 
-# the terms of the GNU Affero General Public License as published by the Free 
-# Software Foundation; either version 3 of the License, or (at your option) any 
-# later version. 
-#  
-# This program is distributed in the hope that it will be useful, but WITHOUT 
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
-# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more 
-# details. 
-#  
-# You should have received a copy of the GNU Affero General Public License 
+#
+# cgpPindel is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation; either version 3 of the License, or (at your option) any
+# later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ########## LICENCE ##########
 
@@ -157,7 +157,7 @@ sub _parse_header {
 	my ($type, $event_size) = split / /, shift @head_bits;
 
 	my $nt_field = shift @head_bits; # gives the non-templated sequence
-	my ($nt_size,$nt_seq) = $nt_field =~ m/NT (\d+) "(.+)"/;
+	my ($nt_size,$nt_seq) = $nt_field =~ m/NT (\d+) "(.*)"/;
 
 	## mark the variant as complex...
 	if($type eq 'D' && $nt_size != 0) {
@@ -230,7 +230,7 @@ sub _parse_header_v02 {
 	my ($type, $event_size) = split / /, shift @head_bits;
 
 	my $nt_field = shift @head_bits; # gives the non-templated sequence
-	my ($nt_size,$nt_seq) = $nt_field =~ m/NT (\d+) "(.+)"/;
+	my ($nt_size,$nt_seq) = $nt_field =~ m/NT (\d+) "(.*)"/;
 
 	if($type eq 'D' && $nt_size != 0) {
 		$type .= 'I';
@@ -306,7 +306,7 @@ sub _parse_alignment {
 	# the deleted seq from the reference. Also DIs do not display the deleted seq.....
 	if($record_type eq 'I') {
 	  $ref_change = q{}; ## $ref_change =~ s/\s//; ##remove all white space as there is no deleted ref_seq
-	}elsif($record_type eq 'DI' || $ref_change =~ m/\<[[:digit:]]+\>/i) {
+	}elsif($record_type eq 'DI' || $ref_change =~ m/[[:digit:]]+/) {
 		my $start = $record->start || $record->range_start;
 		my $end = $record->end || $record->range_end;
 		$ref_change = $fai->fetch("$chr:$start-$end");
@@ -328,6 +328,7 @@ sub _parse_alignment {
 	$start_pos++ if($record_type eq 'I');
 
 	## Se up a local buffered region of reference. Rather than hitting the .fa file we can simply substr chunks out of this.....
+	$self->{_buffer_region_chr} = q{} unless(exists $self->{_buffer_region_chr});
 	unless(
 	       $chr eq $self->{_buffer_region_chr} &&
 	       $start_pos-$change_ref_offset >= $self->{_buffer_region_start} &&
@@ -346,7 +347,7 @@ sub _parse_alignment {
 	my $_buffer_region_start = $self->{_buffer_region_start};
 
 	foreach my $read(@{$alignment}) {
-		$read =~ s/ ([+-])/\t\1/ if($record_type eq 'D'); ## correction for a bug in the pindel output layout.... this is done here to allow use to pass a ref of the read into _parse_read
+		$read =~ s/ ([+-])/\t$1/ if($record_type eq 'D'); ## correction for a bug in the pindel output layout.... this is done here to allow use to pass a ref of the read into _parse_read
 		_parse_read($record, $chr, $start_pos, \$read, $ref_seq_length, ($read_num++.$record_idx), $change_ref_offset, $change_ref_offset_end,\$_buffer_region,$_buffer_region_start);
 	}
 
@@ -613,7 +614,7 @@ sub calmd {
 	my $was_previous_type_match = 0;
 	my ($type, $len, $new_start, $ref_seq, $ref_base, $read_base, $match_count, $final_end);
 
-	for(my $i==0;$i<$pairs_length;$i+=2){
+	for(my $i=0;$i<$pairs_length;$i+=2){
 		$len  = $cigar->[$i];
 		$type = $cigar->[$i+1];
 
