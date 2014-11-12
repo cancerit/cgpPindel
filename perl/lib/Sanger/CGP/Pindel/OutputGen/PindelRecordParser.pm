@@ -306,7 +306,7 @@ sub _parse_alignment {
 	# the deleted seq from the reference. Also DIs do not display the deleted seq.....
 	if($record_type eq 'I') {
 	  $ref_change = q{}; ## $ref_change =~ s/\s//; ##remove all white space as there is no deleted ref_seq
-	}elsif($record_type eq 'DI' || $ref_change =~ m/^[ACGT]+\<\d+\>[ACGT]+$/i) {
+	}elsif($record_type eq 'DI' || $ref_change =~ m/\<[[:digit:]]+\>/i) {
 		my $start = $record->start || $record->range_start;
 		my $end = $record->end || $record->range_end;
 		$ref_change = $fai->fetch("$chr:$start-$end");
