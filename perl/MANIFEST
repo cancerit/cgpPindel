@@ -1,3 +1,4 @@
+bin/cpanm
 bin/filter_pindel_reads
 bin/FlagVcf.pl
 bin/pindel

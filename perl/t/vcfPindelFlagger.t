@@ -499,6 +499,7 @@ sub _test_F012{
     my $sub = $filter_hash->{test};
 
     my($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF);
+    $MATCH  = 1;
     $CHROM  = [split("\t",$test1)]->[0];
     $POS    = [split("\t",$test1)]->[1];
     $FAIL   = 1;
