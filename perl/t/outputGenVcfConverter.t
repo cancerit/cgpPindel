@@ -235,30 +235,40 @@ qq{##fileformat=VCFv4.1
 
 ## breaks up a header line into manageable chunks for comparison. This way order shouldnt matter....
 sub header_to_hash{
-	my($line) = @_;
+	my $line = shift;
 
-	my ($k,$data) = $line =~ /^##(.+)=<()>^/;
+	my ($k,$data) = $line =~ /^##([^=]+)=<(.+)>$/;
+
+	unless(defined $k) {
+	  ($k,$data) = $line =~ /^##([^=]+)=(.+)$/;
+	}
+
+	if($k =~ m/^vcfProcessLog_/) {
+	  $k =~ s/_.*//;
+	}
 
 	my $ret = {key => $k};
-
-
-	my @bits = split(/,/,$data);
-
 	my $fragments = [];
 
-	my $key_gen = 0;
-
+	my @bits = split(/,/,$data);
 	foreach my $pair (@bits){
-		my($key,$val) = split /=/, $pair;
+		my($key,$val) = split /=</, $pair;
+		if(defined $val) {
+		  chop $val;
+		}
+		else {
+		  ($key,$val) = split /=/, $pair;
+		}
 
 		unless($val){
-			push @$fragments, $fragments;
+			push @$fragments, $key;
 		}else{
 			$ret->{$key} = $val;
 		}
 	}
 
 	$ret->{'frag'} = $fragments;
+  return $ret;
 }
 
 
