@@ -91,7 +91,7 @@ use Sanger::CGP::Vcf::OutputGen::UuIdGenerator;
   my $mt_out_sam_fh;
 
   if(defined $opts->{'samoutput'}){
-  	my $base_path = $opts->{'samoutput'} =~ s/\..+$//r;
+  	my $base_path = $opts->{'samoutput'};
     $wt_out_sam_path = $base_path . '_wt.sam';
     $mt_out_sam_path = $base_path . '_mt.sam';
 
