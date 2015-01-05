@@ -60,7 +60,8 @@ sub init{
 
 	## clear the first line of ##+....
 
-	if(my $first_line = <$fh>){
+  my $first_line = <$fh>;
+	if(defined $first_line){
 		chomp $first_line;
 		croak "Expecting the first line to be ##+.... |$first_line|" unless $first_line =~ m/^##+/;
 	}
