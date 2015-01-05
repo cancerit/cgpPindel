@@ -78,7 +78,7 @@ sub set_input {
 
 sub set_exclude {
   my ($self, $bed_tabix) = @_;
-  croak "set_input requires a value for 'bam'" unless(defined $bed_tabix);
+  croak "set_exclude requires a value for 'bed_tabix'" unless(defined $bed_tabix);
   die "Does not appear to be a bed.gz file: $bed_tabix" unless($bed_tabix =~ m/\.bed\.gz$/);
   if($bed_tabix !~ m/^(http|ftp)/) {
     die "File does not exist : $bed_tabix" unless(-e $bed_tabix);
