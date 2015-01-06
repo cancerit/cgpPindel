@@ -118,6 +118,7 @@ sub setup {
               'g|genes=s' => \$opts{'genes'},
               'u|unmatched=s' => \$opts{'unmatched'},
               'sf|softfil=s' => \$opts{'softfil'},
+              'l|limit=i' => \$opts{'limit'},
   ) or pod2usage(2);
 
   pod2usage(-verbose => 1) if(defined $opts{'h'});
@@ -140,6 +141,7 @@ sub setup {
 
   delete $opts{'process'} unless(defined $opts{'process'});
   delete $opts{'index'} unless(defined $opts{'index'});
+  delete $opts{'limit'} unless(defined $opts{'limit'});
 
   delete $opts{'exclude'} unless(defined $opts{'exclude'});
   delete $opts{'badloci'} unless(defined $opts{'badloci'});
@@ -151,7 +153,14 @@ sub setup {
       my $refs = scalar @valid_seqs;
 
       my $max = $index_max{$opts{'process'}};
-      $max = $refs if($max == -1);
+      if($max==-1){
+        if(exists $opts{'limit'}) {
+          $max = $opts{'limit'} > $refs ? $refs : $opts{'limit'};
+        }
+        else {
+      	  $max = $refs;
+      	}
+      }
 
       die "ERROR: based on reference and exclude option index must be between 1 and $refs\n" if($opts{'index'} < 1 || $opts{'index'} > $max);
       PCAP::Cli::opt_requires_opts('index', \%opts, ['process']);
@@ -217,6 +226,8 @@ pindel.pl [options]
     -cpus      -c   Number of cores to use. [1]
                      - recommend max 4 during 'input' process.
     -softfil   -sf  VCF filter rules to be indicated in INFO field as soft flags
+    -limit     -l   When defined with '-cpus' internally thread concurrent processes.
+                     - requires '-p', specifically for pindel/pin2vcf steps
 
   Targeted processing (further detail under OPTIONS):
     -process   -p   Only process this step then exit, optionally set -index
