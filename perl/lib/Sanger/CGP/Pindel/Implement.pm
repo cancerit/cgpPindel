@@ -91,16 +91,16 @@ sub input {
 }
 
 sub pindel {
-  my ($index, $options) = @_;
-  return 1 if(exists $options->{'index'} && $index != $options->{'index'});
-
+  my ($index_in, $options) = @_;
   my $tmp = $options->{'tmp'};
-  return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
+
+  return 1 if(exists $options->{'index'} && $index_in != $options->{'index'});
 
   my @seqs = sort keys %{$options->{'seqs'}};
-  my $iter = 1;
-  for my $seq(@seqs) {
-    next if($iter++ != $index); # skip to the relevant seq in the list
+  my @indicies = limited_indicies($options, $index_in, scalar @seqs);
+	for my $index(@indicies) {
+    next if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
+    my $seq = $seqs[$index-1];
 
     ## build commands for this index
     #
@@ -135,7 +135,7 @@ sub pindel {
     make_path($gen_out) unless(-e $gen_out);
 
     my $filtered = File::Spec->catdir($tmp, 'filter');
-    my ($bd_fh, $bd_file) = tempfile(File::Spec->catfile($tmp, 'pindel_db_XXXX'), UNLINK => 1);
+    my ($bd_fh, $bd_file) = tempfile(File::Spec->catfile($tmp, 'pindel_db_XXXX'), UNLINK => 0);
     close $bd_fh;
 
     my $pindel_comm = _which('pindel');
@@ -165,15 +165,17 @@ sub pindel {
 }
 
 sub pindel_to_vcf {
-  my ($index, $options) = @_;
-  return 1 if(exists $options->{'index'} && $index != $options->{'index'});
+  my ($index_in, $options) = @_;
   my $tmp = $options->{'tmp'};
-  return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
+
+  return 1 if(exists $options->{'index'} && $index_in != $options->{'index'});
 
   my @seqs = sort keys %{$options->{'seqs'}};
-  my $iter = 1;
-  for my $seq(@seqs) {
-    next if($iter++ != $index); # skip to the relevant seq in the list
+  my @indicies = limited_indicies($options, $index_in, scalar @seqs);
+
+	for my $index(@indicies) {
+    next if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
+    my $seq = $seqs[$index-1];
 
     my $pout = File::Spec->catdir($tmp, 'pout');
 
@@ -350,6 +352,23 @@ sub file_list {
   }
   closedir $dh;
   return @files;
+}
+
+sub limited_indicies {
+	my ($options, $index_in, $count) = @_;
+  my @indicies;
+  if(exists $options->{'limit'}) {
+    # main script checks index is not greater than limit or < 1
+	  my $base = $index_in;
+	  while($base <= $count) {
+	    push @indicies, $base;
+	    $base += $options->{'limit'};
+	  }
+	}
+	else {
+	  push @indicies, $index_in;
+	}
+	return @indicies;
 }
 
 sub _which {
