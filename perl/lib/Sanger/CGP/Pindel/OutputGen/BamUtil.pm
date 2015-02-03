@@ -1,23 +1,23 @@
 package Sanger::CGP::Pindel::OutputGen::BamUtil;
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd. 
-#  
-# Author: Keiran Raine <cgpit@sanger.ac.uk> 
-#  
+# Copyright (c) 2014 Genome Research Ltd.
+#
+# Author: Keiran Raine <cgpit@sanger.ac.uk>
+#
 # This file is part of cgpPindel.
-#  
-# cgpPindel is free software: you can redistribute it and/or modify it under 
-# the terms of the GNU Affero General Public License as published by the Free 
-# Software Foundation; either version 3 of the License, or (at your option) any 
-# later version. 
-#  
-# This program is distributed in the hope that it will be useful, but WITHOUT 
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
-# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more 
-# details. 
-#  
-# You should have received a copy of the GNU Affero General Public License 
+#
+# cgpPindel is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation; either version 3 of the License, or (at your option) any
+# later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ########## LICENCE ##########
 
@@ -107,7 +107,7 @@ sub parse_contigs{
 
       if(defined $man_species) {
         if(defined $species) {
-          die "ERROR: Manually entered species ($man_species) doesn't match BAM file header ($species)\n"
+          warn "WARN: Manually entered species ($man_species) doesn't match BAM file header ($species). Defaulting to BAM header species.\n"
             if($man_species ne $species);
         }
         else { $species = $man_species; }
@@ -116,7 +116,7 @@ sub parse_contigs{
 
       if(defined $man_assembly) {
         if(defined $assembly) {
-          die "ERROR: Manually entered assembly ($man_assembly) doesn't match BAM file header ($assembly)\n"
+          warn "WARN: Manually entered assembly ($man_assembly) doesn't match BAM file header ($assembly). Defaulting to BAM header assembly.\n"
             if($man_assembly ne $assembly);
         }
         else { $assembly = $man_assembly; }
