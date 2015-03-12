@@ -65,10 +65,12 @@ my %index_max = ( 'input'   => 2,
   $threads->run(2, 'input', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'input');
 
   # count the valid input files, gives constant job count for downstream
-  my $jobs = Sanger::CGP::Pindel::Implement::determine_jobs($options) if(!exists $options->{'process'} || first { $options->{'process'} eq $_ } ('pindel', 'pin2vcf'));
-
-  $threads->run($jobs, 'pindel', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'pindel');
-  $threads->run($jobs, 'pin2vcf', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'pin2vcf');
+  if(!exists $options->{'process'} || first { $options->{'process'} eq $_ } ('pindel', 'pin2vcf')) {
+    my $jobs = Sanger::CGP::Pindel::Implement::determine_jobs($options); # method still needed to populate info
+    $jobs = $options->{'limit'} if(exists $options->{'limit'} && defined $options->{'limit'});
+    $threads->run($jobs, 'pindel', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'pindel');
+    $threads->run($jobs, 'pin2vcf', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'pin2vcf');
+  }
 
   Sanger::CGP::Pindel::Implement::merge_and_bam($options) if(!exists $options->{'process'} || $options->{'process'} eq 'merge');
 
