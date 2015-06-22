@@ -28,6 +28,7 @@ use autodie qw(:all);
 use Const::Fast qw(const);
 use File::Spec;
 use File::Which qw(which);
+use File::Copy qw(copy);
 use File::Path qw(make_path remove_tree);
 use File::Temp qw(tempfile);
 use Capture::Tiny;
@@ -47,7 +48,7 @@ const my $SAMTOOLS_FAIDX => q{ faidx %s %s > %s};
 const my $FILTER_PIN_COMM => q{ %s %s %s %s};
 const my $PINDEL_COMM => q{ %s %s %s %s %s %s};
 const my $PIN_2_VCF => q{ -mt %s -wt %s -r %s -o %s -so %s -mtp %s -wtp %s -pp '%s' -i %s};
-const my $PIN_MERGE => q{ -o %s %s %s %s};
+const my $PIN_MERGE => q{ -o %s -i %s};
 const my $FLAG => q{ -a %s -u %s -s %s -i %s -o %s -r %s};
 const my $PIN_GERM => q{ -f F012 -i %s -o %s};
 
@@ -225,13 +226,10 @@ sub merge_and_bam {
   return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
 
   my $vcf = File::Spec->catdir($tmp, 'vcf');
-  my $search_vcf = File::Spec->catfile($vcf, '*_pindel.vcf');
-  my $search_mt = File::Spec->catfile($vcf, '*_pindel_mt.sam');
-  my $search_wt = File::Spec->catfile($vcf, '*_pindel_wt.sam');
   my $outstub = File::Spec->catfile($options->{'outdir'}, $options->{'tumour_name'}.'_vs_'.$options->{'normal_name'});
   my $command = "$^X ";
   $command .= _which('pindel_merge_vcf_bam.pl');
-  $command .= sprintf $PIN_MERGE, $outstub, $search_vcf, $search_mt, $search_wt;
+  $command .= sprintf $PIN_MERGE, $outstub, $vcf,;
 
   PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
 
@@ -369,6 +367,29 @@ sub limited_indicies {
 	  push @indicies, $index_in;
 	}
 	return @indicies;
+}
+
+sub fragmented_files {
+  my ($base_dir, $files, $hprefix, $outfile) = @_;
+  my $file_count = scalar @{$files};
+  return $files if($file_count <= 100);
+  warn "Extreme number of files, slow merging of $file_count files required\n";
+  my $grep_non_header = qq{grep -v '^$hprefix' %s >> %s};
+  my $header_count;
+
+  my $merged_file = $base_dir.$outfile;
+  my $is_first = 1;
+  for my $file(@{$files}) {
+    if($is_first == 1) {
+      copy($base_dir.$file, $merged_file);
+      $is_first = 0;
+      next;
+    }
+    my $cmd = sprintf $grep_non_header, $base_dir.$file, $merged_file;
+    warn "Running: $cmd\n";
+    system([0,1],$cmd); # autodie in use, exit code 1 returned when no lines returned by grep
+  }
+  return [$merged_file];
 }
 
 sub _which {

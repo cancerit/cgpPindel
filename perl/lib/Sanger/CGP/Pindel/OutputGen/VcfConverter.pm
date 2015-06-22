@@ -1,23 +1,23 @@
 package Sanger::CGP::Pindel::OutputGen::VcfConverter;
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd. 
-#  
-# Author: Keiran Raine <cgpit@sanger.ac.uk> 
-#  
+# Copyright (c) 2014 Genome Research Ltd.
+#
+# Author: Keiran Raine <cgpit@sanger.ac.uk>
+#
 # This file is part of cgpPindel.
-#  
-# cgpPindel is free software: you can redistribute it and/or modify it under 
-# the terms of the GNU Affero General Public License as published by the Free 
-# Software Foundation; either version 3 of the License, or (at your option) any 
-# later version. 
-#  
-# This program is distributed in the hope that it will be useful, but WITHOUT 
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
-# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more 
-# details. 
-#  
-# You should have received a copy of the GNU Affero General Public License 
+#
+# cgpPindel is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation; either version 3 of the License, or (at your option) any
+# later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ########## LICENCE ##########
 
@@ -97,8 +97,8 @@ sub gen_header{
 		{key => 'FORMAT', ID => 'NR', Number => 1, Type => 'Integer', Description => 'Total mapped reads on the negative strand'},
 		{key => 'FORMAT', ID => 'PU', Number => 1, Type => 'Integer', Description => 'Unique calls on the positive strand'},
 		{key => 'FORMAT', ID => 'NU', Number => 1, Type => 'Integer', Description => 'Unique calls on the negative strand'},
-		{key => 'FORMAT', ID => 'TG', Number => 1, Type => 'Integer', Description => 'Total distinct contributuing read groups'},
-		{key => 'FORMAT', ID => 'VG', Number => 1, Type => 'Integer', Description => 'Variant distinct contributuing read groups'},
+		{key => 'FORMAT', ID => 'TG', Number => 1, Type => 'Integer', Description => 'Total distinct contributing read groups'},
+		{key => 'FORMAT', ID => 'VG', Number => 1, Type => 'Integer', Description => 'Variant distinct contributing read groups'},
 	];
 
 	return Sanger::CGP::Vcf::VcfUtil::gen_tn_vcf_header( $wt_sample, $mt_sample, $contigs, $process_logs, $reference_name, $input_source, $info, $format, []);

@@ -23,6 +23,7 @@ package Sanger::CGP::Pindel::OutputGen::BamUtil;
 
 
 use Sanger::CGP::Pindel;
+use Sanger::CGP::Pindel::Implement;
 use Sanger::CGP::Vcf::Contig;
 use Sanger::CGP::Vcf::Sample;
 
@@ -39,11 +40,13 @@ const my $PG_TEMPLATE => "\@PG\tID:%s\tPN:%s\tCL:%s\tPP:%s\tDS:%s\tVN:%s";
 const my $BAMSORT => ' inputformat=%s index=1 md5=1 O=%s indexfilename=%s md5filename=%s I=';
 
 sub sam_to_sorted_bam {
-  my ($path_prefix, $sam_files) = @_;
+  my ($path_prefix, $base_dir, $sam_files) = @_;
+  $sam_files = Sanger::CGP::Pindel::Implement::fragmented_files($base_dir, $sam_files, '@', 'FINAL_MERGED.sam');
   my $bam_file = $path_prefix.'.bam';
   my $bai_file = $bam_file.'.bai';
   my $md5_file = $bam_file.'.md5';
-  my $command = which('bamsort');
+  my $command = "cd $base_dir; ";
+  $command .= which('bamsort');
   $command .= sprintf $BAMSORT, 'sam', $bam_file, $bai_file, $md5_file;
   $command .= join q{ I=}, @{$sam_files};
   system($command);
