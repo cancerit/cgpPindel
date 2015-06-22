@@ -96,8 +96,8 @@ qq{##fileformat=VCFv4.1
 ##FORMAT=<ID=NR,Number=1,Type=Integer,Description="Total mapped reads on the negative strand">
 ##FORMAT=<ID=PU,Number=1,Type=Integer,Description="Unique calls on the positive strand">
 ##FORMAT=<ID=NU,Number=1,Type=Integer,Description="Unique calls on the negative strand">
-##FORMAT=<ID=TG,Number=1,Type=Integer,Description="Total distinct contributuing read groups">
-##FORMAT=<ID=VG,Number=1,Type=Integer,Description="Variant distinct contributuing read groups">
+##FORMAT=<ID=TG,Number=1,Type=Integer,Description="Total distinct contributing read groups">
+##FORMAT=<ID=VG,Number=1,Type=Integer,Description="Variant distinct contributing read groups">
 ##vcfProcessLog=<InputVCFSource=<Pindel>,InputVCFVer=<test_version1>>
 ##vcfProcessLog=<InputVCFSource=<Jeff K>,InputVCFVer=<test_version2>,InputVCFParam=<o=my_file>>
 ##SAMPLE=<ID=NORMAL,SampleName=test_wt>
@@ -130,8 +130,8 @@ qq{##fileformat=VCFv4.1
 ##FORMAT=<ID=NR,Number=1,Type=Integer,Description="Total mapped reads on the negative strand">
 ##FORMAT=<ID=PU,Number=1,Type=Integer,Description="Unique calls on the positive strand">
 ##FORMAT=<ID=NU,Number=1,Type=Integer,Description="Unique calls on the negative strand">
-##FORMAT=<ID=TG,Number=1,Type=Integer,Description="Total distinct contributuing read groups">
-##FORMAT=<ID=VG,Number=1,Type=Integer,Description="Variant distinct contributuing read groups">
+##FORMAT=<ID=TG,Number=1,Type=Integer,Description="Total distinct contributing read groups">
+##FORMAT=<ID=VG,Number=1,Type=Integer,Description="Variant distinct contributing read groups">
 ##vcfProcessLog=<InputVCFSource=<Pindel>,InputVCFVer=<test_version1>>
 ##vcfProcessLog=<InputVCFSource=<Jeff K>,InputVCFVer=<test_version2>,InputVCFParam=<o=my_file>>
 ##SAMPLE=<ID=NORMAL,SampleName=test_wt>
