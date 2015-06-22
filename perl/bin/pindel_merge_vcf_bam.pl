@@ -38,19 +38,21 @@ use Carp;
 use Pod::Usage qw(pod2usage);
 
 use Sanger::CGP::Pindel::OutputGen::BamUtil;
+use Sanger::CGP::Pindel::Implement;
 
 {
   my $options = setup();
-  Sanger::CGP::Pindel::OutputGen::BamUtil::sam_to_sorted_bam($options->{'out'}.'_mt', $options->{'mt'});
-  Sanger::CGP::Pindel::OutputGen::BamUtil::sam_to_sorted_bam($options->{'out'}.'_wt', $options->{'wt'});
-  merge_vcf($options->{'out'}, $options->{'vcf'})
+  Sanger::CGP::Pindel::OutputGen::BamUtil::sam_to_sorted_bam($options->{'out'}.'_mt', $options->{'indir'}, $options->{'mt'});
+  Sanger::CGP::Pindel::OutputGen::BamUtil::sam_to_sorted_bam($options->{'out'}.'_wt', $options->{'indir'}, $options->{'wt'});
+  merge_vcf($options->{'out'}, $options->{'indir'}, $options->{'vcf'})
 }
 
 sub merge_vcf {
-  my ($path_prefix, $vcf_files) = @_;
+  my ($path_prefix, $indir, $vcf_files) = @_;
+  $vcf_files = Sanger::CGP::Pindel::Implement::fragmented_files($indir, $vcf_files, '#', 'FINAL_MERGED.vcf');
   my $new_vcf = $path_prefix.'.vcf';
-  system(qq{grep '^#' $vcf_files->[0] > $new_vcf});
-  system(qq{cat @{$vcf_files} | grep -v '^#' | sort -k1,1 -k2,2n >> $new_vcf});
+  system(qq{cd $indir; grep '^#' $vcf_files->[0] > $new_vcf});
+  system(qq{cd $indir; cat @{$vcf_files} | grep -v '^#' | sort -k1,1 -k2,2n >> $new_vcf});
 
   my $vcf_gz = $new_vcf.'.gz';
   my $command = which('bgzip');
@@ -67,10 +69,12 @@ sub merge_vcf {
 sub setup {
   my %opts;
   $opts{'cmd'} = join " ", $0, @ARGV;
+
   GetOptions( 'h|help' => \$opts{'h'},
               'm|man' => \$opts{'m'},
               'v|version' => \$opts{'v'},
               'o|out=s' => \$opts{'out'},
+              'i|indir=s' => \$opts{'indir'},
   ) or pod2usage(2);
 
   if(defined $opts{'v'}){
@@ -82,21 +86,32 @@ sub setup {
   pod2usage(-verbose => 2) if(defined $opts{'m'});
 
   # the files from the command line pattern match
-  my @bad_files;
-  for my $file(@ARGV) {
+#  my @bad_files;
+#  for my $file(@ARGV) {
+
+  $opts{'indir'} .= '/' if($opts{'indir'} !~ m|/$|);
+  opendir(my $dh, $opts{'indir'});
+  while(my $file = readdir $dh) {
+    # don't store the full_path, as it makes the memory footprint too large
+    my $full_path = $opts{'indir'}.$file;
+    next unless(-f $full_path);
     if($file =~ m/\.vcf$/) {
+      next if($file eq 'FINAL_MERGED.vcf');
       push @{$opts{'vcf'}}, $file;
     }
     elsif($file =~ m/_([mw]t)\.sam$/) {
+      next if($file =~ m/^FINAL_MERGED\.sam$/); # this is transient for each type
       push @{$opts{$1}}, $file;
     }
-    else {
-      push @bad_files, $file;
-    }
   }
+  closedir($dh);
 
-  die "ERROR: The following unexpected files were presented: \n\t".(join "\n\t", @bad_files)."\n"
-    if(scalar @bad_files);
+#  die "ERROR: The following unexpected files were presented: \n\t".(join "\n\t", @bad_files)."\n"
+#    if(scalar @bad_files);
+
+warn scalar(@{$opts{'vcf'}})." vcf files\n";
+warn scalar(@{$opts{'mt'}})." mt sam files\n";
+warn scalar(@{$opts{'wt'}})." wt sam files\n";
 
   return \%opts;
 }
@@ -111,7 +126,7 @@ pindel_merge_vcf_bam.pl - Merges provided VCF and SAM files into final result fi
 
 pindel_merge_vcf_bam.pl [options] files...
 
-  Input files must follow the expected naming convention of:
+  Files found in '-indir' must follow the expected naming convention of:
     *.vcf    - the unmerged VCF files
     *_mt.sam - the remapped reads from the tumour sample
     *_wt.sam - the remapped reads from the normal sample
@@ -119,6 +134,10 @@ pindel_merge_vcf_bam.pl [options] files...
   This matches the standard output of pindel_2_combined_vcf.pl.
 
   Required parameters:
+    -indir     -i   Directory containing per-contig files for:
+                     - *.vcf
+                     - *_mt.sam
+                     - *_wt.sam
     -out       -o   Output stub for final files e.g.
                     somepath/sample_vs_sample, results in:
 

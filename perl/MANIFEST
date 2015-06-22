@@ -8,6 +8,7 @@ bin/pindel_germ_bed.pl
 bin/pindel_input_gen.pl
 bin/pindel_merge_vcf_bam.pl
 bin/pindel_np_from_vcf.pl
+bin/prep_np_release.pl
 docs.tar.gz
 lib/Sanger/CGP/Pindel.pm
 lib/Sanger/CGP/Pindel/Implement.pm

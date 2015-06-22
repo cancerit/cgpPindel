@@ -76,7 +76,7 @@ my %index_max = ( 'input'   => 2,
 
   if(!exists $options->{'process'} || $options->{'process'} eq 'flag') {
     Sanger::CGP::Pindel::Implement::flag($options);
-    cleanup($options);
+    cleanup($options) unless($options->{'debug'});
   }
 }
 
@@ -121,6 +121,7 @@ sub setup {
               'u|unmatched=s' => \$opts{'unmatched'},
               'sf|softfil=s' => \$opts{'softfil'},
               'l|limit=i' => \$opts{'limit'},
+              'd|debug' => \$opts{'debug'},
   ) or pod2usage(2);
 
   pod2usage(-verbose => 1) if(defined $opts{'h'});
@@ -230,6 +231,7 @@ pindel.pl [options]
     -softfil   -sf  VCF filter rules to be indicated in INFO field as soft flags
     -limit     -l   When defined with '-cpus' internally thread concurrent processes.
                      - requires '-p', specifically for pindel/pin2vcf steps
+    -debug     -d   Don't cleanup workarea on completion.
 
   Targeted processing (further detail under OPTIONS):
     -process   -p   Only process this step then exit, optionally set -index
