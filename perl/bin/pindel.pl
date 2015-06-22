@@ -122,6 +122,7 @@ sub setup {
               'sf|softfil=s' => \$opts{'softfil'},
               'l|limit=i' => \$opts{'limit'},
               'd|debug' => \$opts{'debug'},
+              'a|apid' => \$opts{'apid'},
   ) or pod2usage(2);
 
   pod2usage(-verbose => 1) if(defined $opts{'h'});
@@ -148,6 +149,7 @@ sub setup {
 
   delete $opts{'exclude'} unless(defined $opts{'exclude'});
   delete $opts{'badloci'} unless(defined $opts{'badloci'});
+  delete $opts{'apid'} unless(defined $opts{'apid'});
 
   if(exists $opts{'process'}) {
     PCAP::Cli::valid_process('process', $opts{'process'}, \@VALID_PROCESS);
@@ -232,6 +234,8 @@ pindel.pl [options]
     -limit     -l   When defined with '-cpus' internally thread concurrent processes.
                      - requires '-p', specifically for pindel/pin2vcf steps
     -debug     -d   Don't cleanup workarea on completion.
+    -apid      -a   Analysis process ID (numeric) - for cgpAnalysisProc header info
+                     - not necessary for external use
 
   Targeted processing (further detail under OPTIONS):
     -process   -p   Only process this step then exit, optionally set -index
