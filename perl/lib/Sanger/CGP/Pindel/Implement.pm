@@ -263,6 +263,7 @@ sub flag {
                               $new_vcf, # output,
                               $options->{'filters'};
   $command .= ' -sr '.$options->{'softfil'} if(exists $options->{'softfil'} && defined $options->{'softfil'});
+  $command .= ' -p '.$options->{'apid'} if(exists $options->{'apid'} && defined $options->{'softapidfil'});
 
   my $vcf_gz = $new_vcf.'.gz';
   my $bgzip = _which('bgzip');
