@@ -39,9 +39,9 @@ The is a lightly modified version of pindel v2.0 with CGP specific processing fo
 
 * Input file generation
 * Conversion from pindel text output to:
-** tumour and normal BAM alignment files
-** VCF
-** Application of VCF filters.
+    * tumour and normal BAM alignment files
+    * VCF
+    * Application of VCF filters.
 
 ---
 
