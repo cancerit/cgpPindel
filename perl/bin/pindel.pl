@@ -183,6 +183,12 @@ sub setup {
   $opts{'threads'} = 1 unless(defined $opts{'threads'});
   $opts{'seqtype'} = 'WGS' unless(defined $opts{'seqtype'});
 
+
+  # make all things that appear to be paths absolute
+  for (keys %opts) {
+    $opts{$_} = abs_path($opts{$_}) if(defined $opts{$_} && -e $opts{$_});
+  }
+
   my $tmpdir = File::Spec->catdir($opts{'outdir'}, 'tmpPindel');
   make_path($tmpdir) unless(-d $tmpdir);
   my $progress = File::Spec->catdir($tmpdir, 'progress');
