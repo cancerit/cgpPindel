@@ -1,7 +1,7 @@
 package Sanger::CGP::Pindel::InputGen::Read;
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2015 Genome Research Ltd.
 #
 # Author: Keiran Raine <cgpit@sanger.ac.uk>
 #
@@ -70,7 +70,7 @@ sub new {
               'seq' => $seq,
               'qual' => $qual,
               'end' => int $end,
-              'rg' => $rg || '.',
+              'rg' => defined $rg ? $rg : '.',
               };
   $self->{'tabix'} = $tabix if(defined $tabix);
   bless $self, $class;
