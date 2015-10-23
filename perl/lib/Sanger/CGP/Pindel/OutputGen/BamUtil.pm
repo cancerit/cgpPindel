@@ -42,15 +42,46 @@ const my $BAMSORT => ' inputformat=%s index=1 md5=1 O=%s indexfilename=%s md5fil
 sub sam_to_sorted_bam {
   my ($path_prefix, $base_dir, $sam_files) = @_;
   $sam_files = Sanger::CGP::Pindel::Implement::fragmented_files($base_dir, $sam_files, '@', 'FINAL_MERGED.sam');
+  update_header_when_no_reads($base_dir, $sam_files);
   my $bam_file = $path_prefix.'.bam';
   my $bai_file = $bam_file.'.bai';
   my $md5_file = $bam_file.'.md5';
-  my $command = "cd $base_dir; ";
+  my $command = q{};
+  $command .= "cd $base_dir; " unless($sam_files->[0] =~ m/FINAL_MERGED[.]sam$/);
   $command .= which('bamsort');
   $command .= sprintf $BAMSORT, 'sam', $bam_file, $bai_file, $md5_file;
   $command .= join q{ I=}, @{$sam_files};
   system($command);
   return 1;
+}
+
+sub update_header_when_no_reads {
+  my ($base_dir, $sam_files) = @_;
+  for my $sam_file (@{$sam_files}) {
+    my $sam = $base_dir.$sam_file;
+    my @header;
+    my $has_records = 0;
+    open my $IN, '<', $sam || die $!;
+    while(<$IN>) {
+      if($_ =~ m/^\@/) {
+        chomp $_;
+        push @header, $_;
+      }
+      else {
+        $has_records++;
+      }
+      last if($has_records);
+    }
+    close $IN;
+    unless($has_records) {
+      if($header[0] =~ s/SO:unknown/SO:coordinate/) {
+        warn "Updating sort order as no records\n";
+        open my $OUT, '>', $sam || die $!;
+        print $OUT join("\n",@header),"\n";
+        close $OUT;
+      }
+    }
+  }
 }
 
 sub pindel_header {
