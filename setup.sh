@@ -52,10 +52,8 @@ cd $INIT_DIR
 
 # make sure that build is self contained
 unset PERL5LIB
-ARCHNAME=`perl -e 'use Config; print $Config{archname};'`
 PERLROOT=$INST_PATH/lib/perl5
-PERLARCH=$PERLROOT/$ARCHNAME
-export PERL5LIB="$PERLROOT:$PERLARCH"
+export PERL5LIB="$PERLROOT"
 
 #create a location to build dependencies
 SETUP_DIR=$INIT_DIR/install_tmp
@@ -95,13 +93,13 @@ fi
 echo -n "Compiling pindel binaries ..."
 (
   set -x
-  g++ -O3 -o $SETUP_DIR/pindel c++/pindel.cpp
-  g++ -O3 -o $SETUP_DIR/filter_pindel_reads c++/filter_pindel_reads.cpp
-  cp $SETUP_DIR/pindel $INST_PATH/bin/.
-  cp $SETUP_DIR/filter_pindel_reads $INST_PATH/bin/.
+  g++ -O3 -o $SETUP_DIR/pindel c++/pindel.cpp &&
+  g++ -O3 -o $SETUP_DIR/filter_pindel_reads c++/filter_pindel_reads.cpp &&
+  cp $SETUP_DIR/pindel $INST_PATH/bin/. &&
+  cp $SETUP_DIR/filter_pindel_reads $INST_PATH/bin/. &&
   # convenience for testing
-  mkdir -p $INIT_DIR/bin
-  cp $SETUP_DIR/pindel $INIT_DIR/bin/.
+  mkdir -p $INIT_DIR/bin &&
+  cp $SETUP_DIR/pindel $INIT_DIR/bin/. &&
   cp $SETUP_DIR/filter_pindel_reads $INIT_DIR/bin/.
 ) >>$INIT_DIR/setup.log 2>&1
 done_message "" "Failed during compilation of pindel."
@@ -125,9 +123,9 @@ done_message "" "Failed during installation of core dependencies."
 
 echo -n "Installing cgpPindel ..."
 (
-  perl Makefile.PL INSTALL_BASE=$INST_PATH
-  make
-  make test
+  perl Makefile.PL INSTALL_BASE=$INST_PATH &&
+  make &&
+  make test &&
   make install
 ) >>$INIT_DIR/setup.log 2>&1
 done_message "" "cgpPindel install failed."
