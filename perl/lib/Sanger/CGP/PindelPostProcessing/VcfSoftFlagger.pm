@@ -56,11 +56,15 @@ sub new{
     return $self;
 }
 
-=head flag
+=head3 flag
+
+=over
 
 =item Param 1 full input vcf file path. If the path ends in '.gz' an attempt to un-bgzip the file before processing will be made.
 
 =item Param 2 full output vcf file path. If the path ends in '.gz' an attempt to bgzip the file after processing will be made.
+
+=back
 
 =cut
 sub flag{
@@ -84,11 +88,15 @@ sub flag{
 	$vcf->close();
 }
 
-=head flag
+=head3 flag
+
+=over
 
 =item Param 1 Vcf object.
 
 =item Param 2 an open writable file handle.
+
+=back
 
 =cut
 sub flag_vcf{
@@ -111,14 +119,19 @@ sub flag_vcf{
 	}
 }
 
-=item reformat_header
+=head3 reformat_header
+
   Vcf module makes a mess of this and does not group common header types
   simply take the existing data and use the order that each header type is first seen
   and build an array of each following element of that type
 
+=over
+
 =item Param 1 Vcf object.
 
 =item Returns the header as a formatted string.
+
+=back
 
 =cut
 sub reformat_header {
@@ -144,15 +157,19 @@ sub reformat_header {
 	return (join "\n", @final_header)."\n";
 }
 
-=item _parse_user_defined_filters
+=head3 _parse_user_defined_filters
 
   Modified from vcf-annotate vcftools. Takes a vcf-annotate filter file and reads it into the flagger.
+
+=over
 
 =item Param 1 Vcf object.
 
 =item Param 2 Full file path to a filter file.
 
 =item Param 3 Filter type string (udef_filters | udef_flags). This determins how the filter file is treated i.e. as INFO flags or filters.
+
+=back
 
 =cut
 sub _parse_user_defined_filters
@@ -206,9 +223,11 @@ sub _parse_user_defined_filters
 	}
 }
 
-=item apply_user_defined_filters
+=head3 apply_user_defined_filters
 
   Modified from vcf-annotate vcftools. Applies the filters of a specified filter-set to a line of data.
+
+=over
 
 =item Param 1 Vcf object.
 
@@ -217,6 +236,8 @@ sub _parse_user_defined_filters
 =item Param 3 Filter type string (udef_filters | udef_flags). This determins which filter-set is to be applied i.e. as INFO flags or filters.
 
 =item Returns An array-ref of the modified line.
+
+=back
 
 =cut
 sub apply_user_defined_filters{

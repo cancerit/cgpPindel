@@ -142,6 +142,12 @@ sub setup {
   PCAP::Cli::file_for_reading('unmatched', $opts{'unmatched'});
   PCAP::Cli::file_for_reading('softfil', $opts{'softfil'}) if(defined $opts{'softfil'});
   PCAP::Cli::out_dir_check('outdir', $opts{'outdir'});
+  my $final_logs = File::Spec->catdir($opts{'outdir'}, 'logs');
+  if(-e $final_logs) {
+    warn "NOTE: Presence of '$final_logs' directory suggests successful complete analysis, please delete to rerun\n";
+    exit 0;
+  }
+
 
   delete $opts{'process'} unless(defined $opts{'process'});
   delete $opts{'index'} unless(defined $opts{'index'});
