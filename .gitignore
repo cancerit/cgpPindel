@@ -17,3 +17,5 @@
 /perl/perltidy.LOG
 /perl/MYMETA.json
 /perl/MYMETA.yml
+/perl/Makefile
+/perl/pm_to_blib
