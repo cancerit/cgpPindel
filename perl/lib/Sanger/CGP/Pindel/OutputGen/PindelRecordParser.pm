@@ -85,7 +85,8 @@ sub version{
 	return shift->{_version};
 }
 
-=head next_record
+=head3 next_record
+
 Grabs the next record from the pindel output file.
 
 @returns - a Sanger::CGP::Pindel::OutputGen::PindelRecord;
@@ -140,7 +141,8 @@ sub _process_record{
 	return $record;
 }
 
-=head _parse_header
+=head3 _parse_header
+
 Processes the header component of a pindel record.
 
 @param1 record         - a empty Sanger::CGP::Pindel::OutputGen::PindelRecord object.
@@ -213,7 +215,8 @@ sub _parse_header {
 	return $record;
 }
 
-=head _parse_header_v02
+=head3 _parse_header_v02
+
 Processes the header component of a pindel record.
 
 @param1 record    - a empty Sanger::CGP::Pindel::OutputGen::PindelRecord object.
@@ -280,7 +283,8 @@ sub _parse_header_v02 {
 }
 
 
-=head _parse_alignment
+=head3 _parse_alignment
+
 processes the alignment component of a pindel record.
 
 @param1 record         - a Sanger::CGP::Pindel::OutputGen::PindelRecord object. This must have the following fields
@@ -359,7 +363,7 @@ sub _parse_alignment {
 }
 
 
-=head _repeat_count
+=head3 _repeat_count
 
 Takes the alignment string left and right components and attempts to resolve the number of repeats of the minimum change unit provided in the record.
 
@@ -404,7 +408,7 @@ sub _repeat_count {
 	return int (($pre_rep_len-(length $repeat_range)) / length $min_change);
 }
 
-=head most_prev_change
+=head3 most_prev_change
 
 Loops through an array of alignment strings sub-stringing the variant out using the
 offsets provided. The most prevalent variant is returned. This was used when a bug
@@ -440,7 +444,8 @@ sub most_prev_change {
 	return ($max_change, ($max_change_count / $total));
 }
 
-=head _shrink_change
+=head3 _shrink_change
+
 Takes a string and attempts to reduce it to its repetitive component if it has one i.e.
 
 ATCATCATC shrinks to ATC
@@ -476,7 +481,8 @@ sub _shrink_change {
 	return defined $new_change ? $new_change : $change;
 }
 
-=head _parse_read
+=head3 _parse_read
+
 Takes a read string in the pidnel output and adds it to the record object as a sam record.
 We will need these reads to do two things. 1) create pindel-bam files 2) count unique reads
 between bwa and pindel.
@@ -585,7 +591,8 @@ sub _parse_read {
 	return 1;
 }
 
-=item calmd
+=head3 calmd
+
 Calculate the MD and NM tags based on new Cigar string, seq and genomic location
 Added to deal with problem in samtools calmd where split reads are handled poorly
 
