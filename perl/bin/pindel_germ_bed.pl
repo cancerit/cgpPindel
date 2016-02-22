@@ -123,4 +123,3 @@ pindel_germ_bed.pl [options]
   Example:
     pindel_germ_bed.pl -i cgpPindel.flagged.vcf -o germline.bed -f F012
 
-=back
