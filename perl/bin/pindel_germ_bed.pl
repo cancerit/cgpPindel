@@ -60,13 +60,26 @@ my $vcf = Vcf->new( file=>$options->{'input'},
                     version=>'4.1');
 $vcf->parse_header();
 
+my $has_entry = 0;
+my $line = 0;
+my $first_contig;
 while(my $x = $vcf->next_data_array){
+  if($line ==0 && $has_entry == 0){
+    $line = 1;
+    $first_contig=$$x[0];
+  }
   next unless(";$x->[6];" =~ m/;$flag;/); # skip things that don't have this flag value
   my ($ref, $start, $alt) = (@{$x})[0,1,4];
   my $end = $start + length $alt;
   # start is always the base before the change in VCF in/del so this magically ends up as half-open coord.
   print $o_fh (join "\t", $ref, $start, $end),"\n" or die "Failed to write: $!";
+  $has_entry = 1;
 }
+#Fake line as first position of first contig unless we have had at least one bed entry
+if($has_entry == 0){
+  print $o_fh (join ("\t",$first_contig,0,1),"\n") or die "Failed to write: $!";
+}
+
 
 close $o_fh;
 
