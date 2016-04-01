@@ -17,8 +17,8 @@ The is a lightly modified version of pindel v2.0 with CGP specific processing fo
 
 Please install the following first:
 
-* [PCAP-core](http://github.com/ICGC-TCGA-PanCancer/PCAP-core/releases)
-* [cgpVcf](http://github.com/cancerit/cgpVcf/releases)
+* [PCAP-core v2.0+](http://github.com/ICGC-TCGA-PanCancer/PCAP-core/releases)
+* [cgpVcf v2.0+](http://github.com/cancerit/cgpVcf/releases)
 
 Please see these for any child dependencies.
 
@@ -26,8 +26,9 @@ Once complete please run:
 
 ./setup.sh /some/install/location
 
-Please be aware that this expects basic C compilation libraries and tools to be available,
-most are listed in `INSTALL`.
+Please use `setup.sh` to install any other dependencies.  Setting the environment variable `CGP_PERLLIBS` allows you to to append to `PERL5LIB` during install.  Without this all dependancies are installed into the target area.
+
+Please be aware that this expects basic C compilation libraries and tools to be available.
 
 ---
 
@@ -38,17 +39,17 @@ most are listed in `INSTALL`.
 
 ####Cutting the release
 1. Update `perl/lib/Sanger/CGP/Pindel.pm` to the correct version (adding rc/beta to end if applicable).
-2. Update `Changes` to show major items.
+2. Update `CHANGES.md` to show major items.
 3. Run `./prerelease.sh`
 4. Check all tests and coverage reports are acceptable.
-5. Commit the updated docs tree and updated module/version.
+5. Commit the updated docs and updated module/version.
 6. Push commits.
 7. Use the GitHub tools to draft a release.
 
 LICENCE
 =======
 
-Copyright (c) 2014-2015 Genome Research Ltd.
+Copyright (c) 2014-2016 Genome Research Ltd.
 
 Author: Cancer Genome Project <cgpit@sanger.ac.uk>
 
