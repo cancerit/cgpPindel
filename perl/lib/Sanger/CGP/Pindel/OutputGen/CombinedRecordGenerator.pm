@@ -1,7 +1,7 @@
 package Sanger::CGP::Pindel::OutputGen::CombinedRecordGenerator;
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2016 Genome Research Ltd.
 #
 # Author: Keiran Raine <cgpit@sanger.ac.uk>
 #
@@ -28,8 +28,6 @@ use strict;
 use Carp;
 use English qw( -no_match_vars );
 use Data::Dumper;
-
-use Bio::DB::Sam;
 
 use Sanger::CGP::Pindel::OutputGen::CombinedRecord;
 
@@ -120,7 +118,7 @@ sub _process_counts{
 	## BWA Depths... not taking into account reads passed to Pindel...
 	my ($pos_bwa_reads, $neg_bwa_reads);
 	if($record->type eq 'I'){
-		($pos_bwa_reads, $neg_bwa_reads) = _read_depth($sam_obj, $record->chro, $record->range_start, $record->range_end-1); # as indels are always attached to the base before in Bio::DB::Sam
+		($pos_bwa_reads, $neg_bwa_reads) = _read_depth($sam_obj, $record->chro, $record->range_start, $record->range_end-1); # as indels are always attached to the base before in Bio::DB::HTS
 	}else{
 		($pos_bwa_reads, $neg_bwa_reads) = _read_depth($sam_obj, $record->chro, $record->range_start, $record->range_start);
 	}
@@ -299,7 +297,7 @@ sub _count_sam_event_reads{
 
 	# These will be used by the pileup callback.
 	my $g_r_start = $record->range_start;
-	my $g_r_end = $record->range_end-1; # as indels are always attached to the base before in Bio::DB::Sam
+	my $g_r_end = $record->range_end-1; # as indels are always attached to the base before in Bio::DB::HTS
 	my $g_chg_len = $record->type eq 'D' ? length $record->ref_seq : length $record->alt_seq;
 	my $g_min_chg_len = length $record->min_change;
 	$g_min_chg_len = 0 unless(defined $g_min_chg_len);
