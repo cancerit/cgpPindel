@@ -1,7 +1,7 @@
 package Sanger::CGP::PindelPostProcessing::FilterRules;
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2016 Genome Research Ltd.
 #
 # Author: Keiran Raine <cgpit@sanger.ac.uk>
 #
@@ -21,12 +21,8 @@ package Sanger::CGP::PindelPostProcessing::FilterRules;
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ########## LICENCE ##########
 
-BEGIN {
-  $SIG{__WARN__} = sub {warn $_[0] unless( $_[0] =~ m/^Subroutine Tabix.* redefined/)};
-};
-
 use strict;
-use Tabix;
+use Bio::DB::HTS::Tabix;
 use Sanger::CGP::Pindel;
 
 my %RULE_DESCS = ('F001' => { 'tag' =>'INFO/LEN',
@@ -119,13 +115,13 @@ sub use_prev {
 
 sub reuse_unmatched_normals_tabix {
   unless(defined $vcf_flagging_unmatched_normals_tabix){
-    $vcf_flagging_unmatched_normals_tabix = new Tabix(-data => $ENV{VCF_FLAGGING_UNMATCHED_NORMALS},-index => $ENV{VCF_FLAGGING_UNMATCHED_NORMALS}.'.tbi');
+    $vcf_flagging_unmatched_normals_tabix = new Bio::DB::HTS::Tabix(filename=> $ENV{VCF_FLAGGING_UNMATCHED_NORMALS});
   }
 }
 
 sub reuse_repeats_tabix {
   unless(defined $vcf_flagging_repeats_tabix) {
-    $vcf_flagging_repeats_tabix = new Tabix(-data => $ENV{VCF_FLAGGING_REPEATS},-index => $ENV{VCF_FLAGGING_REPEATS}.'.tbi');
+    $vcf_flagging_repeats_tabix = new Bio::DB::HTS::Tabix(filename=> $ENV{VCF_FLAGGING_REPEATS});
   }
 }
 
@@ -303,11 +299,8 @@ sub flag_009 {
   my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
   ### HACK Dirty dirty dirty......
   unless($main::VCF_IS_CODING_TABIX){
-    BEGIN {
-      $SIG{__WARN__} = sub {warn $_[0] unless( $_[0] =~ m/^Subroutine Tabix.* redefined/)};
-    };
-    use Tabix;
-    $main::VCF_IS_CODING_TABIX = new Tabix(-data => $ENV{VCF_IS_CODING},-index => $ENV{VCF_IS_CODING}.'.tbi');
+    use Bio::DB::HTS::Tabix;
+    $main::VCF_IS_CODING_TABIX = new Bio::DB::HTS::Tabix(filename=> $ENV{VCF_IS_CODING});
   }
 
   my $ret = eval{
@@ -343,11 +336,9 @@ sub flag_010 {
   $to += $length_off;
 
   my $ret = eval{
-    my $res = $vcf_flagging_unmatched_normals_tabix->query($CHROM,$from,$to);
-
-    return $PASS if(!defined $res->get); # no valid entries (chromosome not in index) so must pass
-
-    while(my $line = $vcf_flagging_unmatched_normals_tabix->read($res)){
+    my $iter = $vcf_flagging_unmatched_normals_tabix->query(sprintf '%s:%d-%d', $CHROM,$from,$to);
+    return $PASS if(!defined $iter); # no valid entries (chromosome not in index) so must pass
+    while($iter->next){
       return $FAIL;
     }
     return $PASS;
@@ -434,9 +425,11 @@ sub flag_017 {
   my($to) = ";$$RECORD[7]" =~ m/;RE=(\d+)/;
 
   my $ret = eval{
-    my $res = $vcf_flagging_repeats_tabix->query($CHROM,($from-1),$to);
-    return $PASS if(!defined $res->get); # no valid entries (chromosome not in index) so must pass
-    return $FAIL if($vcf_flagging_repeats_tabix->read($res));
+    my $iter = $vcf_flagging_repeats_tabix->query(sprintf '%s:%d-%d', $CHROM,($from-1),$to);
+    return $PASS if(!defined $iter); # no valid entries (chromosome not in index) so must pass
+    while($iter->next){
+      return $FAIL;
+    }
     return $PASS;
   };
   if($@) {

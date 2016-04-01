@@ -1,4 +1,3 @@
-bin/cpanm
 bin/FlagVcf.pl
 bin/pindel.pl
 bin/pindel_2_combined_vcf.pl
