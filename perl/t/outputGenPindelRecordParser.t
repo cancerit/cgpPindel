@@ -26,7 +26,7 @@ use FindBin qw($Bin);
 use Data::Dumper;
 use File::Spec;
 
-use Bio::DB::Sam;
+use Bio::DB::HTS;
 
 my $MODULE = 'Sanger::CGP::Pindel::OutputGen::PindelRecordParser';
 
@@ -41,7 +41,7 @@ my $pin_file = File::Spec->catfile($test_data,'test.txt_22');
 subtest 'Initialisation checks' => sub {
   use_ok($MODULE);
 
-  my $fai = Bio::DB::Sam::Fai->load($ref_file);
+  my $fai = Bio::DB::HTS::Fai->load($ref_file);
   my $obj = new_ok($MODULE => [-path => $pin_file, -fai => $fai]); ## this will fail without a valid sam pindel file
 
   open(my $fh,"<",$pin_file);
@@ -267,7 +267,7 @@ subtest 'Non-object funcions' => sub {
 
   subtest 'calmd' => sub {
 
-    my $fai = Bio::DB::Sam::Fai->load($ref_file);
+    my $fai = Bio::DB::HTS::Fai->load($ref_file);
 
     ##ÊThese are real coordinates from human build 37
     #genome.fa 22:30000000-30000050
@@ -304,7 +304,7 @@ subtest 'Non-object funcions' => sub {
 
   subtest '_parse_read' => sub {
 
-    my $fai = Bio::DB::Sam::Fai->load($ref_file);
+    my $fai = Bio::DB::HTS::Fai->load($ref_file);
 
     my $ref_sequence_a = $fai->fetch('22:16060000-16061000');
     my $ref_start_a = 16060000;
@@ -427,7 +427,7 @@ subtest 'Object funcions' => sub {
 
   subtest '_parse_aignment' => sub {
 
-  	my $fai = Bio::DB::Sam::Fai->load($ref_file);
+  	my $fai = Bio::DB::HTS::Fai->load($ref_file);
     my $obj = new_ok($MODULE => [-path => $pin_file, -fai => $fai]); ## this will fail without a valid sam pindel file
 
   	my $header_string_1 = q(GAGACCTCCCCAGAAATGGATGCCAGCATTATGCTTCCTATACAGCCTGCAGAACCATGAGCCAATTAACTCTCTtttttcTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTCTTTCTTTCTTTCTTTCTTTCTTTCTTTCT);

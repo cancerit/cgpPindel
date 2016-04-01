@@ -1,21 +1,21 @@
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd. 
-#  
-# Author: Keiran Raine <cgpit@sanger.ac.uk> 
-#  
+# Copyright (c) 2014-2016 Genome Research Ltd.
+#
+# Author: Keiran Raine <cgpit@sanger.ac.uk>
+#
 # This file is part of cgpPindel.
-#  
-# cgpPindel is free software: you can redistribute it and/or modify it under 
-# the terms of the GNU Affero General Public License as published by the Free 
-# Software Foundation; either version 3 of the License, or (at your option) any 
-# later version. 
-#  
-# This program is distributed in the hope that it will be useful, but WITHOUT 
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
-# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more 
-# details. 
-#  
-# You should have received a copy of the GNU Affero General Public License 
+#
+# cgpPindel is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation; either version 3 of the License, or (at your option) any
+# later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ########## LICENCE ##########
 
@@ -26,7 +26,7 @@ use FindBin qw($Bin);
 use Data::Dumper;
 use File::Spec;
 
-use Bio::DB::Sam;
+use Bio::DB::HTS;
 
 my $MODULE = 'Sanger::CGP::Pindel::OutputGen::CombinedRecordGenerator';
 
@@ -44,9 +44,9 @@ my $wt_file = File::Spec->catfile($test_data,'test-BL.bam');
 subtest 'Initialisation checks' => sub {
   use_ok($MODULE);
 
-  my $fai = Bio::DB::Sam::Fai->load($ref_file);
-  my $wt_sam = Bio::DB::Sam->new(-bam => $wt_file, -fasta => $ref_file);
-  my $mt_sam = Bio::DB::Sam->new(-bam => $mt_file, -fasta => $ref_file);
+  my $fai = Bio::DB::HTS::Fai->load($ref_file);
+  my $wt_sam = Bio::DB::HTS->new(-bam => $wt_file, -fasta => $ref_file);
+  my $mt_sam = Bio::DB::HTS->new(-bam => $mt_file, -fasta => $ref_file);
   my $obj = new_ok($MODULE => [-path => $pin_file, -fai => $fai, -wt_sam => $wt_sam, -mt_sam => $mt_sam, -mutant_sample_name => 'test']); ## this will fail without a valid sam pindel file
 
   is($obj->{_wt_sam},$wt_sam,'Correctly setting wt sam object');
@@ -78,7 +78,7 @@ subtest 'Non-object funcions' => sub {
 
   subtest '_read_depth' => sub {
 
-  	my $wt_sam = Bio::DB::Sam->new(-bam => $wt_file, -fasta => $ref_file);
+  	my $wt_sam = Bio::DB::HTS->new(-bam => $wt_file, -fasta => $ref_file);
 
   	my $expect = [{
   	  'HWUSI-EAS493_8289_FC30GNW_PE:6:86:991:775' => '724837',
@@ -148,7 +148,7 @@ subtest 'Non-object funcions' => sub {
 
   subtest '_count_sam_event_reads' => sub {
 
-  	my $mt_sam = Bio::DB::Sam->new(-bam => $mt_file, -fasta => $ref_file);
+  	my $mt_sam = Bio::DB::HTS->new(-bam => $mt_file, -fasta => $ref_file);
   	my $samp_type_key = 'mt';
 
   	my $record_2 = new Sanger::CGP::Pindel::OutputGen::CombinedRecord(
@@ -164,7 +164,7 @@ subtest 'Non-object funcions' => sub {
       -s1 => 12,
       -s2 => 234.764,
       -sum_ms => 202,
-      -ref_seq => lc'TTTTTC',
+      -ref_seq => 'tttttc',
       -reads => {'test'=>{'-'=>[['EAS139_64:1:55:1728:1427_r1_D0',16,22,16060468,29,'12M6D63M','*',0,0,'AGTTAACTCTCTTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTCTTTCTTTCTTTCTTTCTTTCTTT','*','MD:Z:1A10^TTTTTC63','NM:i:7'],]}},
       -lub => 'T'
   	);
@@ -207,12 +207,6 @@ subtest 'Non-object funcions' => sub {
 
   	my ($pos_reads,$neg_reads) = Sanger::CGP::Pindel::OutputGen::CombinedRecordGenerator::_count_sam_event_reads($record_1, $mt_sam, $samp_type_key);
 
-#  	warn "pos:";
-#  	use Data::Dumper;
-#  	warn Dumper($pos_reads);
-#  	warn "neg:";
-#  	warn Dumper($neg_reads);
-
   	is($record_1->b_mt_pos,10,'Check for correct pos read call counts');
   	is($record_1->b_mt_neg,3,'Check for correct neg read call counts');
 
@@ -228,9 +222,9 @@ subtest 'Object funcions' => sub {
   subtest '_process_counts' => sub {
 
 
-  	my $fai = Bio::DB::Sam::Fai->load($ref_file);
-    my $wt_sam = Bio::DB::Sam->new(-bam => $wt_file, -fasta => $ref_file);
-    my $mt_sam = Bio::DB::Sam->new(-bam => $mt_file, -fasta => $ref_file);
+  	my $fai = Bio::DB::HTS::Fai->load($ref_file);
+    my $wt_sam = Bio::DB::HTS->new(-bam => $wt_file, -fasta => $ref_file);
+    my $mt_sam = Bio::DB::HTS->new(-bam => $mt_file, -fasta => $ref_file);
   	my $samp_type_key = 'mt';
 
   	my $generator = new Sanger::CGP::Pindel::OutputGen::CombinedRecordGenerator(
@@ -251,7 +245,7 @@ subtest 'Object funcions' => sub {
       -end => 16060485,
       -range_start => 16060479,
       -range_end => 16060525,
-      -ref_seq => lc'TTTTTC',
+      -ref_seq => 'tttttc',
       -reads => {
         'test'=>{'-'=>[['EAS139_64:1:55:1728:1427_r1_D0',16,22,16060468,29,'12M6D63M','*',0,0,'AGTTAACTCTCTTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTCTTTCTTTCTTTCTTTCTTTCTTT','*','MD:Z:1A10^TTTTTC63','NM:i:7']]},
         'test-BL'=>{'-'=>[['EAS139_64:1:55:1728:1427_r1_D0',16,22,16060468,29,'12M6D63M','*',0,0,'AGTTAACTCTCTTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTCTTTCTTTCTTTCTTTCTTTCTTT','*','MD:Z:1A10^TTTTTC63','NM:i:7']]}
@@ -269,7 +263,7 @@ subtest 'Object funcions' => sub {
       -end => 16060485,
       -range_start => 16060479,
       -range_end => 16060525,
-      -ref_seq => lc'TTTTTC',
+      -ref_seq => 'tttttc',
       -reads => {
         'test'=>{'-'=>[['EAS139_64:1:55:1728:1427_r1_D0',16,22,16060468,29,'12M6D63M','*',0,0,'AGTTAACTCTCTTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTCTTTCTTTCTTTCTTTCTTTCTTT','*','MD:Z:1A10^TTTTTC63','NM:i:7']]},
         'test-BL'=>{'-'=>[['EAS139_64:1:55:1728:1427_r1_D0',16,22,16060468,29,'12M6D63M','*',0,0,'AGTTAACTCTCTTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTCTTTCTTTCTTTCTTTCTTTCTTT','*','MD:Z:1A10^TTTTTC63','NM:i:7']]}

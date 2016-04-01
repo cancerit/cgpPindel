@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2016 Genome Research Ltd.
 #
 # Author: Keiran Raine <cgpit@sanger.ac.uk>
 #
@@ -40,6 +40,7 @@ WriteMakefile(
                      'Try::Tiny' => 0.19,
                      'File::Which' => 0.05,
                      'List::Util' => 1.38,
+                     'Bio::DB::HTS' => 1.11,
                      'List::MoreUtils' => 0.33,
                      'Test::Fatal' => 0.013,
                      'Devel::Cover' => 1.09,

@@ -1,7 +1,7 @@
 package Sanger::CGP::Pindel::InputGen::Read;
 
 ########## LICENCE ##########
-# Copyright (c) 2014-2015 Genome Research Ltd.
+# Copyright (c) 2014-2016 Genome Research Ltd.
 #
 # Author: Keiran Raine <cgpit@sanger.ac.uk>
 #
@@ -157,11 +157,13 @@ sub _good_anchor {
 sub _tabix_hit {
   my $self = shift;
   my $tabix = $self->{'tabix'};
-  my $res = $tabix->query($self->{'rname'}, $self->{'pos'}-1, $self->{'pos'});
-  if(defined $res->get) {
-    return 1 if(defined $tabix->read($res));
+
+  my $iter = $self->{'tabix'}->query(sprintf '%s:%d-%d', $self->{'rname'}, $self->{'pos'}-1, $self->{'pos'});
+  return 0 unless(defined $iter);
+  while(my $ret = $iter->next){
+    return 1;
   }
-  0;
+  return 0;
 }
 
 sub frac_pbq_poor {

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2016 Genome Research Ltd.
 #
 # Author: Keiran Raine <cgpit@sanger.ac.uk>
 #
@@ -22,23 +22,19 @@
 ########## LICENCE ##########
 
 
-BEGIN {
-  use Cwd qw(abs_path);
-  use File::Basename;
-  unshift (@INC,dirname(abs_path($0)).'/../lib');
-};
-
 use strict;
 use warnings FATAL => 'all';
 use autodie qw(:all);
-
+use Cwd qw(abs_path);
+use File::Basename;
 use Getopt::Long;
 use Try::Tiny;
 use Carp;
 use Pod::Usage qw(pod2usage);
-use Data::Dumper;
+use FindBin qw($Bin);
+use lib "$Bin/../lib";
 
-use Bio::DB::Sam;
+use Bio::DB::HTS;
 
 use Sanger::CGP::Pindel::OutputGen::CombinedRecordGenerator;
 use Sanger::CGP::Pindel::OutputGen::VcfConverter;
@@ -66,8 +62,8 @@ use Sanger::CGP::Vcf::OutputGen::UuIdGenerator;
     closedir $dh;
   }
 
-  my $wt_sam = Bio::DB::Sam->new(-bam => $opts->{wt}, -fasta => $opts->{r});
-  my $mt_sam = Bio::DB::Sam->new(-bam => $opts->{mt}, -fasta => $opts->{r});
+  my $wt_sam = Bio::DB::HTS->new(-bam => $opts->{wt}, -fasta => $opts->{r});
+  my $mt_sam = Bio::DB::HTS->new(-bam => $opts->{mt}, -fasta => $opts->{r});
 
   ## combine the header text to get a combined list of contigs.
   my $contigs    = Sanger::CGP::Pindel::OutputGen::BamUtil::parse_contigs($wt_sam->header->text . $mt_sam->header->text, $opts->{sp}, $opts->{as});
@@ -83,7 +79,7 @@ use Sanger::CGP::Vcf::OutputGen::UuIdGenerator;
 
   my $wt_sample = (values(%$wt_samples))[0];
   my $mt_sample = (values(%$mt_samples))[0];
-  my $fai = Bio::DB::Sam::Fai->load($opts->{r});
+  my $fai = Bio::DB::HTS::Fai->load($opts->{r});
 
   my $wt_out_sam_path;
   my $mt_out_sam_path;

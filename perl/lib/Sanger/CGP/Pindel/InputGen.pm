@@ -1,7 +1,7 @@
 package Sanger::CGP::Pindel::InputGen;
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2016 Genome Research Ltd.
 #
 # Author: Keiran Raine <cgpit@sanger.ac.uk>
 #
@@ -34,10 +34,7 @@ use Try::Tiny qw(try catch finally);
 use File::Spec;
 use Data::Dumper;
 
-BEGIN {
-  $SIG{__WARN__} = sub {warn $_[0] unless( $_[0] =~ m/^Subroutine Tabix.* redefined/)};
-};
-use Tabix;
+use Bio::DB::HTS::Tabix;
 
 use Sanger::CGP::Pindel;
 
@@ -222,7 +219,7 @@ sub reads_to_pindel {
 
   my $tabix;
   if(defined $bed) {
-    $tabix = new Tabix(-data => $bed);
+    $tabix = new Bio::DB::HTS::Tabix(filename => $bed);
   }
 
   for(1..$total_pairs) {
