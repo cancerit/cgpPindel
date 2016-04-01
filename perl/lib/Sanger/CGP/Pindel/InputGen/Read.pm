@@ -156,8 +156,6 @@ sub _good_anchor {
 
 sub _tabix_hit {
   my $self = shift;
-  my $tabix = $self->{'tabix'};
-
   my $iter = $self->{'tabix'}->query(sprintf '%s:%d-%d', $self->{'rname'}, $self->{'pos'}-1, $self->{'pos'});
   return 0 unless(defined $iter);
   while(my $ret = $iter->next){
