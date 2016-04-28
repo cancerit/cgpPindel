@@ -305,7 +305,7 @@ sub flag_009 {
 
   my $ret = eval{
     # as vcf POS for indels is the previous base pos is 0-based, but the new TABIX requires 1-based
-    my $res = $main::VCF_IS_CODING_TABIX->query($CHROM,$POS+1,($POS+1+$MATCH));
+    my $res = $main::VCF_IS_CODING_TABIX->query($CHROM,$POS+1,($POS+$MATCH));
     return $FAIL if(!defined $res->get); # no valid entries (chromosome not in index) so must FAIL
     return $PASS if($main::VCF_IS_CODING_TABIX->read($res));
     return $FAIL;
@@ -331,7 +331,7 @@ sub flag_010 {
     $to--;
   }
   # then apply the range fudging
-  $from -= $length_off # no fudge of position as tabix for bed is now 1 based
+  $from -= $length_off; # no fudge of position as tabix for bed is now 1 based
   $to += $length_off;
 
   my $ret = eval{
