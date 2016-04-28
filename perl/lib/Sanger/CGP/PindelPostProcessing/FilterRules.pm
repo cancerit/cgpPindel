@@ -304,9 +304,8 @@ sub flag_009 {
   }
 
   my $ret = eval{
-    ## half open interval based.... i.e. from is zero based to is one based.
-    # as vcf POS for indels is the previous base pos is already 0-based
-    my $res = $main::VCF_IS_CODING_TABIX->query($CHROM,$POS,($POS+$MATCH));
+    # as vcf POS for indels is the previous base pos is 0-based, but the new TABIX requires 1-based
+    my $res = $main::VCF_IS_CODING_TABIX->query($CHROM,$POS+1,($POS+1+$MATCH));
     return $FAIL if(!defined $res->get); # no valid entries (chromosome not in index) so must FAIL
     return $PASS if($main::VCF_IS_CODING_TABIX->read($res));
     return $FAIL;
@@ -332,7 +331,7 @@ sub flag_010 {
     $to--;
   }
   # then apply the range fudging
-  $from -= ($length_off + 1); # additional -1 to switch to 0 based
+  $from -= $length_off # no fudge of position as tabix for bed is now 1 based
   $to += $length_off;
 
   my $ret = eval{
@@ -425,7 +424,8 @@ sub flag_017 {
   my($to) = ";$$RECORD[7]" =~ m/;RE=(\d+)/;
 
   my $ret = eval{
-    my $iter = $vcf_flagging_repeats_tabix->query(sprintf '%s:%d-%d', $CHROM,($from-1),$to);
+    # as vcf POS for indels is the previous base pos is 0-based, but the new TABIX requires 1-based
+    my $iter = $vcf_flagging_repeats_tabix->query(sprintf '%s:%d-%d', $CHROM,$from,$to);
     return $PASS if(!defined $iter); # no valid entries (chromosome not in index) so must pass
     while($iter->next){
       return $FAIL;
