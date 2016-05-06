@@ -158,7 +158,12 @@ sub _process_fh{
   if($header){
     ## write the header... we need to test if S2 is preant first...
     my $source = basename($0). '_v'. Sanger::CGP::Pindel->VERSION;
-    my $include_s2 = $record_generator->version eq 'v01' ? 1 : 0;
+    my $include_s2;
+    if(defined($record_generator->version)){
+      $include_s2 = $record_generator->version eq 'v01' ? 1 : 0;
+    }else{
+      $include_s2 = 1;
+    }
 
     my @process_logs = ();
 
