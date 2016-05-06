@@ -173,18 +173,17 @@ sub pindel_to_vcf {
 
   my @seqs = sort keys %{$options->{'seqs'}};
   my @indicies = limited_indicies($options, $index_in, scalar @seqs);
-
 	for my $index(@indicies) {
     next if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
     my $seq = $seqs[$index-1];
-
     my $pout = File::Spec->catdir($tmp, 'pout');
 
     my @in_files;
     for my $type(qw(D SI)) {
       my $in_file = File::Spec->catfile($pout, $seq.'_'.$seq.'_'.$type);
-      push @in_files, $in_file if(-s $in_file);
+      push @in_files, $in_file if(-e $in_file && -f $in_file);
     }
+
     if(scalar @in_files > 0) {
       my $vcf = File::Spec->catdir($tmp, 'vcf');
       make_path($vcf) unless(-e $vcf);
@@ -207,7 +206,6 @@ sub pindel_to_vcf {
       $command .= ' -s' if(defined $options->{'skipgerm'});
       $command .= ' -as '.$options->{'assembly'} if(defined $options->{'assembly'});
       $command .= ' -sp '.$options->{'species'}   if(defined $options->{'species'});
-
       PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
     }
 
