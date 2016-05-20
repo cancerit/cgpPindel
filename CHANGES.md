@@ -1,4 +1,4 @@
-### 2.0.3
+### 2.0.4
 * Permits empty results files
 
 ### 2.0.0
