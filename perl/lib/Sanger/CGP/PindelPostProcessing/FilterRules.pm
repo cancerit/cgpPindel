@@ -305,9 +305,11 @@ sub flag_009 {
 
   my $ret = eval{
     # as vcf POS for indels is the previous base pos is 0-based, but the new TABIX requires 1-based
-    my $res = $main::VCF_IS_CODING_TABIX->query($CHROM,$POS+1,($POS+$MATCH));
-    return $FAIL if(!defined $res->get); # no valid entries (chromosome not in index) so must FAIL
-    return $PASS if($main::VCF_IS_CODING_TABIX->read($res));
+    my $iter = $main::VCF_IS_CODING_TABIX->query($CHROM,$POS+1,($POS+$MATCH));
+    return $FAIL if(!defined $iter); # no valid entries (chromosome not in index) so must FAIL
+    while($iter->next){
+      return $PASS;
+    }
     return $FAIL;
   };
   if($@) {
