@@ -71,7 +71,7 @@ while(my $x = $vcf->next_data_array){
 }
 #Fake line as first position of first contig unless we have had at least one bed entry
 if($has_entry == 0){
-  my $first_contig = (sort keys $vcf->get_header_line(key=>'contig')->[0])[0];
+  my $first_contig = (sort keys %{$vcf->get_header_line(key=>'contig')->[0]})[0];
   print $o_fh (join ("\t",$first_contig,0,1),"\n") or die "Failed to write: $!";
 }
 

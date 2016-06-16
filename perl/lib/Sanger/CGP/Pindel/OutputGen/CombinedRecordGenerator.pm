@@ -381,8 +381,8 @@ sub _count_sam_event_reads{
 	my %pos_reads = %{$ins_reads[1]};
 	my %neg_reads = %{$ins_reads[0]};
 
-	@pos_reads{keys %{$del_reads[1]}} = values{%{$del_reads[1]}};
-	@neg_reads{keys %{$del_reads[0]}} = values{%{$del_reads[0]}};
+	@pos_reads{keys %{$del_reads[1]}} = values %{$del_reads[1]};
+	@neg_reads{keys %{$del_reads[0]}} = values %{$del_reads[0]};
 
 	## return the reads to the outside world, we need to merge these with the reads discovered from Pindel to get accurate counts...
 	return (\%pos_reads,\%neg_reads);
