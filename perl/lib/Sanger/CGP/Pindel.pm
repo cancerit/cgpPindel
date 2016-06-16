@@ -26,7 +26,7 @@ use strict;
 use Const::Fast qw(const);
 
 use base 'Exporter';
-our $VERSION = '2.0.6';
+our $VERSION = '2.0.7';
 our @EXPORT = qw($VERSION);
 
 1;
