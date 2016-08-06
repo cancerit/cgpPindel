@@ -1,3 +1,7 @@
+| Master | Dev |
+|---|---|
+|  [![Build Status](https://travis-ci.org/cancerit/cgpPindel.svg?branch=master)](https://travis-ci.org/cancerit/cgpPindel) | [![Build Status](https://travis-ci.org/cancerit/cgpPindel.svg?branch=dev)](https://travis-ci.org/cancerit/cgpPindel) |
+
 cgpPindel
 =========
 
