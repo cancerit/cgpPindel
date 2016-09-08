@@ -30,7 +30,7 @@ perl:
  - "5.22"
 
 script:
- - git clone --depth 1 --single-branch --branch feature/adapter-trim https://github.com/ICGC-TCGA-PanCancer/PCAP-core.git
+ - git clone --depth 1 --single-branch --branch dev https://github.com/ICGC-TCGA-PanCancer/PCAP-core.git
  - cd PCAP-core
  - ./setup.sh $HOME/PCAP-opt
  - cd ../
