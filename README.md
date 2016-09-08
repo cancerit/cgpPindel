@@ -3,6 +3,10 @@ cgpPindel
 
 cgpPindel contains the Cancer Genome Projects workflow for [pindel](http://gmt.genome.wustl.edu/pindel/current/).
 
+| Master | Dev |
+|---|---|
+|  [![Build Status](https://travis-ci.org/cancerit/cgpPindel.svg?branch=master)](https://travis-ci.org/cancerit/cgpPindel) | [![Build Status](https://travis-ci.org/cancerit/cgpPindel.svg?branch=dev)](https://travis-ci.org/cancerit/cgpPindel) |
+
 The is a lightly modified version of pindel v2.0 with CGP specific processing for:
 
 * Input file generation
