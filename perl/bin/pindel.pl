@@ -23,7 +23,7 @@
 
 
 BEGIN {
-  use Cwd qw(abs_path);
+  use Cwd qw(abs_path cwd);
   use File::Basename;
   unshift (@INC,dirname(abs_path($0)).'/../lib');
 };
@@ -122,7 +122,7 @@ sub setup {
               'sf|softfil=s' => \$opts{'softfil'},
               'l|limit=i' => \$opts{'limit'},
               'd|debug' => \$opts{'debug'},
-              'a|apid' => \$opts{'apid'},
+              'a|apid:s' => \$opts{'apid'},
   ) or pod2usage(2);
 
   pod2usage(-verbose => 1) if(defined $opts{'h'});
@@ -190,9 +190,10 @@ sub setup {
   $opts{'seqtype'} = 'WGS' unless(defined $opts{'seqtype'});
 
 
-  # make all things that appear to be paths absolute
-  for (keys %opts) {
-    $opts{$_} = abs_path($opts{$_}) if(defined $opts{$_} && -e $opts{$_});
+  # make all things that appear to be paths complete (absolute not great if BAM/BAI in different locations)
+  for my $key (keys %opts) {
+    next unless( first {$key eq $_} qw(reference outdir tumour normal badloci simrep filters genes unmatched softfil));
+    $opts{$key} = cwd().'/'.$opts{$key} if(defined $opts{$key} && -e $opts{$key} && $opts{$key} !~ m/^\//);
   }
 
   my $tmpdir = File::Spec->catdir($opts{'outdir'}, 'tmpPindel');
