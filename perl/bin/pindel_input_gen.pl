@@ -79,6 +79,10 @@ sub setup {
   pod2usage(-msg  => "\nERROR: 'bam' must be defined.\n", -verbose => 2,  -output => \*STDERR) unless(defined $opts{'bam'});
 
   $opts{'threads'} ||= 1;
+  if($opts{'threads'} > 4) {
+    warn "Requested threads > 4, setting to 4\n";
+    $opts{'threads'} = 4;
+  }
 
   die "'outdir' is not writable: $opts{outdir}\n" if(-e $opts{'outdir'} && !-w _);
   unless(-e $opts{'outdir'}) {
@@ -121,7 +125,7 @@ pindel_input_gen.pl [options]
 
   RUNTIME:  ~100 sec. per million pairs.
             ~50 sec. when 2 threads used.
-            Greater than 2 threads not recommended
+            Capped at 4 threads (passive)
 
 =head1 OPTIONS
 
