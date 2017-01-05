@@ -30,6 +30,9 @@ perl:
  - "5.22"
 
 script:
+ - git clone --depth 1 --single-branch --branch dev https://github.com/cancerit/cgpBigWig.git
+ - cd cgpBigWig
+ - ./setup.sh $HOME/PCAP-opt
  - git clone --depth 1 --single-branch --branch dev https://github.com/ICGC-TCGA-PanCancer/PCAP-core.git
  - cd PCAP-core
  - ./setup.sh $HOME/PCAP-opt
