@@ -34,7 +34,6 @@ use File::Temp qw(tempfile);
 use Capture::Tiny;
 use List::Util qw(first);
 use FindBin qw($Bin);
-use Capture::Tiny qw(capture_stdout);
 
 use Sanger::CGP::Pindel;
 
@@ -294,8 +293,12 @@ sub prepare {
 sub valid_seqs {
   my $options = shift;
   my @good_seqs;
-  my $fai_seqs = capture_stdout { system('cut', '-f', 1, $options->{'reference'}.'.fai' ); };
-  my @all_seqs = split /\n/, $fai_seqs;
+
+  my @all_seqs;
+  open my $FAI_IN, '<', $options->{'reference'}.'.fai';
+  while(<$FAI_IN>) { push @all_seqs, (split /\t/, $_)[0]; }
+  close $FAI_IN;
+
   if(exists $options->{'exclude'}) {
     my @exclude = split /,/, $options->{'exclude'};
     my @exclude_patt;
