@@ -88,7 +88,7 @@ sub pindel_header {
   my ($bam, $samp_type, $parent_pg, $cmd, $man_species, $man_assembly) = @_;
 
   my $hfile = Bio::DB::HTSfile->open($bam);
-  my @h_lines = split /\n/, $hfile->header_read;
+  my @h_lines = split /\n/, $hfile->header_read->text();
   my $last_pg;
   for my $idx(0..(scalar @h_lines)-1) {
     my $h_line = $h_lines[$idx];
