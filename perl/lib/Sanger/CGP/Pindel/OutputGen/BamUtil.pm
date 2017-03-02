@@ -31,8 +31,8 @@ use strict;
 use autodie qw(:all);
 use Carp;
 use Data::Dumper;
-use Capture::Tiny qw(capture_stdout);
 use File::Which qw(which);
+use Bio::DB::HTS;
 
 use Const::Fast qw(const);
 
@@ -86,10 +86,9 @@ sub update_header_when_no_reads {
 
 sub pindel_header {
   my ($bam, $samp_type, $parent_pg, $cmd, $man_species, $man_assembly) = @_;
-  my $command = which('samtools');
-  $command .= ' view -H '.$bam;
-  my $header = capture_stdout { system($command); };
-  my @h_lines = split /\n/, $header;
+
+  my $hfile = Bio::DB::HTSfile->open($bam);
+  my @h_lines = split /\n/, $hfile->header_read;
   my $last_pg;
   for my $idx(0..(scalar @h_lines)-1) {
     my $h_line = $h_lines[$idx];
