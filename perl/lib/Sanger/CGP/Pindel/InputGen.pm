@@ -1,7 +1,7 @@
 package Sanger::CGP::Pindel::InputGen;
 
 ########## LICENCE ##########
-# Copyright (c) 2014-2016 Genome Research Ltd.
+# Copyright (c) 2014-2017 Genome Research Ltd.
 #
 # Author: Keiran Raine <cgpit@sanger.ac.uk>
 #
