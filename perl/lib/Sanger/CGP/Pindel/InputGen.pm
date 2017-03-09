@@ -252,11 +252,13 @@ sub reads_to_disk {
   for my $rname(keys %grouped) {
     my $mode = '>>';
     unless(exists $rname_fh->{$rname}) {
-      my $path = File::Spec->catfile($self->{'outdir'}, $rname.'.txt');
+      my $path = File::Spec->catfile($self->{'outdir'}, $rname.'.txt.gz');
       $rname_fh->{$rname} = $path;
       $mode = '>';
     }
-    open my $fh, $mode, $rname_fh->{$rname};
+
+    my $gzip = sprintf 'gzip --fast -c %s %s', $mode, $rname_fh->{$rname};
+    open my $fh, '|-', $gzip or die "Can't start gzip";
     for my $record(@{$grouped{$rname}}) {
       print $fh (join "\n", $record),"\n";
     }
