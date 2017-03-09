@@ -44,7 +44,7 @@ use Sanger::CGP::Pindel::OutputGen::BamUtil;
 
 const my $PINDEL_GEN_COMM => q{ -b %s -o %s -t %s};
 const my $SAMTOOLS_FAIDX => q{ faidx %s %s > %s};
-const my $FILTER_PIN_COMM => q{gunzip -c %s | %s %s %s %s /dev/stdin};
+const my $FIFO_FILTER_TO_PIN => q{gunzip -c %s | %s %s %s %s /dev/stdin | %s %s %s %s %s %s %s};
 const my $PIN_2_VCF => q{ -mt %s -wt %s -r %s -o %s -so %s -mtp %s -wtp %s -pp '%s' -i %s};
 const my $PIN_MERGE => q{ -o %s -i %s};
 const my $FLAG => q{ -a %s -u %s -s %s -i %s -o %s -r %s};
@@ -136,7 +136,6 @@ sub pindel {
 
     ## FIFO madness
     push @command_set, 'mkfifo '.$filtered_seq; # shell for this
-    my $FIFO_FILTER_TO_PIN = q{gunzip -c %s | %s %s %s %s /dev/stdin | %s %s %s %s %s %s %s};
     push @command_set, sprintf $FIFO_FILTER_TO_PIN, (join q{ }, @{$options->{'seqs'}->{$seq}}),
                                                 _which('filter_pindel_reads'),
                                                 $refseq_file,
