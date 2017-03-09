@@ -1,7 +1,7 @@
 package Sanger::CGP::Pindel::Implement;
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2017 Genome Research Ltd.
 #
 # Author: Keiran Raine <cgpit@sanger.ac.uk>
 #
@@ -44,8 +44,7 @@ use Sanger::CGP::Pindel::OutputGen::BamUtil;
 
 const my $PINDEL_GEN_COMM => q{ -b %s -o %s -t %s};
 const my $SAMTOOLS_FAIDX => q{ faidx %s %s > %s};
-const my $FILTER_PIN_COMM => q{ %s %s %s %s};
-const my $PINDEL_COMM => q{ %s %s %s %s %s %s};
+const my $FIFO_FILTER_TO_PIN => q{gunzip -c %s | %s %s %s %s /dev/stdin | %s %s %s %s %s %s %s};
 const my $PIN_2_VCF => q{ -mt %s -wt %s -r %s -o %s -so %s -mtp %s -wtp %s -pp '%s' -i %s};
 const my $PIN_MERGE => q{ -o %s -i %s};
 const my $FLAG => q{ -a %s -u %s -s %s -i %s -o %s -r %s};
@@ -111,10 +110,12 @@ sub pindel {
     my $refs = File::Spec->catdir($tmp, 'refs');
     make_path($refs) unless(-e $refs);
 
+    my $refseq_file = File::Spec->catfile($refs, "$seq.fa");
+
     my $split_comm = _which('samtools');
     $split_comm .= sprintf $SAMTOOLS_FAIDX,  $options->{'reference'},
                                           $seq,
-                                          File::Spec->catfile($refs, "$seq.fa");
+                                          $refseq_file;
 
     push @command_set, $split_comm;
 
@@ -122,31 +123,31 @@ sub pindel {
     my $filter_out = File::Spec->catdir($tmp, 'filter');
     make_path($filter_out) unless(-e $filter_out);
 
-    my $filter_comm = _which('filter_pindel_reads');
-    $filter_comm .= sprintf $FILTER_PIN_COMM, File::Spec->catfile($refs, "$seq.fa"),
-                                          $seq,
-                                          File::Spec->catfile($filter_out, $seq),
-                                          (join q{ }, @{$options->{'seqs'}->{$seq}});
-
-    push @command_set, $filter_comm;
+    my $filtered_seq = File::Spec->catfile($filter_out, $seq);
 
     # pindel
     my $gen_out = File::Spec->catdir($tmp, 'pout');
     make_path($gen_out) unless(-e $gen_out);
 
-    my $filtered = File::Spec->catdir($tmp, 'filter');
     my ($bd_fh, $bd_file) = tempfile(File::Spec->catfile($tmp, 'pindel_db_XXXX'), UNLINK => 0);
     close $bd_fh;
 
-    my $pindel_comm = _which('pindel');
-    $pindel_comm .= sprintf $PINDEL_COMM, File::Spec->catfile($refs, "$seq.fa"),
-                                      File::Spec->catfile($filtered, $seq),
-                                      $gen_out,
-                                      $seq,
-                                      $bd_file,
-                                      5;
+    unlink $filtered_seq if(-e $filtered_seq);
 
-    push @command_set, $pindel_comm;
+    ## FIFO madness
+    push @command_set, 'mkfifo '.$filtered_seq; # shell for this
+    push @command_set, sprintf $FIFO_FILTER_TO_PIN, (join q{ }, @{$options->{'seqs'}->{$seq}}),
+                                                _which('filter_pindel_reads'),
+                                                $refseq_file,
+                                                $seq,
+                                                $filtered_seq,
+                                                _which('pindel'),
+                                                $refseq_file,
+                                                $filtered_seq,
+                                                $gen_out,
+                                                $seq,
+                                                $bd_file,
+                                                5;
 
     PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), \@command_set, $index);
 
@@ -155,6 +156,8 @@ sub pindel {
       unlink File::Spec->catfile($gen_out, (join '_', $seq, $seq, $ext));
     }
     unlink $bd_file;
+    unlink $refseq_file;
+    unlink $filtered_seq;
 
     #
     ## The rest is auto-magical
@@ -330,9 +333,9 @@ sub determine_jobs {
   my %seqs;
   for my $in_bam($options->{'tumour'}, $options->{'normal'}) {
     my $samp_path = File::Spec->catdir($tmp, sanitised_sample_from_bam($in_bam));
-    my @files = file_list($samp_path, qr/\.txt$/);
+    my @files = file_list($samp_path, qr/\.txt(:?\.gz)$/);
     for my $file(@files) {
-      my ($seq) = $file =~ m/(.+)\.txt$/;
+      my ($seq) = $file =~ m/(.+)\.txt(:?\.gz)$/;
       if(first { $seq eq $_ } @valid_seqs) {
         push @{$seqs{$seq}}, File::Spec->catfile($samp_path, $file);
       }
