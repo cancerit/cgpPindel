@@ -369,7 +369,7 @@ int main (int argc, char *argv[]) {
 
 	// ################### module 1: define input and output #####################
   if (argc != 7) {
-    cout << "\nWelcome to Pindel, developed by Kai Ye, k.ye@lumc.nl\n\n"
+    cerr << "\nWelcome to Pindel, developed by Kai Ye, k.ye@lumc.nl\n\n"
          << "5 parameters are required here:\n"
          << "1. Input: the reference genome sequences in fasta format;\n"
          << "2. Input: the unmapped reads in a modified fastq format;\n"
@@ -405,15 +405,15 @@ int main (int argc, char *argv[]) {
   // #################################################################
 	MaxRangeIndex = atoi(argv[6]);
 	if (MaxRangeIndex <= 2) {
-		cout << "Please set Maximum event size larger than 2" << endl;
+		cerr << "Please set Maximum event size larger than 2" << endl;
 		return 0;
 	}
 	if (MaxRangeIndex > 12) {
-		cout << "Please set Maximum event size <= 12" << endl;
+		cerr << "Please set Maximum event size <= 12" << endl;
 		return 0;
 	}
-   if (MaxRangeIndex > 5 && MaxRangeIndex <= 8) cout << "Pindel may be slow if you have too much data." << endl;
-	if (MaxRangeIndex > 8) cout << "Pindel may be VERY slow if you have too much data." << endl;
+   if (MaxRangeIndex > 5 && MaxRangeIndex <= 8) cerr << "Pindel may be slow if you have too much data." << endl;
+	if (MaxRangeIndex > 8) cerr << "Pindel may be VERY slow if you have too much data." << endl;
 
 	const string WhichChr = argv[4];
 
@@ -445,7 +445,7 @@ int main (int argc, char *argv[]) {
     //strcpy(SIOutputFilename, (OutputFolder + inputFilename + "_SI").c_str());
     ofstream SIoutputfile_test(SIOutputFilename.c_str());
 	 if (!SIoutputfile_test) {
-		 cout << "Sorry, cannot write to the file: " << SIOutputFilename << endl;
+		 cerr << "Sorry, cannot write to the file: " << SIOutputFilename << endl;
 		 return 1;
 	 }
 	 SIoutputfile_test.close();
@@ -455,7 +455,7 @@ int main (int argc, char *argv[]) {
     //strcpy(DeletionOutputFilename, (OutputFolder + inputFilename + "_D").c_str());
     ofstream DeletionOutf_test(DeletionOutputFilename.c_str());
 	 if (!DeletionOutf_test) {
-		 cout << "Sorry, cannot write to the file: " << DeletionOutputFilename << endl;
+		 cerr << "Sorry, cannot write to the file: " << DeletionOutputFilename << endl;
 		 return 1;
 	 }
 	 DeletionOutf_test.close();
@@ -464,7 +464,7 @@ int main (int argc, char *argv[]) {
 	//strcpy(DeletionInsertinOutputFilename, (OutputFolder + inputFilename + "_DI").c_str());
 	ofstream TDOutf_test(TDOutputFilename.c_str());
 	if (!TDOutf_test) {
-		cout << "Sorry, cannot write to the file: " << TDOutputFilename << endl;
+		cerr << "Sorry, cannot write to the file: " << TDOutputFilename << endl;
 		return 1;
 	}
 	TDOutf_test.close();
@@ -474,7 +474,7 @@ int main (int argc, char *argv[]) {
 	//strcpy(InversionOutputFilename, (OutputFolder + inputFilename + "_INV").c_str());
 	ofstream InversionOutf_test(InversionOutputFilename.c_str());
 	if (!InversionOutf_test) {
-		cout << "Sorry, cannot write to the file: " << InversionOutputFilename << endl;
+		cerr << "Sorry, cannot write to the file: " << InversionOutputFilename << endl;
 		return 1;
 	}
 	InversionOutf_test.close();
@@ -484,7 +484,7 @@ int main (int argc, char *argv[]) {
 	//strcpy(LargeInsertionOutputFilename, (OutputFolder + inputFilename + "_LI").c_str());
 	ofstream LargeInsertionOutf_test(LargeInsertionOutputFilename.c_str());
 	if (!LargeInsertionOutf_test) {
-		cout << "Sorry, cannot write to the file: " << LargeInsertionOutputFilename << endl;
+		cerr << "Sorry, cannot write to the file: " << LargeInsertionOutputFilename << endl;
 		return 1;
 	}
 	LargeInsertionOutf_test.close();
@@ -494,7 +494,7 @@ int main (int argc, char *argv[]) {
 	//strcpy(RestOutputFilename, (OutputFolder + inputFilename + "_BP").c_str());
 	ofstream RestOutf_test(RestOutputFilename.c_str());
 	if (!RestOutf_test) {
-		cout << "Sorry, cannot write to the file: " << RestOutputFilename << endl;
+		cerr << "Sorry, cannot write to the file: " << RestOutputFilename << endl;
 		return 1;
 	}
 	RestOutf_test.close();
@@ -631,12 +631,12 @@ int main (int argc, char *argv[]) {
 
        ReadInOneChr(inf_Seq, CurrentChr, WhichChr);
 	    if (CurrentChr.empty()) {
-			 cout << "Cannot find the requested chr." << endl;
+			 cerr << "Cannot find the requested chr." << endl;
 			 return 1;
 		 }
 	    CONS_Chr_Size = CurrentChr.size() - 2 * SpacerBeforeAfter;
        unsigned NumBoxes =(unsigned) (CurrentChr.size() / BoxSize) + 1;
-		 cout << NumBoxes << "\t" << BoxSize << endl;
+		 cerr << NumBoxes << "\t" << BoxSize << endl;
 
       // cout << "NumBoxes: " << NumBoxes << endl;
        vector <unsigned> SIs[NumBoxes];
@@ -703,7 +703,7 @@ int main (int argc, char *argv[]) {
 					 }
 				 }
 			 }
-			 cout << "BreakDancer events: " << All_BD_events.size() - 1 << endl;
+			 cerr << "BreakDancer events: " << All_BD_events.size() - 1 << endl;
 
 		 //}
 
@@ -715,7 +715,7 @@ int main (int argc, char *argv[]) {
           ReturnFromReadingReads = 0;
           ReturnFromReadingReads = ReadInRead(inf_ReadsSeq, WhichChr, CurrentChr, Reads);
           if (ReturnFromReadingReads == 1) {
-             cout << "malformed record detected!" << endl;
+             cerr << "malformed record detected!" << endl;
 	          return 1;
           }
 			 else if (Reads.size() == 0) return 0;
@@ -724,9 +724,9 @@ int main (int argc, char *argv[]) {
 		 Time_Mine_E = time(NULL);
 
 		 if (Reads.size())
-		    cout << "There are " << Reads.size() << " reads for this chromosome." <<endl;
+		    cerr << "There are " << Reads.size() << " reads for this chromosome." <<endl;
        else {
-          cout << "There are no reads for this chromosome." <<endl;
+          cerr << "There are no reads for this chromosome." <<endl;
           return 0;
        }
        Num_Left = Reads.size();
@@ -736,7 +736,7 @@ int main (int argc, char *argv[]) {
 
 		 // ################### module 3: search breakpoints #####################
 		 if (All_BD_events.size() > 1) {
-			 cout << "Searching additional breakpoints by adding BreakDancer results" << endl;
+			 cerr << "Searching additional breakpoints by adding BreakDancer results" << endl;
 			    short * BD_INDEX = new short[CurrentChr.size()];
 				 for (unsigned i = 0; i < CurrentChr.size(); i++) BD_INDEX[i] = 0;
 				 for (unsigned i = 1; i < All_BD_events.size(); i++) {
@@ -750,7 +750,7 @@ int main (int argc, char *argv[]) {
 					 if (BD_INDEX[i] > 0) BD_Plus++;
 					 else if (BD_INDEX[i] < 0) BD_Minus++;
 				 }
-				 cout << BD_Plus << "\t" << BD_Minus << endl;
+				 cerr << BD_Plus << "\t" << BD_Minus << endl;
 
 			 //ADDITIONAL_MISMATCH = 2;
 			 //Seq_Error_Rate = 0.05;
@@ -812,14 +812,14 @@ int main (int argc, char *argv[]) {
 					 }
 				 }
 			 }
-			 cout << "\tNumber of reads with far end mapped: " << CountFarEnd << "\t"
+			 cerr << "\tNumber of reads with far end mapped: " << CountFarEnd << "\t"
 			 //<< "\tTotal number of reads:" << Reads.size() << "\n"
 			 //<< CountFarEnd * 100.0 / Reads.size() << " %\n"
 			 << "Far+: " << CountFarEndPlus << "\tFar-: " << CountFarEndMinus << endl;
 		    delete[] BD_INDEX;
 		 }
 
-		 cout << "Searching breakpoints of deletion events" << endl;
+		 cerr << "Searching breakpoints of deletion events" << endl;
 		 for (short RangeIndex = 1; RangeIndex < MaxRangeIndex; RangeIndex++) {
 
 			 CountFarEnd = 0;
@@ -859,13 +859,13 @@ int main (int argc, char *argv[]) {
 				 }
 			 }
 
-			 cout << RangeIndex << "\tNumber of reads with far end mapped: " << CountFarEnd << "\t"
+			 cerr << RangeIndex << "\tNumber of reads with far end mapped: " << CountFarEnd << "\t"
 			      //<< "\tTotal number of reads:" << Reads.size() << "\n"
 			      //<< CountFarEnd * 100.0 / Reads.size() << " %\n"
 			      << "Far+: " << CountFarEndPlus << "\tFar-: " << CountFarEndMinus << endl;
 		 }
 
-		 cout << "Searching breakpoints of SI events" << endl;
+		 cerr << "Searching breakpoints of SI events" << endl;
 		 for (short RangeIndex = 1; RangeIndex < 2; RangeIndex++) {
 			 CountFarEnd = 0;
 			 CountFarEndMinus = 0;
@@ -895,7 +895,7 @@ int main (int argc, char *argv[]) {
 				 }
 			 }
 
-			 cout << RangeIndex << "\tNumber of reads with far end mapped: " << CountFarEnd << "\t"
+			 cerr << RangeIndex << "\tNumber of reads with far end mapped: " << CountFarEnd << "\t"
 			 //<< "\tTotal number of reads:" << Reads.size() << "\n"
 			 //<< CountFarEnd * 100.0 / Reads.size() << " %\n"
 			 << "Far+: " << CountFarEndPlus << "\tFar-: " << CountFarEndMinus << endl;
@@ -904,7 +904,7 @@ int main (int argc, char *argv[]) {
 if (Analyze_TD_INV_LI_Others) {
 
 
-		 cout << "Searching breakpoints of tandem duplication events" << endl;
+		 cerr << "Searching breakpoints of tandem duplication events" << endl;
 		 //int CountFarEnd, CountFarEndPlus, CountFarEndMinus;
 		 for (short RangeIndex = 1; RangeIndex < MaxRangeIndex; RangeIndex++) {
 
@@ -955,13 +955,13 @@ if (Analyze_TD_INV_LI_Others) {
 				 }
 			 }
 
-			 cout << RangeIndex << "\tNumber of reads with far end mapped: " << CountFarEnd << "\t"
+			 cerr << RangeIndex << "\tNumber of reads with far end mapped: " << CountFarEnd << "\t"
 			 //<< "\tTotal number of reads:" << Reads.size() << "\n"
 			 //<< CountFarEnd * 100.0 / Reads.size() << " %\n"
 			 << "Far+: " << CountFarEndPlus << "\tFar-: " << CountFarEndMinus << endl;
 		 }
 
-		 cout << "Searching breakpoints of inversions" << endl;
+		 cerr << "Searching breakpoints of inversions" << endl;
 		 unsigned ReadsUsedForD = 0;
 		 unsigned ReadsUsedForDI = 0;
 		 for (short RangeIndex = 1; RangeIndex < MaxRangeIndex; RangeIndex++) {
@@ -1002,7 +1002,7 @@ if (Analyze_TD_INV_LI_Others) {
 					 }
 				 }
 			 }
-			 cout << RangeIndex << "\tNumber of reads with far end mapped: " << CountFarEnd << "\t"
+			 cerr << RangeIndex << "\tNumber of reads with far end mapped: " << CountFarEnd << "\t"
 			 //<< "\tTotal number of reads:" << Reads.size() << "\n"
 			 //<< CountFarEnd * 100.0 / Reads.size() << " %\n"
 			 << "Far+: " << CountFarEndPlus << "\tFar-: " << CountFarEndMinus << endl;
@@ -1010,7 +1010,7 @@ if (Analyze_TD_INV_LI_Others) {
 } // if (Analyze_TD_INV_LI_Others)
 
 		 // compare backup with current value
-		 cout << "revisit all breakpoints identified ...";
+		 cerr << "revisit all breakpoints identified ...";
 		 for (unsigned ReadIndex = 0; ReadIndex < Reads.size(); ReadIndex++) {
 			 if (Reads[ReadIndex].UP_Far.empty()) {
 				 if (!Reads[ReadIndex].UP_Far_backup.empty()) {
@@ -1024,13 +1024,13 @@ if (Analyze_TD_INV_LI_Others) {
 				 }
 			 }
 		 }
-		 cout << " done." << endl;
+		 cerr << " done." << endl;
 
 
 	    // ################### module 4: search variants and report #####################
 
 		 //short MAX_MISMATCHES_Per_Read = 0;;
-		 cout << "Searching deletion events ... " << endl;
+		 cerr << "Searching deletion events ... " << endl;
 		 for (unsigned ReadIndex = 0; ReadIndex < Reads.size(); ReadIndex++) {
 			 if (Reads[ReadIndex].UP_Far.empty()) continue;
 			 //MAX_MISMATCHES_Per_Read = (short)(Seq_Error_Rate * Reads[ReadIndex].ReadLength + 1);
@@ -1159,14 +1159,14 @@ if (Analyze_TD_INV_LI_Others) {
 				 }
 			}
 		 }
-			cout << "Total: " << Count_D << "\t+" << Count_D_Plus << "\t-" << Count_D_Minus << endl;
+			cerr << "Total: " << Count_D << "\t+" << Count_D_Plus << "\t-" << Count_D_Minus << endl;
 			ofstream DeletionOutf(DeletionOutputFilename.c_str());
 			SortOutputD(NumBoxes, CurrentChr, Reads, Deletions, DeletionOutf);
 			//DeletionOutf.close();
 			for (unsigned int i = 0; i < NumBoxes; i++) Deletions[i].clear();
 
 
-		 cout << "Searching deletion-insertions ... " << endl;
+		 cerr << "Searching deletion-insertions ... " << endl;
 		 unsigned CloseIndex, FarIndex;
 		 for (unsigned ReadIndex = 0; ReadIndex < Reads.size(); ReadIndex++) {
 			 if (Reads[ReadIndex].Used || Reads[ReadIndex].UP_Far.empty()) continue;
@@ -1292,7 +1292,7 @@ if (Analyze_TD_INV_LI_Others) {
 				 }
 			 }
 		 }
-		 cout << "Total: " << Count_DI << "\t+" << Count_DI_Plus << "\t-" << Count_DI_Minus << endl;
+		 cerr << "Total: " << Count_DI << "\t+" << Count_DI_Plus << "\t-" << Count_DI_Minus << endl;
 		 //ofstream DeletionInsertionOutf(DeletionInsertinOutputFilename.c_str());
 		 SortOutputDI(NumBoxes, CurrentChr, Reads, DI, DeletionOutf);
 		 //DeletionInsertionOutf.close();
@@ -1302,7 +1302,7 @@ if (Analyze_TD_INV_LI_Others) {
 if (Analyze_TD_INV_LI_Others) {
 
 
-		 cout << "Searching tandem dupliation events ... " << endl;
+		 cerr << "Searching tandem dupliation events ... " << endl;
 		 for (unsigned ReadIndex = 0; ReadIndex < Reads.size(); ReadIndex++) {
 			 if (Reads[ReadIndex].Used || Reads[ReadIndex].UP_Far.empty()) continue;
 			 //short MAX_MISMATCHES_Per_Read = (short)(Seq_Error_Rate * Reads[ReadIndex].ReadLength + 1);
@@ -1385,13 +1385,13 @@ if (Analyze_TD_INV_LI_Others) {
 				 }
 			 }
 		 }
-		 cout << "Total: " << Count_TD << "\t+" << Count_TD_Plus << "\t-" << Count_TD_Minus << endl;
+		 cerr << "Total: " << Count_TD << "\t+" << Count_TD_Plus << "\t-" << Count_TD_Minus << endl;
 		 ofstream TDOutf(TDOutputFilename.c_str());
 		 SortOutputTD(NumBoxes, CurrentChr, Reads, TD, TDOutf);
 		 //TDOutf.close();
        for (unsigned int i = 0; i < NumBoxes; i++) TD[i].clear();
 
-		 cout << "Searching tandem dupliation events with non-template sequence ... " << endl;
+		 cerr << "Searching tandem dupliation events with non-template sequence ... " << endl;
 		 for (unsigned ReadIndex = 0; ReadIndex < Reads.size(); ReadIndex++) {
 			 if (Reads[ReadIndex].Used || Reads[ReadIndex].UP_Far.empty()) continue;
 			 //MAX_MISMATCHES_Per_Read = (short)(Seq_Error_Rate * Reads[ReadIndex].ReadLength + 1);
@@ -1481,13 +1481,13 @@ if (Analyze_TD_INV_LI_Others) {
 				 }
 			 }
 		 }
-		 cout << "Total: " << Count_TD_NT << "\t+" << Count_TD_NT_Plus << "\t-" << Count_TD_NT_Minus << endl;
+		 cerr << "Total: " << Count_TD_NT << "\t+" << Count_TD_NT_Plus << "\t-" << Count_TD_NT_Minus << endl;
 		 //ofstream TDOutf(TDOutputFilename.c_str());
 		 SortOutputTD_NT(NumBoxes, CurrentChr, Reads, TD_NT, TDOutf);
 		 TDOutf.close();
        for (unsigned int i = 0; i < NumBoxes; i++) TD_NT[i].clear();
 
-		 cout << "Searching inversions ... " << endl;
+		 cerr << "Searching inversions ... " << endl;
 		 for (unsigned ReadIndex = 0; ReadIndex < Reads.size(); ReadIndex++) {
 			 if (Reads[ReadIndex].Used || Reads[ReadIndex].UP_Far.empty()) continue;
 			 if (Reads[ReadIndex].UP_Close[0].Strand != Reads[ReadIndex].UP_Far[0].Strand
@@ -1657,13 +1657,13 @@ if (Analyze_TD_INV_LI_Others) {
 				 }
 			 }
 		 }
-		 cout << "Total: " << Count_Inv << "\t+" << Count_Inv_Plus << "\t-" << Count_Inv_Minus << endl;
+		 cerr << "Total: " << Count_Inv << "\t+" << Count_Inv_Plus << "\t-" << Count_Inv_Minus << endl;
 		 ofstream InversionOutf(InversionOutputFilename.c_str());
 		 SortOutputInv(NumBoxes, CurrentChr, Reads, Inv, InversionOutf);
 		 //InversionOutf.close();
        for (unsigned int i = 0; i < NumBoxes; i++) Inv[i].clear();
 
-		 cout << "Searching inversions with non-template sequence ... " << endl;
+		 cerr << "Searching inversions with non-template sequence ... " << endl;
 		 for (unsigned ReadIndex = 0; ReadIndex < Reads.size(); ReadIndex++) {
 			 if (Reads[ReadIndex].Used || Reads[ReadIndex].UP_Far.empty()) continue;
 			 CloseIndex = Reads[ReadIndex].UP_Close.size() - 1;
@@ -1832,7 +1832,7 @@ if (Analyze_TD_INV_LI_Others) {
 				 }
 			 }
 		 }
-		 cout << "Total: " << Count_Inv_NT << "\t+" << Count_Inv_NT_Plus << "\t-" << Count_Inv_NT_Minus << endl;
+		 cerr << "Total: " << Count_Inv_NT << "\t+" << Count_Inv_NT_Plus << "\t-" << Count_Inv_NT_Minus << endl;
 		 //ofstream InversionOutf(InversionOutputFilename.c_str());
 		 SortOutputInv_NT(NumBoxes, CurrentChr, Reads, Inv_NT, InversionOutf);
 		 //InversionOutf.close();
@@ -1840,7 +1840,7 @@ if (Analyze_TD_INV_LI_Others) {
 
 } // Analyze_TD_INV_LI_Others
 
-		 cout << "Searching short insertions ... " << endl;
+		 cerr << "Searching short insertions ... " << endl;
 		 for (unsigned ReadIndex = 0; ReadIndex < Reads.size(); ReadIndex++) {
 			 if (Reads[ReadIndex].Used || Reads[ReadIndex].UP_Far.empty()) continue;
 			 if (!Reads[ReadIndex].UP_Far.empty())
@@ -1963,7 +1963,7 @@ if (Analyze_TD_INV_LI_Others) {
 				 }
 			 }
 		 }
-		 cout << "Total: " << Count_SI << "\t+" << Count_SI_Plus << "\t-" << Count_SI_Minus << endl;
+		 cerr << "Total: " << Count_SI << "\t+" << Count_SI_Plus << "\t-" << Count_SI_Minus << endl;
 		 ofstream SIoutputfile(SIOutputFilename.c_str());
 		 SortOutputSI(NumBoxes, CurrentChr, Reads, SIs, SIoutputfile);
 		 SIoutputfile.close();
@@ -1980,7 +1980,7 @@ if (Analyze_TD_INV_LI_Others) {
 			 if (Reads[Index].Used) Count_Used++;
 		 }
 
-		 cout << "Total: " << Reads.size() << "\tClose end found " << Count_Close << "\tFar end found " << Count_Far << "\tUsed\t" << Count_Used << "\n\n";
+		 cerr << "Total: " << Reads.size() << "\tClose end found " << Count_Close << "\tFar end found " << Count_Far << "\tUsed\t" << Count_Used << "\n\n";
 
 		 Reads.clear();
 
@@ -2012,9 +2012,9 @@ if (Analyze_TD_INV_LI_Others) {
       //Time_Load_S = time(NULL);
     //}
 
-  cout << "Loading genome sequences and reads: " << AllLoadings << " seconds." << endl;
+  cerr << "Loading genome sequences and reads: " << AllLoadings << " seconds." << endl;
   //cout << "Mining indels: " << AllMinings << " seconds." << endl;
-  cout << "Mining, Sorting and output results: " << AllSortReport << " seconds." << endl;
+  cerr << "Mining, Sorting and output results: " << AllSortReport << " seconds." << endl;
   return 0;
 }//main
 
@@ -2025,14 +2025,14 @@ void ReadInOneChr(ifstream & inf_Seq, string & TheInput, const string & ChrName)
    string TempLine, TempChrName;
 	inf_Seq >> TempChar;
 	if (TempChar != '>') {
-		cout << "Please use fasta format for the reference file." << endl;
+		cerr << "Please use fasta format for the reference file." << endl;
 		TheInput.clear();
 		return;
 	}
 	while (inf_Seq >> TempChrName) {
-		cout << "Processing chromosome " << TempChrName << endl;
+		cerr << "Processing chromosome " << TempChrName << endl;
 		if (!TheInput.empty()) {
-		   cout << "Skip the rest of chromosomes.\n";
+		   cerr << "Skip the rest of chromosomes.\n";
 			break;
 		}
 		if (TempChrName == ChrName) {
@@ -2070,18 +2070,18 @@ void ReadInOneChr(ifstream & inf_Seq, string & TheInput, const string & ChrName)
 			}
 		}
 	}
-   cout << ChrName << "\t" << TheInput.size() << "\t";
+   cerr << ChrName << "\t" << TheInput.size() << "\t";
 	if (!TheInput.empty()) {
 		string Spacer = "";
 		for (unsigned i = 0; i < SpacerBeforeAfter; i++) Spacer += "N";
 		TheInput = Spacer + TheInput + Spacer;
 	}
-	cout << TheInput.size() << endl;
+	cerr << TheInput.size() << endl;
    return;
 }
 
 short ReadInRead(ifstream & inf_ReadSeq, const string & FragName, const string & CurrentChr, vector <SPLIT_READ> & Reads) {
-	cout << "Scanning and processing reads anchored in " << FragName << endl;
+	cerr << "Scanning and processing reads anchored in " << FragName << endl;
 	//short ADDITIONAL_MISMATCH = 1;
 
 	SPLIT_READ Temp_One_Read;
@@ -2098,13 +2098,13 @@ short ReadInRead(ifstream & inf_ReadSeq, const string & FragName, const string &
 	VectorTag.clear();
 	while (inf_ReadSeq >> Temp_One_Read.Name) {
 		if (Temp_One_Read.Name[0] != FirstCharReadName) {
-			cout << "Something wrong with the read name: " << Temp_One_Read.Name << endl;
+			cerr << "Something wrong with the read name: " << Temp_One_Read.Name << endl;
 			Reads.clear();
 			return 1;
 		}
 		NumReadScanned++;
 		if (NumReadScanned % 1000000 == 0)
-			cout << NumReadScanned << endl;
+			cerr << NumReadScanned << endl;
 		getline(inf_ReadSeq, TempLine);
 		inf_ReadSeq >> Temp_One_Read.UnmatchedSeq;
 		getline(inf_ReadSeq, TempLine);
@@ -2177,8 +2177,8 @@ short ReadInRead(ifstream & inf_ReadSeq, const string & FragName, const string &
 		}
 	}
 	if (FirstChr) {
-		cout << "\nThe last read Pindel scanned: \n";
-		cout << Temp_One_Read.Name << "\n"
+		cerr << "\nThe last read Pindel scanned: \n";
+		cerr << Temp_One_Read.Name << "\n"
 		<< Temp_One_Read.UnmatchedSeq << "\n"
 		<< Temp_One_Read.MatchedD << "\t"
 		<< Temp_One_Read.FragName << "\t"
@@ -2189,17 +2189,17 @@ short ReadInRead(ifstream & inf_ReadSeq, const string & FragName, const string &
 		FirstChr = false;
       //ReportLength = Temp_One_Read.UnmatchedSeq.size();
 	}
-	cout << "NumReadScanned:\t" << NumReadScanned << endl;
-	cout << "NumReadInChr:\t" << NumReadInChr << endl;
-	cout << "NumReadStored:\t" << Reads.size() << endl;
-	cout << "NumReadStored / NumReadInChr = " << Reads.size() * 100.0 / NumReadInChr << " %\n"
+	cerr << "NumReadScanned:\t" << NumReadScanned << endl;
+	cerr << "NumReadInChr:\t" << NumReadInChr << endl;
+	cerr << "NumReadStored:\t" << Reads.size() << endl;
+	cerr << "NumReadStored / NumReadInChr = " << Reads.size() * 100.0 / NumReadInChr << " %\n"
 	<< "InChrPlus \t" << InChrPlus << "\tGetPlus \t" << GetPlus << "\t" << GetPlus * 100.0 / InChrPlus
 	<< " %\n" << "InChrMinus\t" << InChrMinus  << "\tGetMinus\t" << GetMinus
 	<< "\t" << GetMinus * 100.0 / InChrMinus << " %\n" << endl;
 	inf_ReadSeq.close();
 	if (Reads.size() == 0) return 0;
 	//cout << LeftReads.size() << endl;
-	cout << "sorting tags ... ";
+	cerr << "sorting tags ... ";
 	string Str4Exchange;
 	for (short i = 0; i < VectorTag.size() - 1; i++) {
 		for (short j = 1; j < VectorTag.size(); j++) {
@@ -2220,7 +2220,7 @@ short ReadInRead(ifstream & inf_ReadSeq, const string & FragName, const string &
 			}
 		}
 	}
-	cout << " finished!" << endl;
+	cerr << " finished!" << endl;
 	return 0;
 }
 
@@ -3304,7 +3304,7 @@ void OutputDI(const vector <SPLIT_READ> & DI,
 
 
 void SortOutputSI(const unsigned & NumBoxes, const string & CurrentChr, vector <SPLIT_READ> & Reads, vector <unsigned> SIs[], ofstream & SIsOutf) {
-   cout << "Sorting and outputing short insertions ..." << endl;
+   cerr << "Sorting and outputing short insertions ..." << endl;
    unsigned int SIsNum;
    short CompareResult;
    SPLIT_READ Temp4Exchange;
@@ -3462,11 +3462,11 @@ void SortOutputSI(const unsigned & NumBoxes, const string & CurrentChr, vector <
          }
       }   // if (!insertion[Box_index].empty())
    }
-   cout << "Short insertions: " << NumberOfSIsInstances << endl << endl;
+   cerr << "Short insertions: " << NumberOfSIsInstances << endl << endl;
 }
 
 void SortOutputTD(const unsigned & NumBoxes, const string & CurrentChr, vector <SPLIT_READ> & AllReads, vector <unsigned> TDs[], ofstream & TDOutf) {
-   cout << "Sorting and outputing tandem duplications ..." << endl;
+   cerr << "Sorting and outputing tandem duplications ..." << endl;
    unsigned int TDNum;
    short CompareResult;
    SPLIT_READ Temp4Exchange;
@@ -3607,11 +3607,11 @@ void SortOutputTD(const unsigned & NumBoxes, const string & CurrentChr, vector <
          }
       }   // if (!Deletions[Box_index].empty())
    } // for (unsigned Box_index = 0; Box_index < NumBoxes; Box_index++)
-   cout << "Tandem duplications: " << NumberOfTDInstances << endl << endl;
+   cerr << "Tandem duplications: " << NumberOfTDInstances << endl << endl;
 }
 
 void SortOutputTD_NT(const unsigned & NumBoxes, const string & CurrentChr, vector <SPLIT_READ> & AllReads, vector <unsigned> TDs[], ofstream & TDOutf) {
-   cout << "Sorting and outputing tandem duplications with non-template sequence ..." << endl;
+   cerr << "Sorting and outputing tandem duplications with non-template sequence ..." << endl;
    unsigned int TDNum;
    short CompareResult;
    SPLIT_READ Temp4Exchange;
@@ -3763,11 +3763,11 @@ void SortOutputTD_NT(const unsigned & NumBoxes, const string & CurrentChr, vecto
          }
       }   // if (!Deletions[Box_index].empty())
    } // for (unsigned Box_index = 0; Box_index < NumBoxes; Box_index++)
-   cout << "Tandem duplications with non-template sequence (TD_NT): " << Count_TD_NT_output << "\n\n";
+   cerr << "Tandem duplications with non-template sequence (TD_NT): " << Count_TD_NT_output << "\n\n";
 }
 
 void SortOutputD(const unsigned & NumBoxes, const string & CurrentChr, vector <SPLIT_READ> & Reads, vector <unsigned> Deletions[], ofstream & DeletionOutf) {
-   cout << "Sorting and outputing deletions ..." << endl;
+   cerr << "Sorting and outputing deletions ..." << endl;
    unsigned int DeletionsNum;
    short CompareResult;
    SPLIT_READ Temp4Exchange;
@@ -3914,11 +3914,11 @@ void SortOutputD(const unsigned & NumBoxes, const string & CurrentChr, vector <S
          }
       }   // if (!Deletions[Box_index].empty())
    } // for (unsigned Box_index = 0; Box_index < NumBoxes; Box_index++)
-   cout << "Deletions: " << NumberOfDeletionsInstances << endl << endl;
+   cerr << "Deletions: " << NumberOfDeletionsInstances << endl << endl;
 }
 
 void SortOutputInv(const unsigned & NumBoxes, const string & CurrentChr, vector <SPLIT_READ> & Reads, vector <unsigned> Inv[], ofstream & InvOutf) {
-   cout << "Sorting and outputing Inversions ..." << endl;
+   cerr << "Sorting and outputing Inversions ..." << endl;
    unsigned int InversionsNum;
    short CompareResult;
    SPLIT_READ Temp4Exchange;
@@ -4053,11 +4053,11 @@ void SortOutputInv(const unsigned & NumBoxes, const string & CurrentChr, vector 
          }
       }   // if (!Deletions[Box_index].empty())
    } // for (unsigned Box_index = 0; Box_index < NumBoxes; Box_index++)
-   cout << "Inversions (INV): " << NumberOfInvInstances << endl << endl;
+   cerr << "Inversions (INV): " << NumberOfInvInstances << endl << endl;
 }
 
 void SortOutputInv_NT(const unsigned & NumBoxes, const string & CurrentChr, vector <SPLIT_READ> & Reads, vector <unsigned> Inv[], ofstream & InvOutf) {
-   cout << "Sorting and outputing Inversions with non-template sequence ..." << endl;
+   cerr << "Sorting and outputing Inversions with non-template sequence ..." << endl;
    unsigned int InversionsNum;
    short CompareResult;
    SPLIT_READ Temp4Exchange;
@@ -4211,11 +4211,11 @@ void SortOutputInv_NT(const unsigned & NumBoxes, const string & CurrentChr, vect
          }
       }   // if (!Deletions[Box_index].empty())
    } // for (unsigned Box_index = 0; Box_index < NumBoxes; Box_index++)
-   cout << "Inversions with non-template sequence (INV_NT): " << Count_INV_NT_output << endl << endl;
+   cerr << "Inversions with non-template sequence (INV_NT): " << Count_INV_NT_output << endl << endl;
 }
 
 void SortOutputDI(const unsigned & NumBoxes, const string & CurrentChr, vector <SPLIT_READ> & Reads, vector <unsigned> DI[], ofstream & DIOutf) {
-   cout << "Sorting and outputing deletions with non-template sequences ..." << endl;
+   cerr << "Sorting and outputing deletions with non-template sequences ..." << endl;
    unsigned int DINum;
    short CompareResult;
    SPLIT_READ Temp4Exchange;
@@ -4356,7 +4356,7 @@ void SortOutputDI(const unsigned & NumBoxes, const string & CurrentChr, vector <
              }
       }   // if (!Deletions[Box_index].empty())
    } // for (unsigned Box_index = 0; Box_index < NumBoxes; Box_index++)
-   cout << "deletions with non-template sequences: " << NumberOfDIInstances << endl << endl;
+   cerr << "deletions with non-template sequences: " << NumberOfDIInstances << endl << endl;
 }
 
 
@@ -5731,7 +5731,7 @@ void SortOutputLI(const string & CurrentChr, vector <SPLIT_READ> & Reads, ofstre
 		}
 	}
 
-	cout << "Breakpoints for large insertions (LI): " << Count_LI << "\n\n";
+	cerr << "Breakpoints for large insertions (LI): " << Count_LI << "\n\n";
 }
 
 
@@ -5851,7 +5851,7 @@ void SortOutputRest(const string & CurrentChr, vector <SPLIT_READ> & Reads, ofst
 		}
 	}
 
-	cout << "Other unassigned breakpoints (BP): " << Count_BP << "\n\n";
+	cerr << "Other unassigned breakpoints (BP): " << Count_BP << "\n\n";
 }
 
 short CompareTwoString(const string & Str_A, const string & Str_B) {
