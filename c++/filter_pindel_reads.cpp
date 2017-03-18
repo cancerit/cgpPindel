@@ -240,7 +240,7 @@ int main (int argc, char *argv[]) {
 
 	// ################### module 1: define input and output #####################
   if (argc < 4) {
-    cout << "\nFiltering Pindel reads, developed by Kai Ye, k.ye@lumc.nl\n\n"
+    cerr << "\nFiltering Pindel reads, developed by Kai Ye, k.ye@lumc.nl\n\n"
          << "at least 4 parameters are required here:\n"
          << "1. Input: the reference genome sequences in fasta format;\n"
 	      << "2. Which chr/fragment\n"
@@ -258,7 +258,7 @@ int main (int argc, char *argv[]) {
 	string OutputFile = argv[3];
 	ofstream Output(OutputFile.c_str());
 	if (!Output) {
-		cout << "Sorry, cannot write to the file: " << OutputFile << endl;
+		cerr << "Sorry, cannot write to the file: " << OutputFile << endl;
 		return 1;
 	}
 
@@ -297,13 +297,13 @@ int main (int argc, char *argv[]) {
 
        ReadInOneChr(inf_Seq, CurrentChr, WhichChr);
 	    if (CurrentChr.empty()) {
-			 cout << "Cannot find the requested chr." << endl;
+			 cerr << "Cannot find the requested chr." << endl;
 			 return 1;
 		 }
 	    CONS_Chr_Size = CurrentChr.size() - 2 * SpacerBeforeAfter;
 
-	for (int FileIndex = 4; FileIndex <= argc; FileIndex++) {
-		cout << "processing file: " << argv[FileIndex] << endl;
+	for (int FileIndex = 4; FileIndex < argc; FileIndex++) {
+		cerr << "processing file: " << argv[FileIndex] << endl;
 		ifstream  inf_ReadsSeq(argv[FileIndex]);   // input file name
 		ReadInRead(inf_ReadsSeq, CurrentChr, WhichChr, Output);
 	}
@@ -318,14 +318,14 @@ void ReadInOneChr(ifstream & inf_Seq, string & TheInput, const string & ChrName)
    string TempLine, TempChrName;
 	inf_Seq >> TempChar;
 	if (TempChar != '>') {
-		cout << "Please use fasta format for the reference file." << endl;
+		cerr << "Please use fasta format for the reference file." << endl;
 		TheInput.clear();
 		return;
 	}
 	while (inf_Seq >> TempChrName) {
-		cout << "Processing chromosome " << TempChrName << endl;
+		cerr << "Processing chromosome " << TempChrName << endl;
 		if (!TheInput.empty()) {
-		   cout << "Skip the rest of chromosomes.\n";
+		   cerr << "Skip the rest of chromosomes.\n";
 			break;
 		}
 		if (TempChrName == ChrName) {
@@ -363,18 +363,18 @@ void ReadInOneChr(ifstream & inf_Seq, string & TheInput, const string & ChrName)
 			}
 		}
 	}
-   cout << ChrName << "\t" << TheInput.size() << "\t";
+   cerr << ChrName << "\t" << TheInput.size() << "\t";
 	if (!TheInput.empty()) {
 		string Spacer = "";
 		for (unsigned i = 0; i < SpacerBeforeAfter; i++) Spacer += "N";
 		TheInput = Spacer + TheInput + Spacer;
 	}
-	cout << TheInput.size() << endl;
+	cerr << TheInput.size() << endl;
    return;
 }
 
 short ReadInRead(ifstream & inf_ReadSeq, const string & CurrentChr, const string & FragName, ofstream & Outf) {
-	cout << "Scanning and processing reads anchored in " << FragName << endl;
+	cerr << "Scanning and processing reads anchored in " << FragName << endl;
 	//short ADDITIONAL_MISMATCH = 1;
 	ADDITIONAL_MISMATCH = 1;
 	Seq_Error_Rate = 0.05;
@@ -392,13 +392,13 @@ short ReadInRead(ifstream & inf_ReadSeq, const string & CurrentChr, const string
 	VectorTag.clear();
 	while (inf_ReadSeq >> Temp_One_Read.Name) {
 		if (Temp_One_Read.Name[0] != FirstCharReadName) {
-			cout << "Something wrong with the read name: " << Temp_One_Read.Name << endl;
+			cerr << "Something wrong with the read name: " << Temp_One_Read.Name << endl;
 			//Reads.clear();
 			return 1;
 		}
 		NumReadScanned++;
 		if (NumReadScanned % 1000000 == 0)
-			cout << NumReadScanned << endl;
+			cerr << NumReadScanned << endl;
 		getline(inf_ReadSeq, TempLine);
 		inf_ReadSeq >> Temp_One_Read.UnmatchedSeq;
 		getline(inf_ReadSeq, TempLine);
@@ -475,10 +475,10 @@ short ReadInRead(ifstream & inf_ReadSeq, const string & CurrentChr, const string
 		}
 	}
 
-	cout << "NumReadScanned:\t" << NumReadScanned << endl;
-	cout << "NumReadInChr:\t" << NumReadInChr << endl;
-	cout << "NumReadStored:\t" << GetPlus + GetMinus << endl;
-	cout << "NumReadStored / NumReadInChr = " << (GetPlus + GetMinus) * 100.0 / NumReadInChr << " %\n"
+	cerr << "NumReadScanned:\t" << NumReadScanned << endl;
+	cerr << "NumReadInChr:\t" << NumReadInChr << endl;
+	cerr << "NumReadStored:\t" << GetPlus + GetMinus << endl;
+	cerr << "NumReadStored / NumReadInChr = " << (GetPlus + GetMinus) * 100.0 / NumReadInChr << " %\n"
 	<< "InChrPlus \t" << InChrPlus << "\tGetPlus \t" << GetPlus << "\t" << GetPlus * 100.0 / InChrPlus
 	<< " %\n" << "InChrMinus\t" << InChrMinus  << "\tGetMinus\t" << GetMinus
 	<< "\t" << GetMinus * 100.0 / InChrMinus << " %\n" << endl;
