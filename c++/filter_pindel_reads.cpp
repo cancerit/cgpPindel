@@ -302,7 +302,7 @@ int main (int argc, char *argv[]) {
 		 }
 	    CONS_Chr_Size = CurrentChr.size() - 2 * SpacerBeforeAfter;
 
-	for (int FileIndex = 4; FileIndex <= argc; FileIndex++) {
+	for (int FileIndex = 4; FileIndex < argc; FileIndex++) {
 		cout << "processing file: " << argv[FileIndex] << endl;
 		ifstream  inf_ReadsSeq(argv[FileIndex]);   // input file name
 		ReadInRead(inf_ReadsSeq, CurrentChr, WhichChr, Output);
