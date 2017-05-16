@@ -52,7 +52,7 @@ sub merge_vcf {
   $vcf_files = Sanger::CGP::Pindel::Implement::fragmented_files($indir, $vcf_files, '#', 'FINAL_MERGED.vcf');
   my $new_vcf = $path_prefix.'.vcf';
   system(qq{cd $indir; grep '^#' $vcf_files->[0] > $new_vcf});
-  system(qq{cd $indir; cat @{$vcf_files} | grep -v '^#' | sort -k 1,1 -k2,2n -k4,5 >> $new_vcf});
+  system(qq{cd $indir; cat @{$vcf_files} | grep -v '^#' | sort -k1,1 -k2,2n -k4,5 >> $new_vcf});
 
   my $vcf_gz = $new_vcf.'.gz';
   my $command = which('bgzip');

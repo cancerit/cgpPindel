@@ -1,3 +1,6 @@
+### 2.2.2
+Correction to sorting of VCF files
+
 ### 2.2.0
 Reduces the amount of temporary space required and overall I/O
 
