@@ -31,7 +31,7 @@
 #include <cmath>
 #include <math.h>
 #include <time.h>
-#include <bits/basic_string.h>
+//#include <bits/basic_string.h>
 #include <map>
 #include <stdint.h>
 
@@ -1637,7 +1637,6 @@ if (Analyze_TD_INV_LI_Others) {
 											 cout << CurrentChr.substr(Reads[ReadIndex].UP_Far[FarIndex].AbsLoc, ReportLength) << endl;
 											 for (int i = 0; i < ReportLength - Reads[ReadIndex].BP - 1; i++) cout << " ";
 											 cout << ReverseComplement( Reads[ReadIndex].UnmatchedSeq ) << endl;
-
 											 DeletionInsertionOutf << Reads[ReadIndex].Name << "\n"
 											 << Reads[ReadIndex].UnmatchedSeq << "\n"
 											 << Reads[ReadIndex].MatchedD << "\t"
@@ -2525,7 +2524,6 @@ void CheckLeft_Far(const SPLIT_READ & OneRead,
 		}
 		/*
       else { // TOTAL_SNP_ERROR_CHECKED_Minus
-
 			int SizeOfCurrent = Left_PD[TOTAL_SNP_ERROR_CHECKED_Minus].size();
 			if (CurrentChar == 'N') {
 				for (int j = 0; j < SizeOfCurrent; j++) {
@@ -2647,7 +2645,6 @@ void CheckRight_Far(const SPLIT_READ & OneRead,
 		}
 		/*
       else { // TOTAL_SNP_ERROR_CHECKED_Minus
-
 			int SizeOfCurrent = Right_PD[TOTAL_SNP_ERROR_CHECKED_Minus].size();
 			if (CurrentChar == 'N') {
 				for (int j = 0; j < SizeOfCurrent; j++) {
@@ -2664,7 +2661,6 @@ void CheckRight_Far(const SPLIT_READ & OneRead,
 					//else Left_PD_Output[i + 1].push_back(pos);
 				}
 			}
-
 			if (!Right_PD_Output[TOTAL_SNP_ERROR_CHECKED_Minus].empty()) {
 				short CurrentLength_output = CurrentLength + 1;
 				CheckRight_Far(TheInput, CurrentReadSeq, Right_PD_Output,
@@ -4244,7 +4240,7 @@ void SortOutputDI(const unsigned & NumBoxes, const string & CurrentChr, vector <
                   //if (InputIndels[Second].OK)
 						{
 							if (InputIndels[First].BPLeft < InputIndels[Second].BPLeft) continue;
-                     else if (InputIndels[First].BPLeft > InputIndels[Second].BPLeft) {
+                     					else if (InputIndels[First].BPLeft > InputIndels[Second].BPLeft) {
 								CompareResult = 1;
 							}
 							else if (InputIndels[First].BPLeft == InputIndels[Second].BPLeft) {
@@ -4258,7 +4254,7 @@ void SortOutputDI(const unsigned & NumBoxes, const string & CurrentChr, vector <
                                     else if (CompareTwoString(InputIndels[First].NT_str, InputIndels[Second].NT_str)) { // NT_size ==
                                         CompareResult = 1;
                                     }
-									else CompareResult = 2;
+									//else CompareResult = 2;
 									//else {
 									//	if (InputIndels[First].MatchedRelPos == InputIndels[Second].MatchedRelPos) {
 									//		if (InputIndels[First].UnmatchedSeq == InputIndels[Second].UnmatchedSeq) {
@@ -4307,7 +4303,7 @@ void SortOutputDI(const unsigned & NumBoxes, const string & CurrentChr, vector <
             if (GoodIndels[GoodIndex].BPLeft == OneIndelEvent.BPLeft
                 && GoodIndels[GoodIndex].IndelSize == OneIndelEvent.IndelSize
                 && GoodIndels[GoodIndex].NT_size == OneIndelEvent.NT_size
-                && OneIndelEvent.IndelStr == GoodIndels[GoodIndex].NT_str
+                //&& OneIndelEvent.IndelStr == GoodIndels[GoodIndex].NT_str
                 )
                OneIndelEvent.End = GoodIndex;
 	    else  {
@@ -5562,7 +5558,6 @@ void CheckBoth(const SPLIT_READ & OneRead,
 						PD_Minus_Output[TOTAL_SNP_ERROR_CHECKED_Minus].push_back(pos);
 				}
 			}
-
 			if (PD_Plus_Output[TOTAL_SNP_ERROR_CHECKED_Minus].size() + PD_Minus_Output[TOTAL_SNP_ERROR_CHECKED_Minus].size()) {
 				const short CurrentLengthOutput = CurrentLength + 1;
 				CheckBoth(TheInput, CurrentReadSeq, PD_Plus_Output, PD_Minus_Output,
