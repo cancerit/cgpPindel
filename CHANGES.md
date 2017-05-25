@@ -1,3 +1,6 @@
+### 2.2.3
+Correct read sorting during collection of DI events.  Caused some events to be split into many and others to be missed (Thanks to @liangkaiye for patch)
+
 ### 2.2.2
 Correction to sorting of VCF files
 
