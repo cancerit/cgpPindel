@@ -296,7 +296,7 @@ sub apply_user_defined_filters{
 		$$line[7] = $vcf->add_info_field($$line[7],%apply) if(scalar keys %apply);
 	}else{
 		if(scalar keys %apply) {
-			$$line[6] = join ',', sort keys %apply;
+			$$line[6] = join ';', sort keys %apply;
 		}
 		else {
 			$$line[6] = 'PASS'
