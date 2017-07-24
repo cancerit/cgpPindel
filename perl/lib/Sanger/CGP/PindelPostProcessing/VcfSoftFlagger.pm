@@ -1,7 +1,7 @@
 package Sanger::CGP::PindelPostProcessing::VcfSoftFlagger;
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2017 Genome Research Ltd.
 #
 # Author: Keiran Raine <cgpit@sanger.ac.uk>
 #
@@ -287,7 +287,7 @@ sub apply_user_defined_filters{
 					$apply{ $$filter{name} } = '';
 				}
 			}else{
-				$apply{ $$filter{name} } = $result == $PASS ? 0 : 1;
+				$apply{ $$filter{name} } = 1 if($result != $PASS);
 			}
 		}
 	}
@@ -295,10 +295,12 @@ sub apply_user_defined_filters{
 	if($root_filter_set_name eq 'udef_flags'){
 		$$line[7] = $vcf->add_info_field($$line[7],%apply) if(scalar keys %apply);
 	}else{
-		##TODO HACK passing an empty %apply hash will set the variant to PASS in cases where NO filters are read from the VCF file.
-		##This is to show the file was filtered and everything was supposed to make it though ok.
-		##I cannot guarantee this behaviour will be consistent in future VCF releasess...
-		$$line[6] = $vcf->add_filter($$line[6],%apply);
+		if(scalar keys %apply) {
+			$$line[6] = join ';', sort keys %apply;
+		}
+		else {
+			$$line[6] = 'PASS'
+		}
 	}
 
 	return $line;
