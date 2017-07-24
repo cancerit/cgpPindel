@@ -51,8 +51,8 @@ sub merge_vcf {
   my ($path_prefix, $indir, $vcf_files) = @_;
   $vcf_files = Sanger::CGP::Pindel::Implement::fragmented_files($indir, $vcf_files, '#', 'FINAL_MERGED.vcf');
   my $new_vcf = $path_prefix.'.vcf';
-  system(qq{cd $indir; grep '^#' $vcf_files->[0] > $new_vcf});
-  system(qq{cd $indir; cat @{$vcf_files} | grep -v '^#' | sort -k1,1 -k2,2n -k4,5 >> $new_vcf});
+  system(qq{cd $indir; grep -B 100000000 -m 1 '^#CHROM' $vcf_files->[0] > $new_vcf});
+  system(qq{cd $indir; cat @{$vcf_files} | grep -v '^#' | sort -k1,1 -k2,2n -k4,4 -k 5,5 >> $new_vcf});
 
   my $vcf_gz = $new_vcf.'.gz';
   my $command = which('bgzip');
@@ -160,4 +160,3 @@ pindel_merge_vcf_bam.pl [options] files...
 
   Example:
    pindel_merge_vcf_bam.pl -o someloc/tum_vs_norm in/*.vcf in/*_mt.sam in/*_wt.sam
-
