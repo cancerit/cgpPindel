@@ -242,6 +242,16 @@ sub _read_filter {
 sub _count_sam_event_reads{
 	my ($record, $sam_obj, $samp_type) = @_; #wt mt...'
 
+	my (%pos_reads, %neg_reads);
+
+	my $g_e_type = $record->type;
+	if($g_e_type eq 'DI') {
+		## DIs don't ever match with BWA due to the way they are constructed.
+		$record->generic_setter("b_${samp_type}_pos", 0);
+		$record->generic_setter("b_${samp_type}_neg", 0);
+		return (\%pos_reads,\%neg_reads);
+	}
+
 	## counts [0] = negative strand [1] = positive strand
 	my @ins_count = (0,0);
 	my @del_count = (0,0);
@@ -261,62 +271,46 @@ sub _count_sam_event_reads{
 	my $g_min_chg_len = length $record->min_change;
 	$g_min_chg_len = 0 unless(defined $g_min_chg_len);
 
-	my $g_e_type = $record->type;
 	my $chr = $record->chro;
-	my $g_match = '';
 
-	## DIs dont really exist as BWA calls more likely to be del followed by an ins...
-	if($g_e_type eq 'DI') {
-		my $g_i_len = $g_chg_len;
-		$g_chg_len = $record->end - $record->start; # length of the deletion
-		$g_match = $g_chg_len.'D'.$g_i_len.'I';
-	}
+	croak 'Change length is less than 1' if $g_chg_len == 0;
 
-    croak 'Change length is less than 1' if $g_chg_len == 0;
+	## define all the variables outside of the loop to save on memory allocation events..
+	my ($seqid,$pos,$pileup);
+	my ($pu, $value, $abs, $strand_index);
 
-    ## define all the variables outside of the loop to save on memory allocation events..
-    my ($seqid,$pos,$pileup); ##1
-    my ($pu, $value, $abs, $strand_index, $rn); ##2
-
-	$sam_obj->fast_pileup("$chr:$g_r_start-$g_r_end", sub {
-			($seqid,$pos,$pileup) = @_; ##1
-
+	$sam_obj->fast_pileup("$chr:$g_r_start-$g_r_end",
+		sub {
+			($seqid,$pos,$pileup) = @_;
 			if($pos >= $g_r_start && $pos <= $g_r_end) {
-				##2
-				## no critic
 				foreach $pu (@{$pileup}) {
- 					$value = $pu->indel;
-        ## use critic
- 					next if($value == 0); ## we are not interested in non-call reads...
- 					next if($g_e_type eq 'D'  && $value > 0);
+					$value = $pu->indel;
+					next if($value == 0); ## we are not interested in non-call reads...
+					next if($g_e_type eq 'D'  && $value > 0);
 					next if($g_e_type eq 'I'  && $value < 0);
 
 					my $a = $pu->alignment;
+
 					next unless(_read_filter($a));
 
-					next if($g_e_type eq 'DI' && $a->cigar_str !~ $g_match);
 					$abs = abs $value;
-
-				#	warn "change len: $abs $g_chg_len, ".$record->ref_seq;
 
 					##TODO WE SHOULD LOOK AT MATCHING ON CHANGE rather than length????????????? jwh
 					if($abs == $g_chg_len || $abs == $g_min_chg_len) {
 						$strand_index = $a->reversed == 1 ? 0 : 1;
- 					    $rn = $a->qname;
-						$rn =~ s/_r[0-9]+_[DI]{1,2}[0-9]+$//;
 
 						if($value > 0) {
 							$ins_count[$strand_index]++;
-							$ins_reads[$strand_index]->{$rn}++;
+							$ins_reads[$strand_index]->{$a->qname}++;
 						}else{
 							$del_count[$strand_index]++;
-							$del_reads[$strand_index]->{$rn}++;
+							$del_reads[$strand_index]->{$a->qname}++;
 						}
 					}
 				}
 			}
 			return;
-    	}
+		}
 	);
 
 	## Set the bwa calls
@@ -327,15 +321,11 @@ sub _count_sam_event_reads{
 	}elsif($g_e_type eq 'I'){
 		$record->generic_setter("b_${samp_type}_pos", $ins_count[1]);
 		$record->generic_setter("b_${samp_type}_neg", $ins_count[0]);
-	}elsif($g_e_type eq 'DI'){
-		##TODO if the cigar matches the cigar pattern will have counts (this bit was added as part of the uc correction) not sure why zero... jwh
-		$record->generic_setter("b_${samp_type}_pos", 0);
-		$record->generic_setter("b_${samp_type}_neg", 0);
 	}
 
 	## Reorganise the reads into pos/neg strand groups. Outside of this method we do not care about ins/dels counts...
-	my %pos_reads = %{$ins_reads[1]};
-	my %neg_reads = %{$ins_reads[0]};
+	%pos_reads = %{$ins_reads[1]};
+	%neg_reads = %{$ins_reads[0]};
 
 	@pos_reads{keys %{$del_reads[1]}} = values %{$del_reads[1]};
 	@neg_reads{keys %{$del_reads[0]}} = values %{$del_reads[0]};
