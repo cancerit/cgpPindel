@@ -96,8 +96,6 @@ qq{##fileformat=VCFv4.1
 ##FORMAT=<ID=NR,Number=1,Type=Integer,Description="Total mapped reads on the negative strand">
 ##FORMAT=<ID=PU,Number=1,Type=Integer,Description="Unique calls on the positive strand">
 ##FORMAT=<ID=NU,Number=1,Type=Integer,Description="Unique calls on the negative strand">
-##FORMAT=<ID=TG,Number=1,Type=Integer,Description="Total distinct contributing read groups">
-##FORMAT=<ID=VG,Number=1,Type=Integer,Description="Variant distinct contributing read groups">
 ##vcfProcessLog=<InputVCFSource=<Pindel>,InputVCFVer=<test_version1>>
 ##vcfProcessLog=<InputVCFSource=<Jeff K>,InputVCFVer=<test_version2>,InputVCFParam=<o=my_file>>
 ##SAMPLE=<ID=NORMAL,SampleName=test_wt>
@@ -130,8 +128,6 @@ qq{##fileformat=VCFv4.1
 ##FORMAT=<ID=NR,Number=1,Type=Integer,Description="Total mapped reads on the negative strand">
 ##FORMAT=<ID=PU,Number=1,Type=Integer,Description="Unique calls on the positive strand">
 ##FORMAT=<ID=NU,Number=1,Type=Integer,Description="Unique calls on the negative strand">
-##FORMAT=<ID=TG,Number=1,Type=Integer,Description="Total distinct contributing read groups">
-##FORMAT=<ID=VG,Number=1,Type=Integer,Description="Variant distinct contributing read groups">
 ##vcfProcessLog=<InputVCFSource=<Pindel>,InputVCFVer=<test_version1>>
 ##vcfProcessLog=<InputVCFSource=<Jeff K>,InputVCFVer=<test_version2>,InputVCFParam=<o=my_file>>
 ##SAMPLE=<ID=NORMAL,SampleName=test_wt>
@@ -219,14 +215,10 @@ qq{##fileformat=VCFv4.1
 	  -uc_mt_pos => 17,
 	  -uc_mt_neg => 18,
 	  -uc_wt_pos => 19,
-	  -uc_wt_neg => 20,
-	  -total_wt_rg_count => 5,
-	  -call_wt_rg_count => 1,
-	  -total_mt_rg_count => 9,
-	  -call_mt_rg_count => 7,
+	  -uc_wt_neg => 20
 	);
 
-	my $exp1 = qq{x	30	id1	C	CATG	234	.	PC=I;RS=25;RE=40;LEN=5;S1=3;S2=4;REP=1	GT:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU:TG:VG	./.:3:4:7:8:11:12:15:16:19:20:5:1	./.:1:2:5:6:9:10:13:14:17:18:9:7\n};
+	my $exp1 = qq{x	30	id1	C	CATG	234	.	PC=I;RS=25;RE=40;LEN=5;S1=3;S2=4;REP=1	GT:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	./.:3:4:7:8:11:12:15:16:19:20	./.:1:2:5:6:9:10:13:14:17:18\n};
 
 	is($converter->gen_record($record_1),$exp1,'gen_record');
   };
