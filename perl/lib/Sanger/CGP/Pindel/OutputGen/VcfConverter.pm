@@ -1,7 +1,7 @@
 package Sanger::CGP::Pindel::OutputGen::VcfConverter;
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2017 Genome Research Ltd.
 #
 # Author: Keiran Raine <cgpit@sanger.ac.uk>
 #
@@ -48,7 +48,7 @@ sub new{
 sub init{
 	my($self,%args) = @_;
 	$self->{_contigs} = $args{-contigs},
-	$self->{_format} = 'GT:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU:TG:VG';
+	$self->{_format} = 'GT:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU';
 }
 
 
@@ -97,8 +97,6 @@ sub gen_header{
 		{key => 'FORMAT', ID => 'NR', Number => 1, Type => 'Integer', Description => 'Total mapped reads on the negative strand'},
 		{key => 'FORMAT', ID => 'PU', Number => 1, Type => 'Integer', Description => 'Unique calls on the positive strand'},
 		{key => 'FORMAT', ID => 'NU', Number => 1, Type => 'Integer', Description => 'Unique calls on the negative strand'},
-		{key => 'FORMAT', ID => 'TG', Number => 1, Type => 'Integer', Description => 'Total distinct contributing read groups'},
-		{key => 'FORMAT', ID => 'VG', Number => 1, Type => 'Integer', Description => 'Variant distinct contributing read groups'},
 	];
 
 	return Sanger::CGP::Vcf::VcfUtil::gen_tn_vcf_header( $wt_sample, $mt_sample, $contigs, $process_logs, $reference_name, $input_source, $info, $format, []);
@@ -124,9 +122,6 @@ sub gen_record{
 	$ret .= $record->sum_ms().SEP;
 	$ret .= '.'.SEP;
 
-	#use Data::Dumper;
-	#warn Dumper($record) if($record->start == 50923776);
-
 	# INFO
 	#PC=D;RS=19432;RE=19439;LEN=3;S1=4;S2=161.407;REP=2;PRV=1
 	$ret .= 'PC='.$record->type().';';
@@ -136,7 +131,6 @@ sub gen_record{
 	$ret .= 'S1='.$record->s1().';';
 	$ret .= 'S2='.$record->s2().';' if(defined $record->s2()); ## not presant in older versions of pindel
 	$ret .= 'REP='.$record->repeats().SEP;
-#	$ret .= 'PRV='.$record->prev_frac().SEP;
 
 	# FORMAT
 	$ret .= $self->{_format}.SEP;
@@ -153,9 +147,7 @@ sub gen_record{
 	$ret .= $record->rd_wt_pos().':';
 	$ret .= $record->rd_wt_neg().':';
 	$ret .= $record->uc_wt_pos().':';
-	$ret .= $record->uc_wt_neg().':';
-	$ret .= $record->total_wt_rg_count().':';
-	$ret .= $record->call_wt_rg_count().SEP;
+	$ret .= $record->uc_wt_neg().SEP;
 
 	# TUMOUR GENO
 	$ret .= './.:';
@@ -168,9 +160,7 @@ sub gen_record{
 	$ret .= $record->rd_mt_pos().':';
 	$ret .= $record->rd_mt_neg().':';
 	$ret .= $record->uc_mt_pos().':';
-	$ret .= $record->uc_mt_neg().':';
-	$ret .= $record->total_mt_rg_count().':';
-	$ret .= $record->call_mt_rg_count().NL;
+	$ret .= $record->uc_mt_neg().NL;
 
 	return $ret;
 }

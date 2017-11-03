@@ -1,7 +1,7 @@
 package Sanger::CGP::Pindel::OutputGen::CombinedRecordGenerator;
 
 ########## LICENCE ##########
-# Copyright (c) 2014-2016 Genome Research Ltd.
+# Copyright (c) 2014-2017 Genome Research Ltd.
 #
 # Author: Keiran Raine <cgpit@sanger.ac.uk>
 #
@@ -128,24 +128,9 @@ sub _process_counts{
 	# bwa calls
 	my($pos_call_reads, $neg_call_reads) = _count_sam_event_reads($record, $sam_obj, $samp_type);
 
-	## set up the correct wt/mt method names for the record
-	## TODO might have to revisit this bit - perhaps split the counts by sample
-	my $b_pos_method = "b_${samp_type}_pos";
-	my $b_neg_method = "b_${samp_type}_neg";
-	my $d_pos_method = "d_${samp_type}_pos";
-	my $d_neg_method = "d_${samp_type}_neg";
-	my $p_pos_method = "p_${samp_type}_pos";
-	my $p_neg_method = "p_${samp_type}_neg";
-	my $rd_pos_method = "rd_${samp_type}_pos";
-	my $rd_neg_method = "rd_${samp_type}_neg";
-	my $uc_pos_method = "uc_${samp_type}_pos";
-	my $uc_neg_method = "uc_${samp_type}_neg";
-	my $total_rg_count_method = "total_${samp_type}_rg_count";
-	my $call_rg_count_method = "call_${samp_type}_rg_count";
-
 	# bwa depth
-	$record->$d_pos_method(scalar keys %$pos_bwa_reads);
-	$record->$d_neg_method(scalar keys %$neg_bwa_reads);
+	$record->generic_setter("d_${samp_type}_pos", scalar keys %$pos_bwa_reads);
+	$record->generic_setter("d_${samp_type}_neg", scalar keys %$neg_bwa_reads);
 
 	## ok so... we have all the read names from the pass through pindel.
 	## we also have all the read names from the bam file...
@@ -167,25 +152,15 @@ sub _process_counts{
 		## This needs to be removed so that we can merge on unique read name....
 		## TODO the read groups might not be needed....
 		foreach my $read (@$pos_reads){
-
-			my ($rg) = grep {/RG:Z:.+/} @$read;
-			$rg = '' unless $rg;
-			$rg =~ s/^RG:Z://;
-
 			my $name = $read->[0];
 			$name =~ s/_[^_]+_[^_]+$//;
-			$pos_pin_reads{$name} = $rg;
+			$pos_pin_reads{$name} = 1;
 		}
 
 		foreach my $read (@$neg_reads){
-
-			my ($rg) = grep {/RG:Z:.+/} @$read;
-			$rg = '' unless $rg;
-			$rg =~ s/^RG:Z://;
-
 			my $name = $read->[0];
 			$name =~ s/_[^_]+_[^_]+$//;
-			$neg_pin_reads{$name} = $rg;
+			$neg_pin_reads{$name} = 1;
 		}
 
 		## merge the hashes together... dont worry about the values as they are not important.
@@ -200,28 +175,17 @@ sub _process_counts{
 		@{$neg_call_reads}{keys %neg_pin_reads} = values %neg_pin_reads;
 	}
 
-	## Read group counts
-	my %unique_rg;
-	$unique_rg{$_}++ for (values %$pos_bwa_reads,values %$neg_bwa_reads);
-
-	my %unique_call_rg;
-	$unique_call_rg{$_}++ for (values %$pos_call_reads,values %$neg_call_reads);
-
-	# read group counts
-	$record->$total_rg_count_method(scalar keys %unique_rg);
-	$record->$call_rg_count_method(scalar keys %unique_call_rg);
-
 	# pindel calls
-	$record->$p_pos_method(scalar keys %pos_pin_reads);
-	$record->$p_neg_method(scalar keys %neg_pin_reads);
+	$record->generic_setter("p_${samp_type}_pos", scalar keys %pos_pin_reads);
+	$record->generic_setter("p_${samp_type}_neg", scalar keys %neg_pin_reads);
 
 	# real depth
-	$record->$rd_pos_method(scalar keys %$pos_bwa_reads);
-	$record->$rd_neg_method(scalar keys %$neg_bwa_reads);
+	$record->generic_setter("rd_${samp_type}_pos", scalar keys %$pos_bwa_reads);
+	$record->generic_setter("rd_${samp_type}_neg", scalar keys %$neg_bwa_reads);
 
 	# unique calls
-	$record->$uc_pos_method(scalar keys %$pos_call_reads);
-	$record->$uc_neg_method(scalar keys %$neg_call_reads);
+	$record->generic_setter("uc_${samp_type}_pos", scalar keys %$pos_call_reads);
+	$record->generic_setter("uc_${samp_type}_neg", scalar keys %$neg_call_reads);
 
 	return $record;
 }
@@ -255,17 +219,12 @@ sub _read_depth {
 	my %neg_loc_tmp;
 
   while(my $a = $align_iter->next_seq) {
-#	foreach my $a(@alignments) {
 		my $rn = $a->qname;
-
-		my $rg = $a->aux_get('RG');
-		$rg = '' unless $rg;
-
 		$rn =~ s/_r[0-9]+_[DI]{1,2}[0-9]+$//; # where the read has come from a pindel bam file.... TODO this might not be needed any more...
 		if($a->reversed) {
-			$neg_loc_tmp{$rn} = $rg;
+			$neg_loc_tmp{$rn} = 1;
 		}else {
-			$pos_loc_tmp{$rn} = $rg;
+			$pos_loc_tmp{$rn} = 1;
 		}
 	}
 
@@ -281,7 +240,7 @@ sub _read_filter {
 }
 
 sub _count_sam_event_reads{
-	my ($record, $sam_obj, $samp_type_key) = @_; #wt mt...'
+	my ($record, $sam_obj, $samp_type) = @_; #wt mt...'
 
 	## counts [0] = negative strand [1] = positive strand
 	my @ins_count = (0,0);
@@ -360,21 +319,18 @@ sub _count_sam_event_reads{
     	}
 	);
 
-	my $b_pos_method = "b_${samp_type_key}_pos";
-	my $b_neg_method = "b_${samp_type_key}_neg";
-
 	## Set the bwa calls
 	# b_wt_pos this is the method name structure of CombinedRecord
 	if($g_e_type eq 'D'){
-		$record->$b_pos_method($del_count[1]);
-		$record->$b_neg_method($del_count[0]);
+		$record->generic_setter("b_${samp_type}_pos", $del_count[1]);
+		$record->generic_setter("b_${samp_type}_neg", $del_count[0]);
 	}elsif($g_e_type eq 'I'){
-		$record->$b_pos_method($ins_count[1]);
-		$record->$b_neg_method($ins_count[0]);
+		$record->generic_setter("b_${samp_type}_pos", $ins_count[1]);
+		$record->generic_setter("b_${samp_type}_neg", $ins_count[0]);
 	}elsif($g_e_type eq 'DI'){
 		##TODO if the cigar matches the cigar pattern will have counts (this bit was added as part of the uc correction) not sure why zero... jwh
-		$record->$b_pos_method(0);
-		$record->$b_neg_method(0);
+		$record->generic_setter("b_${samp_type}_pos", 0);
+		$record->generic_setter("b_${samp_type}_neg", 0);
 	}
 
 	## Reorganise the reads into pos/neg strand groups. Outside of this method we do not care about ins/dels counts...
