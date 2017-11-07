@@ -280,7 +280,9 @@ subtest 'Object funcions' => sub {
       -rd_mt_pos => 26,
       -rd_mt_neg => 29,
       -uc_mt_pos => 0,
-      -uc_mt_neg => 1
+      -uc_mt_neg => 1,
+      -fc_mt => 1,
+      -fd_mt => 55,
   	);
 
   	$generator->_process_counts($record_1, $samp_type_key);
@@ -330,7 +332,9 @@ subtest 'Object funcions' => sub {
       -rd_mt_pos => 35,
       -rd_mt_neg => 28,
       -uc_mt_pos => 11, ## the pindel mapped read is presant in the mapped bam file but BOB is not...
-      -uc_mt_neg => 3
+      -uc_mt_neg => 3,
+      -fc_mt => 14,
+      -fd_mt => 63,
     );
 
 

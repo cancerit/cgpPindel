@@ -96,6 +96,8 @@ qq{##fileformat=VCFv4.1
 ##FORMAT=<ID=NR,Number=1,Type=Integer,Description="Total mapped reads on the negative strand">
 ##FORMAT=<ID=PU,Number=1,Type=Integer,Description="Unique calls on the positive strand">
 ##FORMAT=<ID=NU,Number=1,Type=Integer,Description="Unique calls on the negative strand">
+##FORMAT=<ID=FD,Number=1,Type=Integer,Description="Fragment depth">
+##FORMAT=<ID=FC,Number=1,Type=Integer,Description="Fragment calls">
 ##vcfProcessLog=<InputVCFSource=<Pindel>,InputVCFVer=<test_version1>>
 ##vcfProcessLog=<InputVCFSource=<Jeff K>,InputVCFVer=<test_version2>,InputVCFParam=<o=my_file>>
 ##SAMPLE=<ID=NORMAL,SampleName=test_wt>
@@ -128,6 +130,8 @@ qq{##fileformat=VCFv4.1
 ##FORMAT=<ID=NR,Number=1,Type=Integer,Description="Total mapped reads on the negative strand">
 ##FORMAT=<ID=PU,Number=1,Type=Integer,Description="Unique calls on the positive strand">
 ##FORMAT=<ID=NU,Number=1,Type=Integer,Description="Unique calls on the negative strand">
+##FORMAT=<ID=FD,Number=1,Type=Integer,Description="Fragment depth">
+##FORMAT=<ID=FC,Number=1,Type=Integer,Description="Fragment calls">
 ##vcfProcessLog=<InputVCFSource=<Pindel>,InputVCFVer=<test_version1>>
 ##vcfProcessLog=<InputVCFSource=<Jeff K>,InputVCFVer=<test_version2>,InputVCFParam=<o=my_file>>
 ##SAMPLE=<ID=NORMAL,SampleName=test_wt>
@@ -215,10 +219,14 @@ qq{##fileformat=VCFv4.1
 	  -uc_mt_pos => 17,
 	  -uc_mt_neg => 18,
 	  -uc_wt_pos => 19,
-	  -uc_wt_neg => 20
-	);
+	  -uc_wt_neg => 20,
+    -fd_mt => 21,
+    -fd_wt => 22,
+    -fc_mt => 23,
+    -fc_wt => 24,
+	); # many of these values are impossible, it's only checking output format
 
-	my $exp1 = qq{x	30	id1	C	CATG	234	.	PC=I;RS=25;RE=40;LEN=5;S1=3;S2=4;REP=1	GT:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	./.:3:4:7:8:11:12:15:16:19:20	./.:1:2:5:6:9:10:13:14:17:18\n};
+	my $exp1 = qq{x	30	id1	C	CATG	234	.	PC=I;RS=25;RE=40;LEN=5;S1=3;S2=4;REP=1	GT:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU:FD:FC	./.:3:4:7:8:11:12:15:16:19:20:22:24	./.:1:2:5:6:9:10:13:14:17:18:21:23\n};
 
 	is($converter->gen_record($record_1),$exp1,'gen_record');
   };

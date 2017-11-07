@@ -128,16 +128,20 @@ sub _process_counts{
 	# bwa calls
 	my($pos_call_reads, $neg_call_reads) = _count_sam_event_reads($record, $sam_obj, $samp_type);
 
-	# bwa depth
-	$record->generic_setter("d_${samp_type}_pos", scalar keys %$pos_bwa_reads);
-	$record->generic_setter("d_${samp_type}_neg", scalar keys %$neg_bwa_reads);
-
 	## ok so... we have all the read names from the pass through pindel.
 	## we also have all the read names from the bam file...
 	## thus we should be able to get unique counts.....
 
-	my %pos_pin_reads = ();
-	my %neg_pin_reads = ();
+	my %pos_pin_reads;
+	my %neg_pin_reads;
+	my $pos_rd_reads = {};
+	my $neg_rd_reads = {};
+#use Data::Dumper;
+#warn Dumper($pos_bwa_reads);
+	# copy data so not reusing variables with incorrect names:
+	@{$pos_rd_reads}{keys %$pos_bwa_reads} = values %$pos_bwa_reads;
+	@{$neg_rd_reads}{keys %$neg_bwa_reads} = values %$neg_bwa_reads;
+
 
 	foreach my $pindel_sample ($record->samples()){
 		my $pin_sample_type = $pindel_sample eq $self->{_mutant_sample_name} ? 'mt' : 'wt';
@@ -167,25 +171,45 @@ sub _process_counts{
 		## This is an efficient way of hash merging
 		## Depth first..
 
-		@{$pos_bwa_reads}{keys %pos_pin_reads} = values %pos_pin_reads;
-		@{$neg_bwa_reads}{keys %neg_pin_reads} = values %neg_pin_reads;
+		@{$pos_rd_reads}{keys %pos_pin_reads} = values %pos_pin_reads;
+		@{$neg_rd_reads}{keys %neg_pin_reads} = values %neg_pin_reads;
 
 		## Then calls...
 		@{$pos_call_reads}{keys %pos_pin_reads} = values %pos_pin_reads;
 		@{$neg_call_reads}{keys %neg_pin_reads} = values %neg_pin_reads;
 	}
 
-	# pindel calls
+	# calculate fragment depth:
+	my $frag_depth = {};
+	@{$frag_depth}{keys %$pos_rd_reads} = values %$pos_rd_reads;
+	@{$frag_depth}{keys %$neg_rd_reads} = values %$neg_rd_reads;
+
+	# calculate fragment call-depth
+	my $frag_calls = {};
+	@{$frag_calls}{keys %$pos_call_reads} = values %$pos_call_reads;
+	@{$frag_calls}{keys %$neg_call_reads} = values %$neg_call_reads;
+
+	# bwa only depth
+	$record->generic_setter("d_${samp_type}_pos", scalar keys %$pos_bwa_reads);
+	$record->generic_setter("d_${samp_type}_neg", scalar keys %$neg_bwa_reads);
+
+	# pindel only calls
 	$record->generic_setter("p_${samp_type}_pos", scalar keys %pos_pin_reads);
 	$record->generic_setter("p_${samp_type}_neg", scalar keys %neg_pin_reads);
 
-	# real depth
-	$record->generic_setter("rd_${samp_type}_pos", scalar keys %$pos_bwa_reads);
-	$record->generic_setter("rd_${samp_type}_neg", scalar keys %$neg_bwa_reads);
+	# real depth (bwa + pindel)
+	$record->generic_setter("rd_${samp_type}_pos", scalar keys %$pos_rd_reads);
+	$record->generic_setter("rd_${samp_type}_neg", scalar keys %$neg_rd_reads);
 
-	# unique calls
+	# unique calls (bwa + pindel)
 	$record->generic_setter("uc_${samp_type}_pos", scalar keys %$pos_call_reads);
 	$record->generic_setter("uc_${samp_type}_neg", scalar keys %$neg_call_reads);
+
+	# fragment depth (bwa + pindel)
+	$record->generic_setter("fd_${samp_type}", scalar keys %$frag_depth);
+
+	# fragment calls (bwa + pindel)
+	$record->generic_setter("fc_${samp_type}", scalar keys %$frag_calls);
 
 	return $record;
 }

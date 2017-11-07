@@ -62,24 +62,18 @@ sub new{
 	$self->{_uc_wt_pos} = $args{'-uc_wt_pos'};
 	$self->{_uc_wt_neg} = $args{'-uc_wt_neg'};
 
-	$self->{_call_wt_rg_count} = $args{'-call_wt_rg_count'};
-	$self->{_total_wt_rg_count} = $args{'-total_wt_rg_count'};
-	$self->{_call_mt_rg_count} = $args{'-call_mt_rg_count'};
-	$self->{_total_mt_rg_count} = $args{'-total_mt_rg_count'};
+	$self->{_fd_wt} = $args{'-fd_wt'};
+	$self->{_fc_wt} = $args{'-fc_wt'};
+	$self->{_fd_mt} = $args{'-fd_mt'};
+	$self->{_fc_mt} = $args{'-fc_mt'};
 
-    return $self;
+	return $self;
 }
 
 sub valid{
 	my($self,$value) = @_;
 	$self->{_valid} = $value if defined $value;
 	return $self->{_valid};
-}
-
-sub read_groups{
-	my($self,$value) = @_;
-	$self->{_read_groups} = $value if defined $value;
-	return $self->{_read_groups};
 }
 
 sub generic_setter {
@@ -205,4 +199,28 @@ sub uc_wt_neg{
 	my($self,$value) = @_;
 	$self->{_uc_wt_neg} = $value if defined $value;
 	return $self->{_uc_wt_neg};
+}
+
+sub fd_wt{
+	my($self,$value) = @_;
+	$self->{_fd_wt} = $value if defined $value;
+	return $self->{_fd_wt};
+}
+
+sub fd_mt{
+	my($self,$value) = @_;
+	$self->{_fd_mt} = $value if defined $value;
+	return $self->{_fd_mt};
+}
+
+sub fc_wt{
+	my($self,$value) = @_;
+	$self->{_fc_wt} = $value if defined $value;
+	return $self->{_fc_wt};
+}
+
+sub fc_mt{
+	my($self,$value) = @_;
+	$self->{_fc_mt} = $value if defined $value;
+	return $self->{_fc_mt};
 }

@@ -48,7 +48,7 @@ sub new{
 sub init{
 	my($self,%args) = @_;
 	$self->{_contigs} = $args{-contigs},
-	$self->{_format} = 'GT:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU';
+	$self->{_format} = 'GT:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU:FD:FC';
 }
 
 
@@ -97,6 +97,8 @@ sub gen_header{
 		{key => 'FORMAT', ID => 'NR', Number => 1, Type => 'Integer', Description => 'Total mapped reads on the negative strand'},
 		{key => 'FORMAT', ID => 'PU', Number => 1, Type => 'Integer', Description => 'Unique calls on the positive strand'},
 		{key => 'FORMAT', ID => 'NU', Number => 1, Type => 'Integer', Description => 'Unique calls on the negative strand'},
+		{key => 'FORMAT', ID => 'FD', Number => 1, Type => 'Integer', Description => 'Fragment depth'},
+		{key => 'FORMAT', ID => 'FC', Number => 1, Type => 'Integer', Description => 'Fragment calls'},
 	];
 
 	return Sanger::CGP::Vcf::VcfUtil::gen_tn_vcf_header( $wt_sample, $mt_sample, $contigs, $process_logs, $reference_name, $input_source, $info, $format, []);
@@ -135,7 +137,7 @@ sub gen_record{
 	# FORMAT
 	$ret .= $self->{_format}.SEP;
 
-	# 'GT:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU'
+	# 'GT:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU:FD:FC'
 	# NORMAL GENO
 	$ret .= './.:';
 	$ret .= $record->p_wt_pos().':';
@@ -147,7 +149,9 @@ sub gen_record{
 	$ret .= $record->rd_wt_pos().':';
 	$ret .= $record->rd_wt_neg().':';
 	$ret .= $record->uc_wt_pos().':';
-	$ret .= $record->uc_wt_neg().SEP;
+	$ret .= $record->uc_wt_neg().':';
+	$ret .= $record->fd_wt().':';
+	$ret .= $record->fc_wt().SEP;
 
 	# TUMOUR GENO
 	$ret .= './.:';
@@ -160,7 +164,9 @@ sub gen_record{
 	$ret .= $record->rd_mt_pos().':';
 	$ret .= $record->rd_mt_neg().':';
 	$ret .= $record->uc_mt_pos().':';
-	$ret .= $record->uc_mt_neg().NL;
+	$ret .= $record->uc_mt_neg().':';
+	$ret .= $record->fd_mt().':';
+	$ret .= $record->fc_mt().NL;
 
 	return $ret;
 }
