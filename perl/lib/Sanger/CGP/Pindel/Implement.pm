@@ -48,7 +48,8 @@ const my $FIFO_FILTER_TO_PIN => q{gunzip -c %s | %s %s %s %s /dev/stdin | %s %s 
 const my $PIN_2_VCF => q{ -mt %s -wt %s -r %s -o %s -so %s -mtp %s -wtp %s -pp '%s' -i %s};
 const my $PIN_MERGE => q{ -o %s -i %s};
 const my $FLAG => q{ -a %s -u %s -s %s -i %s -o %s -r %s};
-const my $PIN_GERM => q{ -f F012 -i %s -o %s};
+const my $PIN_GERM => q{ -f %s -i %s -o %s};
+const my $BASE_GERM_RULE => 'F012'; # prefixed with additional F if fragment filtering.
 
 sub input {
   my ($index, $options) = @_;
@@ -275,7 +276,7 @@ sub flag {
   my $germ_bed = "$stub.germline.bed";
   my $germ = "$^X ";
   $germ .= _which('pindel_germ_bed.pl');
-  $germ .= sprintf $PIN_GERM, $vcf_gz, $germ_bed;
+  $germ .= sprintf $PIN_GERM, find_germline_rule($options), $vcf_gz, $germ_bed;
 
   my @commands = ($command, $bgzip, $tabix, $germ);
 
@@ -284,6 +285,20 @@ sub flag {
   unlink $new_vcf;
 
   PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
+}
+
+sub find_germline_rule {
+  my $options = shift;
+  open my $ffh, '<', $options->{'filters'} or die $!;
+  my $filter;
+  while(<$ffh>) {
+    if($_ =~ m/(F?$BASE_GERM_RULE)/) {
+      $filter = $1;
+      last;
+    }
+  }
+  close $ffh;
+  return $filter;
 }
 
 sub prepare {
