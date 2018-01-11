@@ -2,6 +2,7 @@
 
 ## NEXT needs to be a major release
 
+* Germline bed file is now merged for adjacent regions (#31)
 * More compressed intermediate files (#55)
 * Change to `Const::Fast` where appropriate (#41)
 * Removed TG VG from genotype.
