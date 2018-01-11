@@ -50,7 +50,8 @@ prove -w -I lib t
 
 echo '### Generating test/pod coverage reports ###'
 # removed 'condition' from coverage as '||' 'or' doesn't work properly
-cover -coverage branch,subroutine,pod -report_c0 50 -report_c1 85 -report_c2 100 -report html_basic reports -silent
+cover -coverage branch,subroutine,pod -report_c0 50 -report_c1 85 -report_c2 100 -report html_basic reports -silent |& grep -v '^Perltidy' | grep -v '^##' | grep -v '^1:'
+# grep on last command to cleanup an oddity in perltidy
 cover -coverage branch,subroutine,pod -report text reports -silent > docs/reports_text/coverage.txt
 rm -rf reports/structure perl.reports/digests reports/cover.13 reports/runs
 cp reports/coverage.html reports/index.html
@@ -76,4 +77,3 @@ rm -f Makefile MANIFEST.bak pm_to_blib
 
 # change back to original dir
 cd $INIT_DIR
-
