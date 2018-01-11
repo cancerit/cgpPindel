@@ -1,7 +1,7 @@
 package Sanger::CGP::Pindel::OutputGen::VcfConverter;
 
 ########## LICENCE ##########
-# Copyright (c) 2014-2017 Genome Research Ltd.
+# Copyright (c) 2014-2018 Genome Research Ltd.
 #
 # Author: Keiran Raine <cgpit@sanger.ac.uk>
 #
@@ -26,9 +26,10 @@ use Sanger::CGP::Pindel;
 
 use strict;
 use Sanger::CGP::Vcf::VcfUtil;
+use Const::Fast qw(const);
 
-use constant SEP => "\t";
-use constant NL => "\n";
+const my $SEP => "\t";
+const my $NL => "\n";
 
 1;
 
@@ -112,17 +113,17 @@ sub gen_record{
 	my $start = $record->start();
 	$start-- if(substr($record->type(),0,1) eq 'D');
 
-	my $ret = $record->chro().SEP;
-	$ret .= $start.SEP;
-	$ret .= $record->id().SEP;
+	my $ret = $record->chro().$SEP;
+	$ret .= $start.$SEP;
+	$ret .= $record->id().$SEP;
 
 	my $ref = uc ($record->lub . $record->ref_seq);
 	my $alt = uc ($record->lub . $record->alt_seq);
 
-	$ret .= $ref.SEP;
-	$ret .= $alt.SEP;
-	$ret .= $record->sum_ms().SEP;
-	$ret .= '.'.SEP;
+	$ret .= $ref.$SEP;
+	$ret .= $alt.$SEP;
+	$ret .= $record->sum_ms().$SEP;
+	$ret .= '.'.$SEP;
 
 	# INFO
 	#PC=D;RS=19432;RE=19439;LEN=3;S1=4;S2=161.407;REP=2;PRV=1
@@ -132,10 +133,10 @@ sub gen_record{
 	$ret .= 'LEN='.$record->length().';';
 	$ret .= 'S1='.$record->s1().';';
 	$ret .= 'S2='.$record->s2().';' if(defined $record->s2()); ## not presant in older versions of pindel
-	$ret .= 'REP='.$record->repeats().SEP;
+	$ret .= 'REP='.$record->repeats().$SEP;
 
 	# FORMAT
-	$ret .= $self->{_format}.SEP;
+	$ret .= $self->{_format}.$SEP;
 
 	# 'GT:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU:FD:FC'
 	# NORMAL GENO
@@ -151,7 +152,7 @@ sub gen_record{
 	$ret .= $record->uc_wt_pos().':';
 	$ret .= $record->uc_wt_neg().':';
 	$ret .= $record->fd_wt().':';
-	$ret .= $record->fc_wt().SEP;
+	$ret .= $record->fc_wt().$SEP;
 
 	# TUMOUR GENO
 	$ret .= './.:';
@@ -166,7 +167,7 @@ sub gen_record{
 	$ret .= $record->uc_mt_pos().':';
 	$ret .= $record->uc_mt_neg().':';
 	$ret .= $record->fd_mt().':';
-	$ret .= $record->fc_mt().NL;
+	$ret .= $record->fc_mt().$NL;
 
 	return $ret;
 }
