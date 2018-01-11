@@ -33,11 +33,12 @@ use Carp;
 use Data::Dumper;
 use File::Which qw(which);
 use Bio::DB::HTS;
+use PerlIO::gzip;
 
 use Const::Fast qw(const);
 
 const my $PG_TEMPLATE => "\@PG\tID:%s\tPN:%s\tCL:%s\tPP:%s\tDS:%s\tVN:%s";
-const my $BAMSORT => ' inputformat=%s index=1 md5=1 O=%s indexfilename=%s md5filename=%s I=';
+const my $BAMSORT => ' inputformat=%s index=1 md5=1 O=%s indexfilename=%s md5filename=%s';
 
 sub sam_to_sorted_bam {
   my ($path_prefix, $base_dir, $sam_files) = @_;
@@ -48,9 +49,9 @@ sub sam_to_sorted_bam {
   my $md5_file = $bam_file.'.md5';
   my $command = q{};
   $command .= "cd $base_dir; " unless($sam_files->[0] =~ m/FINAL_MERGED[.]sam$/);
+  $command .= sprintf ' zcat %s | ', join q{ }, @{$sam_files};
   $command .= which('bamsort');
   $command .= sprintf $BAMSORT, 'sam', $bam_file, $bai_file, $md5_file;
-  $command .= join q{ I=}, @{$sam_files};
   system($command);
   return 1;
 }
@@ -61,7 +62,7 @@ sub update_header_when_no_reads {
     my $sam = $base_dir.$sam_file;
     my @header;
     my $has_records = 0;
-    open my $IN, '<', $sam || die $!;
+    open my $IN, '<:gzip', $sam || die $!;
     while(<$IN>) {
       if($_ =~ m/^\@/) {
         chomp $_;
@@ -76,7 +77,7 @@ sub update_header_when_no_reads {
     unless($has_records) {
       if($header[0] =~ s/SO:unknown/SO:coordinate/) {
         warn "Updating sort order as no records\n";
-        open my $OUT, '>', $sam || die $!;
+        open my $OUT, '>:gzip', $sam || die $!;
         print $OUT join("\n",@header),"\n";
         close $OUT;
       }

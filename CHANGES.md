@@ -2,6 +2,7 @@
 
 ## NEXT needs to be a major release
 
+* More compressed intermediate files (#55)
 * Change to `Const::Fast` where appropriate (#41)
 * Removed TG VG from genotype.
   * Readgroups are always variable, often 1 in data from last few years

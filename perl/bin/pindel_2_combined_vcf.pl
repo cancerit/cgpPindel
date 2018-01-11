@@ -33,6 +33,7 @@ use Carp;
 use Pod::Usage qw(pod2usage);
 use FindBin qw($Bin);
 use lib "$Bin/../lib";
+use PerlIO::gzip;
 
 use Bio::DB::HTS;
 
@@ -88,14 +89,16 @@ use Sanger::CGP::Vcf::OutputGen::UuIdGenerator;
 
   if(defined $opts->{'samoutput'}){
   	my $base_path = $opts->{'samoutput'};
-    $wt_out_sam_path = $base_path . '_wt.sam';
-    $mt_out_sam_path = $base_path . '_mt.sam';
+    $wt_out_sam_path = $base_path . '_wt.sam.gz';
+    $mt_out_sam_path = $base_path . '_mt.sam.gz';
 
-    open($wt_out_sam_fh, ">", $wt_out_sam_path) or die "Cannot open |$wt_out_sam_path| for writing: $!";
+    open $wt_out_sam_fh, '>:gzip', $wt_out_sam_path or die "Cannot open |$wt_out_sam_path| for writing: $!";
+    #open($wt_out_sam_fh, ">", $wt_out_sam_path) or die "Cannot open |$wt_out_sam_path| for writing: $!";
     print $wt_out_sam_fh Sanger::CGP::Pindel::OutputGen::BamUtil::pindel_header($opts->{'wt'}, 'wt', $opts->{'pp'}, $opts->{'cmd'}, $opts->{'sp'}, $opts->{'as'});
     print $wt_out_sam_fh "\n";
 
-    open($mt_out_sam_fh, ">", $mt_out_sam_path) or die "Cannot open |$mt_out_sam_path| for writing: $!";
+    open $mt_out_sam_fh, '>:gzip', $mt_out_sam_path or die "Cannot open |$wt_out_sam_path| for writing: $!";
+    #open($mt_out_sam_fh, ">", $mt_out_sam_path) or die "Cannot open |$mt_out_sam_path| for writing: $!";
     print $mt_out_sam_fh Sanger::CGP::Pindel::OutputGen::BamUtil::pindel_header($opts->{'mt'}, 'mt', $opts->{'pp'}, $opts->{'cmd'}, $opts->{'sp'}, $opts->{'as'});
     print $mt_out_sam_fh "\n";
   }

@@ -99,7 +99,7 @@ sub setup {
       next if($file eq 'FINAL_MERGED.vcf');
       push @{$opts{'vcf'}}, $file;
     }
-    elsif($file =~ m/_([mw]t)\.sam$/) {
+    elsif($file =~ m/_([mw]t)\.sam(.gz)?$/) {
       next if($file =~ m/^FINAL_MERGED\.sam$/); # this is transient for each type
       push @{$opts{$1}}, $file;
     }
