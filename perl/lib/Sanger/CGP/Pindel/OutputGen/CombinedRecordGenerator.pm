@@ -27,7 +27,6 @@ use Sanger::CGP::Pindel;
 use strict;
 use Carp;
 use English qw( -no_match_vars );
-use Data::Dumper;
 
 use Sanger::CGP::Pindel::OutputGen::CombinedRecord;
 
@@ -136,8 +135,7 @@ sub _process_counts{
 	my %neg_pin_reads;
 	my $pos_rd_reads = {};
 	my $neg_rd_reads = {};
-#use Data::Dumper;
-#warn Dumper($pos_bwa_reads);
+
 	# copy data so not reusing variables with incorrect names:
 	@{$pos_rd_reads}{keys %$pos_bwa_reads} = values %$pos_bwa_reads;
 	@{$neg_rd_reads}{keys %$neg_bwa_reads} = values %$neg_bwa_reads;
@@ -154,7 +152,7 @@ sub _process_counts{
 
 		## In the pindel parser we put a chunk of text on the end of the read to make it unique in cases where it might be used in more than one variant.
 		## This needs to be removed so that we can merge on unique read name....
-		## TODO the read groups might not be needed....
+		# RG info never really used so dropped, minimal change by setting all to 1 instead of RGID
 		foreach my $read (@$pos_reads){
 			my $name = $read->[0];
 			$name =~ s/_[^_]+_[^_]+$//;
