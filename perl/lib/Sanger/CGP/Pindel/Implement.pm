@@ -273,12 +273,16 @@ sub flag {
   my $tabix = _which('tabix');
   $tabix .= sprintf ' -p vcf %s', $vcf_gz;
 
-  my $germ_bed = "$stub.germline.bed";
-  my $germ = "$^X ";
-  $germ .= _which('pindel_germ_bed.pl');
-  $germ .= sprintf $PIN_GERM, find_germline_rule($options), $vcf_gz, $germ_bed;
+  my @commands = ($command, $bgzip, $tabix);
 
-  my @commands = ($command, $bgzip, $tabix, $germ);
+  my $germ_rule = find_germline_rule($options);
+  if(defined $germ_rule) {
+    my $germ_bed = "$stub.germline.bed";
+    my $germ = "$^X ";
+    $germ .= _which('pindel_germ_bed.pl');
+    $germ .= sprintf $PIN_GERM, find_germline_rule($options), $vcf_gz, $germ_bed;
+    push @commands, $germ;
+  }
 
   PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), \@commands, 0);
 
