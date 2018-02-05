@@ -1,58 +1,49 @@
-cgpPindel
-=========
+# cgpPindel
 
 cgpPindel contains the Cancer Genome Projects workflow for [pindel](http://gmt.genome.wustl.edu/pindel/current/).
 
-| Master | Dev |
-|---|---|
-|  [![Build Status](https://travis-ci.org/cancerit/cgpPindel.svg?branch=master)](https://travis-ci.org/cancerit/cgpPindel) | [![Build Status](https://travis-ci.org/cancerit/cgpPindel.svg?branch=dev)](https://travis-ci.org/cancerit/cgpPindel) |
+| Master                                        | Develop                                         |
+| --------------------------------------------- | ----------------------------------------------- |
+| [![Master Badge][travis-master]][travis-base] | [![Develop Badge][travis-develop]][travis-base] |
 
 The is a lightly modified version of pindel v2.0 with CGP specific processing for:
 
 * Input file generation
 * Conversion from pindel text output to:
-    * tumour and normal BAM alignment files
-    * VCF
-    * Application of VCF filters.
+    - tumour and normal BAM alignment files
+    - VCF
+    - Application of VCF filters.
 
----
+# Contents
 
-###Dependencies/Install
+- [cgpPindel](#cgppindel)
+- [Contents](#contents)
+- [Installation](#installation)
+- [Contributing](#contributing)
+- [License](#license)
+
+# Installation
 
 Please install the following first:
 
-* [PCAP-core v2.0+](http://github.com/ICGC-TCGA-PanCancer/PCAP-core/releases)
+* [PCAP-core v2.0+](http://github.com/cancerit/PCAP-core/releases)
 * [cgpVcf v2.0+](http://github.com/cancerit/cgpVcf/releases)
-
-Please see these for any child dependencies.
 
 Once complete please run:
 
-./setup.sh /some/install/location
+    ./setup.sh /some/install/location
 
-Please use `setup.sh` to install any other dependencies.  Setting the environment variable `CGP_PERLLIBS` allows you to to append to `PERL5LIB` during install.  Without this all dependancies are installed into the target area.
+⚠️ `cgpPindel` system dependencies should be satisfied with a successful installation of `PCAP-core` and `cgpVcf`. If you find otherwise please let us know!
 
-Please be aware that this expects basic C compilation libraries and tools to be available.
+Setting the environment variable `CGP_PERLLIBS` allows you to to append to `PERL5LIB` during install. Without this all dependancies are installed into the target area.
 
----
+# Contributing
 
-##Creating a release
-####Preparation
-* Commit/push all relevant changes.
-* Pull a clean version of the repo and use this for the following steps.
+Contributions are welcome, and they are greatly appreciated, check our [contributing guidelines](CONTROBUTING.md)!
 
-####Cutting the release
-1. Update `perl/lib/Sanger/CGP/Pindel.pm` to the correct version (adding rc/beta to end if applicable).
-2. Update `CHANGES.md` to show major items.
-3. Run `./prerelease.sh`
-4. Check all tests and coverage reports are acceptable.
-5. Commit the updated docs and updated module/version.
-6. Push commits.
-7. Use the GitHub tools to draft a release.
+# License
 
-LICENCE
-=======
-
+```
 Copyright (c) 2014-2016 Genome Research Ltd.
 
 Author: Cancer Genome Project <cgpit@sanger.ac.uk>
@@ -81,3 +72,9 @@ reads ‘Copyright (c) 2005, 2007, 2008, 2009, 2011, 2012’ and a copyright
 statement that reads ‘Copyright (c) 2005-2012’ should be interpreted as being
 identical to a statement that reads ‘Copyright (c) 2005, 2006, 2007, 2008,
 2009, 2010, 2011, 2012’."
+```
+
+<!-- Travis -->
+[travis-base]: https://travis-ci.org/cancerit/cgpVcf
+[travis-master]: https://travis-ci.org/cancerit/cgpVcf.svg?branch=master
+[travis-develop]: https://travis-ci.org/cancerit/cgpVcf.svg?branch=develop
