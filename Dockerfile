@@ -1,4 +1,4 @@
-# This Dockerfile imports from cancerit/cgp-vcf:2.2.1 wich already includes
+# This Dockerfile imports from cancerit/cgp-vcf:2.2.1 which already includes
 # cgpBigWig, PCAP-core and cgpVcf. cgpPindel system dependencies are satisfied
 # with a successful install of cgpVcf.
 
