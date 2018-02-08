@@ -38,21 +38,35 @@ use PerlIO::gzip;
 use Const::Fast qw(const);
 
 const my $PG_TEMPLATE => "\@PG\tID:%s\tPN:%s\tCL:%s\tPP:%s\tDS:%s\tVN:%s";
-const my $BAMSORT => ' inputformat=%s index=1 md5=1 O=%s indexfilename=%s md5filename=%s';
+const my $BAMSORT => ' inputformat=%s index=1 md5=1 O=%s md5filename=%s';
 
 sub sam_to_sorted_bam {
-  my ($path_prefix, $base_dir, $sam_files) = @_;
+  my ($path_prefix, $base_dir, $sam_files, $as_cram, $as_csi, $ref) = @_;
   $sam_files = Sanger::CGP::Pindel::Implement::fragmented_files($base_dir, $sam_files, '@', 'FINAL_MERGED.sam');
   update_header_when_no_reads($base_dir, $sam_files);
-  my $bam_file = $path_prefix.'.bam';
-  my $bai_file = $bam_file.'.bai';
-  my $md5_file = $bam_file.'.md5';
+  my $aln_fmt = 'bam';
+  my $idx_fmt = 'bai';
+  if($as_cram) {
+    $aln_fmt = 'cram';
+    $idx_fmt = 'crai';
+  }
+  elsif($as_csi) {
+    $idx_fmt = 'csi';
+  }
+  my $aln_out = $path_prefix.'.'.$aln_fmt;
+  my $aln_idx = $aln_out.'.'.$idx_fmt;
+  my $aln_md5 = $aln_out.'.md5';
   my $command = q{};
   $command .= "cd $base_dir; " unless($sam_files->[0] =~ m/FINAL_MERGED[.]sam$/);
   $command .= sprintf ' zcat %s | ', join q{ }, @{$sam_files};
   $command .= which('bamsort');
-  $command .= sprintf $BAMSORT, 'sam', $bam_file, $bai_file, $md5_file;
+  $command .= sprintf $BAMSORT, 'sam', $aln_out, $aln_md5;
+  unless($as_csi) {
+    $command .= sprintf ' indexfilename=%s', $aln_idx;
+  }
   system($command);
+  if($as_csi);
+  system(sprintf 'samtools index -c %s %s', $aln_out, $aln_idx);
   return 1;
 }
 

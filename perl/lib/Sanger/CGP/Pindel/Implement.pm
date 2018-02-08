@@ -46,7 +46,7 @@ const my $PINDEL_GEN_COMM => q{ -b %s -o %s -t %s};
 const my $SAMTOOLS_FAIDX => q{ faidx %s %s > %s};
 const my $FIFO_FILTER_TO_PIN => q{gunzip -c %s | %s %s %s %s /dev/stdin | %s %s %s %s %s %s %s};
 const my $PIN_2_VCF => q{ -mt %s -wt %s -r %s -o %s -so %s -mtp %s -wtp %s -pp '%s' -i %s};
-const my $PIN_MERGE => q{ -o %s -i %s};
+const my $PIN_MERGE => q{ -o %s -i %s -r %s};
 const my $FLAG => q{ -a %s -u %s -s %s -i %s -o %s -r %s};
 const my $PIN_GERM => q{ -f %s -i %s -o %s};
 const my $BASE_GERM_RULE => 'F012'; # prefixed with additional F if fragment filtering.
@@ -230,7 +230,13 @@ sub merge_and_bam {
   my $outstub = File::Spec->catfile($options->{'outdir'}, $options->{'tumour_name'}.'_vs_'.$options->{'normal_name'});
   my $command = "$^X ";
   $command .= _which('pindel_merge_vcf_bam.pl');
-  $command .= sprintf $PIN_MERGE, $outstub, $vcf,;
+  $command .= sprintf $PIN_MERGE, $outstub, $vcf, $options->{'reference'};
+  if($options->{'tumour'} =~ m/\.cram$/) {
+    $command .= ' -c';
+  }
+  elsif(-e $options->{'tumour'}.'.csi') {
+    $command .= ' -s';
+  }
 
   PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
 
