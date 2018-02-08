@@ -66,7 +66,7 @@ sub new {
 sub set_input {
   my ($self, $bam) = @_;
   croak "set_input requires a value for 'bam'" unless(defined $bam);
-  die "Does not appear to be a BAM file: $bam" unless($bam =~ m/\.bam$/);
+  die "Does not appear to be a BAM/CRAM file: $bam" if($bam !~ m/\.bam$/ && $bam !~ m/\.cram$/);
   die "File does not exist : $bam" unless(-e $bam);
   die "File appears to be empty : $bam" unless(-s _);
   $self->{'bam'} = $bam;
