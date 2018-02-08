@@ -8,6 +8,10 @@
 * Removed TG VG from genotype.
   * Readgroups are always variable, often 1 in data from last few years
   * Not used by our filters.
+* Supports BAM/CRAM inputs
+* Output will be aligned with inputs
+  * bam vs cram
+  * bai vs csi
 
 ## 2.2.4
 

@@ -65,8 +65,9 @@ sub sam_to_sorted_bam {
     $command .= sprintf ' indexfilename=%s', $aln_idx;
   }
   system($command);
-  if($as_csi);
-  system(sprintf 'samtools index -c %s %s', $aln_out, $aln_idx);
+  if($as_csi) {
+    system(sprintf 'samtools index -c %s %s', $aln_out, $aln_idx);
+  }
   return 1;
 }
 
