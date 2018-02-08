@@ -1,7 +1,7 @@
 package Sanger::CGP::Pindel::InputGen;
 
 ########## LICENCE ##########
-# Copyright (c) 2014-2017 Genome Research Ltd.
+# Copyright (c) 2014-2018 Genome Research Ltd.
 #
 # Author: Keiran Raine <cgpit@sanger.ac.uk>
 #
@@ -51,7 +51,7 @@ use Sanger::CGP::Pindel::InputGen::Pair;
 
 const my $PAIRS_PER_THREAD => 500_000;
 
-const my $BAMCOLLATE => q{%s outputformat=sam colsbs=268435456 collate=1 classes=F,F2 exclude=DUP,SECONDARY,QCFAIL,SUPPLEMENTARY T=%s filename=%s};
+const my $BAMCOLLATE => q{%s outputformat=sam colsbs=268435456 collate=1 classes=F,F2 exclude=DUP,SECONDARY,QCFAIL,SUPPLEMENTARY T=%s filename=%s inputformat=%s};
 
 sub new {
   my ($class, $bam, $exclude) = @_;
@@ -118,7 +118,8 @@ sub run {
   my $collate = which('bamcollate2');
 
   # ensure that commands containing pipes give appropriate errors
-  my $command .= sprintf $BAMCOLLATE, $collate, File::Spec->catfile($tmpdir, 'collate_tmp'), $self->{'bam'};
+  my ($aln_fmt) = $self->{'bam'} =~ m/[.]([[:alpha:]]+)$/;
+  my $command .= sprintf $BAMCOLLATE, $collate, File::Spec->catfile($tmpdir, 'collate_tmp'), $self->{'bam'}, $aln_fmt;
   try {
     my ($rg_pis, $sample_name);
     my $head_ob = Sanger::CGP::Pindel::InputGen::SamHeader->new($self->{'bam'});
