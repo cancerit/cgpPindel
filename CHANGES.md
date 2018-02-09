@@ -12,6 +12,7 @@
 * Output will be aligned with inputs
   * bam vs cram
   * bai vs csi
+* Although ground work for csi input/output has been done `Bio::DB::HTS doesn't` support csi indexed input yet.
 
 ## 2.2.4
 

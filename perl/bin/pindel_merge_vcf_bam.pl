@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2018 Genome Research Ltd.
 #
 # Author: Keiran Raine <cgpit@sanger.ac.uk>
 #
@@ -88,7 +88,7 @@ sub setup {
               'o|out=s' => \$opts{'out'},
               'i|indir=s' => \$opts{'indir'},
               'c|cram' => \$opts{'cram'},
-              'r|ref' => \$opts{'ref'},
+              'r|ref:s' => \$opts{'ref'},
               's|csi' => \$opts{'csi'},
   ) or pod2usage(2);
 

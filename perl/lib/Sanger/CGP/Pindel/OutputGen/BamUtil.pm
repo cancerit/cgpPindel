@@ -1,7 +1,7 @@
 package Sanger::CGP::Pindel::OutputGen::BamUtil;
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2018 Genome Research Ltd.
 #
 # Author: Keiran Raine <cgpit@sanger.ac.uk>
 #
@@ -38,7 +38,7 @@ use PerlIO::gzip;
 use Const::Fast qw(const);
 
 const my $PG_TEMPLATE => "\@PG\tID:%s\tPN:%s\tCL:%s\tPP:%s\tDS:%s\tVN:%s";
-const my $BAMSORT => ' inputformat=%s index=1 md5=1 O=%s md5filename=%s';
+const my $BAMSORT => ' inputformat=%s outputformat=%s reference=%s | tee %s | md5sum -b - > %s';
 
 sub sam_to_sorted_bam {
   my ($path_prefix, $base_dir, $sam_files, $as_cram, $as_csi, $ref) = @_;
@@ -46,12 +46,15 @@ sub sam_to_sorted_bam {
   update_header_when_no_reads($base_dir, $sam_files);
   my $aln_fmt = 'bam';
   my $idx_fmt = 'bai';
+  my $idx_switch = q{-b};
   if($as_cram) {
     $aln_fmt = 'cram';
     $idx_fmt = 'crai';
+    $idx_switch = q{};
   }
   elsif($as_csi) {
     $idx_fmt = 'csi';
+    $idx_switch = q{-c};
   }
   my $aln_out = $path_prefix.'.'.$aln_fmt;
   my $aln_idx = $aln_out.'.'.$idx_fmt;
@@ -60,14 +63,12 @@ sub sam_to_sorted_bam {
   $command .= "cd $base_dir; " unless($sam_files->[0] =~ m/FINAL_MERGED[.]sam$/);
   $command .= sprintf ' zcat %s | ', join q{ }, @{$sam_files};
   $command .= which('bamsort');
-  $command .= sprintf $BAMSORT, 'sam', $aln_out, $aln_md5;
-  unless($as_csi) {
-    $command .= sprintf ' indexfilename=%s', $aln_idx;
-  }
+  $command .= sprintf $BAMSORT, 'sam', $aln_fmt, $ref, $aln_out, $aln_md5;
   system($command);
-  if($as_csi) {
-    system(sprintf 'samtools index -c %s %s', $aln_out, $aln_idx);
-  }
+
+  $command = sprintf 'samtools index %s %s %s', $idx_switch, $aln_out, $aln_idx;
+  system($command);
+
   return 1;
 }
 
