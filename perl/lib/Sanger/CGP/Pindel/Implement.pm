@@ -79,6 +79,7 @@ sub input {
     my $command = "$^X ";
     $command .= _which('pindel_input_gen.pl');
     $command .= sprintf $PINDEL_GEN_COMM, $input, $gen_out, $max_threads;
+    $command .= " -r $options->{reference}";
     $command .= " -e $options->{badloci}" if(exists $options->{'badloci'});
 
     PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
