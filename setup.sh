@@ -28,7 +28,7 @@ done_message () {
             echo $1
         fi
     else
-        echo " failed.  See setup.log file for error messages." $2
+        echo " failed.  See output for error messages." $2
         echo "    Please check INSTALL file for items that should be installed by a package manager"
         exit 1
     fi
@@ -60,21 +60,16 @@ fi
 # get current directory
 INIT_DIR=`pwd`
 
-# re-initialise log file
-echo > $INIT_DIR/setup.log
-
-# log information about this system
-(
-    echo '============== System information ===='
-    set -x
-    lsb_release -a
-    uname -a
-    sw_vers
-    system_profiler
-    grep MemTotal /proc/meminfo
-    set +x
-    echo
-) >>$INIT_DIR/setup.log 2>&1
+# information about this system
+echo '============== System information ===='
+set -x
+lsb_release -a
+uname -a
+sw_vers
+system_profiler
+grep MemTotal /proc/meminfo
+set +x
+echo
 
 
 set -e
