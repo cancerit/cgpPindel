@@ -25,6 +25,8 @@ There are pre-built images containing this codebase on quay.io.
 
 These were primarily designed for use with dockstore.org but can be used as normal containers.
 
+The docker images are know to work correctly after import into a singularity image.
+
 ## Dependencies/Install
 
 Please install the following first:
@@ -68,7 +70,7 @@ Please be aware that this expects basic C compilation libraries and tools to be 
 ```
 Copyright (c) 2014-2018 Genome Research Ltd.
 
-Author: Cancer Genome Project <cgpit@sanger.ac.uk>
+Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 
 This file is part of cgpPindel.
 
