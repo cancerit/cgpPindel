@@ -30,6 +30,8 @@ perl:
  - "5.22"
 
 script:
+ - set -e
+ - export PATH=$HOME/install/bin:$HOME/install/biobambam2/bin:$PATH
  - git clone --depth 1 --single-branch --branch develop https://github.com/cancerit/cgpBigWig.git
  - cd cgpBigWig
  - ./setup.sh $HOME/PCAP-opt
