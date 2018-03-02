@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2018 Genome Research Ltd.
 #
-# Author: Keiran Raine <cgpit@sanger.ac.uk>
+# Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
 # This file is part of cgpPindel.
 #
@@ -42,8 +42,20 @@ use Sanger::CGP::Pindel::Implement;
 
 {
   my $options = setup();
-  Sanger::CGP::Pindel::OutputGen::BamUtil::sam_to_sorted_bam($options->{'out'}.'_mt', $options->{'indir'}, $options->{'mt'});
-  Sanger::CGP::Pindel::OutputGen::BamUtil::sam_to_sorted_bam($options->{'out'}.'_wt', $options->{'indir'}, $options->{'wt'});
+  Sanger::CGP::Pindel::OutputGen::BamUtil::sam_to_sorted_bam($options->{'out'}.'_mt',
+                                                             $options->{'indir'},
+                                                             $options->{'mt'},
+                                                             $options->{'cram'},
+                                                             $options->{'csi'},
+                                                             $options->{'ref'},
+                                                             );
+  Sanger::CGP::Pindel::OutputGen::BamUtil::sam_to_sorted_bam($options->{'out'}.'_wt',
+                                                             $options->{'indir'},
+                                                             $options->{'wt'},
+                                                             $options->{'cram'},
+                                                             $options->{'csi'},
+                                                             $options->{'ref'},
+                                                             );
   merge_vcf($options->{'out'}, $options->{'indir'}, $options->{'vcf'})
 }
 
@@ -75,6 +87,9 @@ sub setup {
               'v|version' => \$opts{'v'},
               'o|out=s' => \$opts{'out'},
               'i|indir=s' => \$opts{'indir'},
+              'c|cram' => \$opts{'cram'},
+              'r|ref:s' => \$opts{'ref'},
+              's|csi' => \$opts{'csi'},
   ) or pod2usage(2);
 
   if(defined $opts{'v'}){
@@ -99,7 +114,7 @@ sub setup {
       next if($file eq 'FINAL_MERGED.vcf');
       push @{$opts{'vcf'}}, $file;
     }
-    elsif($file =~ m/_([mw]t)\.sam$/) {
+    elsif($file =~ m/_([mw]t)\.sam(.gz)?$/) {
       next if($file =~ m/^FINAL_MERGED\.sam$/); # this is transient for each type
       push @{$opts{$1}}, $file;
     }
@@ -152,6 +167,11 @@ pindel_merge_vcf_bam.pl [options] files...
                       BAM+index for normal/wildtype reads
                         somepath/sample_vs_sample_wt.bam
                         somepath/sample_vs_sample_wt.bam.bai
+
+  Optional parameters:
+    -csi        -s  Specify for csi index when BAM files generated
+    -cram       -c  Specify for CRAM as final output (crai index)
+    -ref        -r  genome.fa file, required for CRAM output
 
   Other:
     -help      -h   Brief help message.

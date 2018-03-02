@@ -1,9 +1,9 @@
 package Sanger::CGP::Pindel::OutputGen::VcfConverter;
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2018 Genome Research Ltd.
 #
-# Author: Keiran Raine <cgpit@sanger.ac.uk>
+# Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
 # This file is part of cgpPindel.
 #
@@ -26,9 +26,10 @@ use Sanger::CGP::Pindel;
 
 use strict;
 use Sanger::CGP::Vcf::VcfUtil;
+use Const::Fast qw(const);
 
-use constant SEP => "\t";
-use constant NL => "\n";
+const my $SEP => "\t";
+const my $NL => "\n";
 
 1;
 
@@ -48,7 +49,7 @@ sub new{
 sub init{
 	my($self,%args) = @_;
 	$self->{_contigs} = $args{-contigs},
-	$self->{_format} = 'GT:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU:TG:VG';
+	$self->{_format} = 'GT:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU:FD:FC';
 }
 
 
@@ -97,8 +98,8 @@ sub gen_header{
 		{key => 'FORMAT', ID => 'NR', Number => 1, Type => 'Integer', Description => 'Total mapped reads on the negative strand'},
 		{key => 'FORMAT', ID => 'PU', Number => 1, Type => 'Integer', Description => 'Unique calls on the positive strand'},
 		{key => 'FORMAT', ID => 'NU', Number => 1, Type => 'Integer', Description => 'Unique calls on the negative strand'},
-		{key => 'FORMAT', ID => 'TG', Number => 1, Type => 'Integer', Description => 'Total distinct contributing read groups'},
-		{key => 'FORMAT', ID => 'VG', Number => 1, Type => 'Integer', Description => 'Variant distinct contributing read groups'},
+		{key => 'FORMAT', ID => 'FD', Number => 1, Type => 'Integer', Description => 'Fragment depth'},
+		{key => 'FORMAT', ID => 'FC', Number => 1, Type => 'Integer', Description => 'Fragment calls'},
 	];
 
 	return Sanger::CGP::Vcf::VcfUtil::gen_tn_vcf_header( $wt_sample, $mt_sample, $contigs, $process_logs, $reference_name, $input_source, $info, $format, []);
@@ -112,20 +113,17 @@ sub gen_record{
 	my $start = $record->start();
 	$start-- if(substr($record->type(),0,1) eq 'D');
 
-	my $ret = $record->chro().SEP;
-	$ret .= $start.SEP;
-	$ret .= $record->id().SEP;
+	my $ret = $record->chro().$SEP;
+	$ret .= $start.$SEP;
+	$ret .= $record->id().$SEP;
 
 	my $ref = uc ($record->lub . $record->ref_seq);
 	my $alt = uc ($record->lub . $record->alt_seq);
 
-	$ret .= $ref.SEP;
-	$ret .= $alt.SEP;
-	$ret .= $record->sum_ms().SEP;
-	$ret .= '.'.SEP;
-
-	#use Data::Dumper;
-	#warn Dumper($record) if($record->start == 50923776);
+	$ret .= $ref.$SEP;
+	$ret .= $alt.$SEP;
+	$ret .= $record->sum_ms().$SEP;
+	$ret .= '.'.$SEP;
 
 	# INFO
 	#PC=D;RS=19432;RE=19439;LEN=3;S1=4;S2=161.407;REP=2;PRV=1
@@ -135,13 +133,12 @@ sub gen_record{
 	$ret .= 'LEN='.$record->length().';';
 	$ret .= 'S1='.$record->s1().';';
 	$ret .= 'S2='.$record->s2().';' if(defined $record->s2()); ## not presant in older versions of pindel
-	$ret .= 'REP='.$record->repeats().SEP;
-#	$ret .= 'PRV='.$record->prev_frac().SEP;
+	$ret .= 'REP='.$record->repeats().$SEP;
 
 	# FORMAT
-	$ret .= $self->{_format}.SEP;
+	$ret .= $self->{_format}.$SEP;
 
-	# 'GT:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU'
+	# 'GT:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU:FD:FC'
 	# NORMAL GENO
 	$ret .= './.:';
 	$ret .= $record->p_wt_pos().':';
@@ -154,8 +151,8 @@ sub gen_record{
 	$ret .= $record->rd_wt_neg().':';
 	$ret .= $record->uc_wt_pos().':';
 	$ret .= $record->uc_wt_neg().':';
-	$ret .= $record->total_wt_rg_count().':';
-	$ret .= $record->call_wt_rg_count().SEP;
+	$ret .= $record->fd_wt().':';
+	$ret .= $record->fc_wt().$SEP;
 
 	# TUMOUR GENO
 	$ret .= './.:';
@@ -169,8 +166,8 @@ sub gen_record{
 	$ret .= $record->rd_mt_neg().':';
 	$ret .= $record->uc_mt_pos().':';
 	$ret .= $record->uc_mt_neg().':';
-	$ret .= $record->total_mt_rg_count().':';
-	$ret .= $record->call_mt_rg_count().NL;
+	$ret .= $record->fd_mt().':';
+	$ret .= $record->fc_mt().$NL;
 
 	return $ret;
 }

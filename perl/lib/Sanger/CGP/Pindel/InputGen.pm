@@ -1,9 +1,9 @@
 package Sanger::CGP::Pindel::InputGen;
 
 ########## LICENCE ##########
-# Copyright (c) 2014-2017 Genome Research Ltd.
+# Copyright (c) 2014-2018 Genome Research Ltd.
 #
-# Author: Keiran Raine <cgpit@sanger.ac.uk>
+# Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
 # This file is part of cgpPindel.
 #
@@ -51,22 +51,33 @@ use Sanger::CGP::Pindel::InputGen::Pair;
 
 const my $PAIRS_PER_THREAD => 500_000;
 
-const my $BAMCOLLATE => q{%s outputformat=sam colsbs=268435456 collate=1 classes=F,F2 exclude=DUP,SECONDARY,QCFAIL,SUPPLEMENTARY T=%s filename=%s};
+const my $BAMCOLLATE => q{%s outputformat=sam colsbs=268435456 collate=1 classes=F,F2 exclude=DUP,SECONDARY,QCFAIL,SUPPLEMENTARY T=%s filename=%s reference=%s inputformat=%s};
 
 sub new {
-  my ($class, $bam, $exclude) = @_;
+  my ($class, $bam, $exclude, $ref) = @_;
   my $self = {'rname_fhs' => {},
               'threads' => 1, };
   bless $self, $class;
   $self->set_input($bam) if(defined $bam);
+  $self->set_reference($ref) if(defined $bam);
   $self->set_exclude($exclude) if(defined $exclude);
   return $self;
+}
+
+sub set_reference {
+  my ($self, $ref) = @_;
+  croak "set_reference requires a value for 'ref'" unless(defined $ref);
+  die "Does not appear to be a fasta file: $ref" if($ref !~ m/\.fa$/ && $ref !~ m/\.fasta$/);
+  die "File does not exist : $ref" unless(-e $ref);
+  die "File appears to be empty : $ref" unless(-s _);
+  $self->{'ref'} = $ref;
+  return $self->{'ref'};
 }
 
 sub set_input {
   my ($self, $bam) = @_;
   croak "set_input requires a value for 'bam'" unless(defined $bam);
-  die "Does not appear to be a BAM file: $bam" unless($bam =~ m/\.bam$/);
+  die "Does not appear to be a BAM/CRAM file: $bam" if($bam !~ m/\.bam$/ && $bam !~ m/\.cram$/);
   die "File does not exist : $bam" unless(-e $bam);
   die "File appears to be empty : $bam" unless(-s _);
   $self->{'bam'} = $bam;
@@ -115,10 +126,12 @@ sub run {
   # setup the temp dir:
   my $tmpdir = File::Temp->newdir( File::Spec->catdir($self->{'outdir'}, 'tmpXXXX') );
 
+  my ($aln_fmt) = $self->{'bam'} =~ m/([^.]+)$/;
+
   my $collate = which('bamcollate2');
 
   # ensure that commands containing pipes give appropriate errors
-  my $command .= sprintf $BAMCOLLATE, $collate, File::Spec->catfile($tmpdir, 'collate_tmp'), $self->{'bam'};
+  my $command .= sprintf $BAMCOLLATE, $collate, File::Spec->catfile($tmpdir, 'collate_tmp'), $self->{'bam'}, $self->{'ref'}, $aln_fmt;
   try {
     my ($rg_pis, $sample_name);
     my $head_ob = Sanger::CGP::Pindel::InputGen::SamHeader->new($self->{'bam'});

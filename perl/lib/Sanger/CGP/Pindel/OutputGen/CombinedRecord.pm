@@ -1,23 +1,23 @@
 package Sanger::CGP::Pindel::OutputGen::CombinedRecord;
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd. 
-#  
-# Author: Keiran Raine <cgpit@sanger.ac.uk> 
-#  
+# Copyright (c) 2014-2018 Genome Research Ltd.
+#
+# Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
+#
 # This file is part of cgpPindel.
-#  
-# cgpPindel is free software: you can redistribute it and/or modify it under 
-# the terms of the GNU Affero General Public License as published by the Free 
-# Software Foundation; either version 3 of the License, or (at your option) any 
-# later version. 
-#  
-# This program is distributed in the hope that it will be useful, but WITHOUT 
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
-# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more 
-# details. 
-#  
-# You should have received a copy of the GNU Affero General Public License 
+#
+# cgpPindel is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation; either version 3 of the License, or (at your option) any
+# later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ########## LICENCE ##########
 
@@ -62,12 +62,12 @@ sub new{
 	$self->{_uc_wt_pos} = $args{'-uc_wt_pos'};
 	$self->{_uc_wt_neg} = $args{'-uc_wt_neg'};
 
-	$self->{_call_wt_rg_count} = $args{'-call_wt_rg_count'};
-	$self->{_total_wt_rg_count} = $args{'-total_wt_rg_count'};
-	$self->{_call_mt_rg_count} = $args{'-call_mt_rg_count'};
-	$self->{_total_mt_rg_count} = $args{'-total_mt_rg_count'};
+	$self->{_fd_wt} = $args{'-fd_wt'};
+	$self->{_fc_wt} = $args{'-fc_wt'};
+	$self->{_fd_mt} = $args{'-fd_mt'};
+	$self->{_fc_mt} = $args{'-fc_mt'};
 
-    return $self;
+	return $self;
 }
 
 sub valid{
@@ -76,10 +76,9 @@ sub valid{
 	return $self->{_valid};
 }
 
-sub read_groups{
-	my($self,$value) = @_;
-	$self->{_read_groups} = $value if defined $value;
-	return $self->{_read_groups};
+sub generic_setter {
+	my ($self, $target, $value) = @_;
+	return $self->$target($value);
 }
 
 sub p_mt_pos{
@@ -202,26 +201,26 @@ sub uc_wt_neg{
 	return $self->{_uc_wt_neg};
 }
 
-sub call_wt_rg_count{
+sub fd_wt{
 	my($self,$value) = @_;
-	$self->{_call_wt_rg_count} = $value if defined $value;
-	return $self->{_call_wt_rg_count};
+	$self->{_fd_wt} = $value if defined $value;
+	return $self->{_fd_wt};
 }
 
-sub total_wt_rg_count{
+sub fd_mt{
 	my($self,$value) = @_;
-	$self->{_total_wt_rg_count} = $value if defined $value;
-	return $self->{_total_wt_rg_count};
+	$self->{_fd_mt} = $value if defined $value;
+	return $self->{_fd_mt};
 }
 
-sub call_mt_rg_count{
+sub fc_wt{
 	my($self,$value) = @_;
-	$self->{_call_mt_rg_count} = $value if defined $value;
-	return $self->{_call_mt_rg_count};
+	$self->{_fc_wt} = $value if defined $value;
+	return $self->{_fc_wt};
 }
 
-sub total_mt_rg_count{
+sub fc_mt{
 	my($self,$value) = @_;
-	$self->{_total_mt_rg_count} = $value if defined $value;
-	return $self->{_total_mt_rg_count};
+	$self->{_fc_mt} = $value if defined $value;
+	return $self->{_fc_mt};
 }

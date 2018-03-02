@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 
 ########## LICENCE ##########
-# Copyright (c) 2014-2016 Genome Research Ltd.
+# Copyright (c) 2014-2018 Genome Research Ltd.
 #
-# Author: Keiran Raine <cgpit@sanger.ac.uk>
+# Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
 # This file is part of cgpPindel.
 #
@@ -45,5 +45,6 @@ WriteMakefile(
                      'Test::Fatal' => 0.013,
                      'Devel::Cover' => 1.09,
                      'Pod::Coverage' => 0.23,
+                     'PerlIO::gzip' => 0.20,
                    }
 );

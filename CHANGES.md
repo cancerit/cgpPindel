@@ -1,19 +1,50 @@
-### 2.2.4
+# CHANGES
+
+## 3.0.0
+
+* Germline bed file is now merged for adjacent regions (#31)
+* More compressed intermediate files (#55)
+* Change to `Const::Fast` where appropriate (#41)
+* Removed TG VG from genotype.
+  * Readgroups are always variable, often 1 in data from last few years
+  * Not used by our filters.
+* Supports BAM/CRAM inputs
+* Output will be aligned with inputs
+  * bam vs cram
+  * bai vs csi
+* Although ground work for csi input/output has been done `Bio::DB::HTS` doesn't support csi indexed input yet.
+  * Created our own fork at [`cancerit/Bio::DB::HTS`][cancerit-biodbhts] so that this could be enabled.
+  * You will need to install this manually or use one of our images for this functionallity.
+    * [dockstore-cgpwxs][ds-cgpwxs-git]
+    * [dockstore-cgpwxs][ds-cgpwgs-git]
+
+<!-- -->
+[cancerit-biodbhts]: https://github.com/cancerit/Bio-DB-HTS/releases/tag/v2.10-rc1
+[ds-cgpwxs-git]: https://github.com/cancerit/dockstore-cgpwxs
+[ds-cgpwgs-git]: https://github.com/cancerit/dockstore-cgpwgs
+
+## 2.2.4
+
 * Force sorting of FILTER field to make records easier to diff.
-* Fix sorting of final VCF to handle events with same start better when using vcftools comparison tools
+* Fix sorting of final VCF to handle events with same start better when using comparison tools
 
-### 2.2.3
-Correct read sorting during collection of DI events.  Caused some events to be split into many and others to be missed (Thanks to @liangkaiye for patch)
+## 2.2.3
 
-### 2.2.2
+Correct read sorting during collection of DI events.  Caused some events to be split into many and
+others to be missed (Thanks to @liangkaiye for patch)
+
+## 2.2.2
+
 Correction to sorting of VCF files
 
-### 2.2.0
+## 2.2.0
+
 Reduces the amount of temporary space required and overall I/O
 
 To process 40 million readpairs (40x Tumour + 40x Normal, chr21, 100bp reads):
 
 Original time:
+
 ```
 User time (seconds): 3553.88
 System time (seconds): 63.92
@@ -24,6 +55,7 @@ File system outputs: 1782080
 ```
 
 New time:
+
 ```
 User time (seconds): 3572.21
 System time (seconds): 74.06
@@ -38,7 +70,7 @@ Original peak size: 650MB
      New peak size: 291MB
 ```
 
-__~55% reduction in working space and about 40% fewer writes to the file system.__
+__~55%__ reduction in working space and about __40%__ fewer writes to the file system.
 
 Exactly the same results:
 
@@ -70,9 +102,11 @@ After filtering, kept 16309 out of a possible 16309 Sites
 Run Time = 6.00 seconds
 ```
 
-### 2.0.4
+## 2.0.4
+
 * Permits empty results files
 
-### 2.0.0
+## 2.0.0
+
 * Migrates all Tabix and Bio::DB::Sam to Bio::DB::HTS::Tabix and Bio::DB::Sam
 * Cleans up install

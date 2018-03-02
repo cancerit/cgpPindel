@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2018 Genome Research Ltd.
 #
-# Author: Keiran Raine <cgpit@sanger.ac.uk>
+# Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
 # This file is part of cgpPindel.
 #
@@ -45,7 +45,7 @@ use Sanger::CGP::Pindel::InputGen;
 {
   my $options = setup();
 
-  my $generator = Sanger::CGP::Pindel::InputGen->new($options->{'bam'}, $options->{'exclude'});
+  my $generator = Sanger::CGP::Pindel::InputGen->new($options->{'bam'}, $options->{'exclude'}, $options->{'reference'});
   $generator->set_threads($options->{'threads'});
   $generator->set_outdir($options->{'outdir'});
   $generator->run;
@@ -60,6 +60,7 @@ sub setup {
               'e|exclude=s' => \$opts{'exclude'},
               'o|outdir=s' => \$opts{'outdir'},
               'b|bam=s' => \$opts{'bam'},
+              'r|reference=s' => \$opts{'reference'},
   ) or pod2usage(2);
 
   pod2usage(-verbose => 1) if(defined $opts{'h'});
@@ -77,6 +78,7 @@ sub setup {
 
   pod2usage(-msg  => "\nERROR: 'outdir' must be defined.\n", -verbose => 2,  -output => \*STDERR) unless(defined $opts{'outdir'});
   pod2usage(-msg  => "\nERROR: 'bam' must be defined.\n", -verbose => 2,  -output => \*STDERR) unless(defined $opts{'bam'});
+  pod2usage(-msg  => "\nERROR: 'reference' must be defined.\n", -verbose => 2,  -output => \*STDERR) unless(defined $opts{'reference'});
 
   $opts{'threads'} ||= 1;
   if($opts{'threads'} > 4) {
@@ -105,6 +107,7 @@ pindel_input_gen.pl [options]
   Required parameters:
     -bam       -b   BAM file to process.
     -outdir    -o   Folder to output result to.
+    -reference -r   Path to reference genome file *.fa
     -threads   -t   Number of threads to use. [1]
                      - 2 is optimum
 

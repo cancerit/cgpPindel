@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 
 ########## LICENCE ##########
-# Copyright (c) 2014-2016 Genome Research Ltd.
+# Copyright (c) 2014-2018 Genome Research Ltd.
 #
-# Author: Keiran Raine <cgpit@sanger.ac.uk>
+# Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
 # This file is part of cgpPindel.
 #
@@ -33,6 +33,7 @@ use Carp;
 use Pod::Usage qw(pod2usage);
 use FindBin qw($Bin);
 use lib "$Bin/../lib";
+use PerlIO::gzip;
 
 use Bio::DB::HTS;
 
@@ -88,14 +89,16 @@ use Sanger::CGP::Vcf::OutputGen::UuIdGenerator;
 
   if(defined $opts->{'samoutput'}){
   	my $base_path = $opts->{'samoutput'};
-    $wt_out_sam_path = $base_path . '_wt.sam';
-    $mt_out_sam_path = $base_path . '_mt.sam';
+    $wt_out_sam_path = $base_path . '_wt.sam.gz';
+    $mt_out_sam_path = $base_path . '_mt.sam.gz';
 
-    open($wt_out_sam_fh, ">", $wt_out_sam_path) or die "Cannot open |$wt_out_sam_path| for writing: $!";
+    open $wt_out_sam_fh, '>:gzip', $wt_out_sam_path or die "Cannot open |$wt_out_sam_path| for writing: $!";
+    #open($wt_out_sam_fh, ">", $wt_out_sam_path) or die "Cannot open |$wt_out_sam_path| for writing: $!";
     print $wt_out_sam_fh Sanger::CGP::Pindel::OutputGen::BamUtil::pindel_header($opts->{'wt'}, 'wt', $opts->{'pp'}, $opts->{'cmd'}, $opts->{'sp'}, $opts->{'as'});
     print $wt_out_sam_fh "\n";
 
-    open($mt_out_sam_fh, ">", $mt_out_sam_path) or die "Cannot open |$mt_out_sam_path| for writing: $!";
+    open $mt_out_sam_fh, '>:gzip', $mt_out_sam_path or die "Cannot open |$wt_out_sam_path| for writing: $!";
+    #open($mt_out_sam_fh, ">", $mt_out_sam_path) or die "Cannot open |$mt_out_sam_path| for writing: $!";
     print $mt_out_sam_fh Sanger::CGP::Pindel::OutputGen::BamUtil::pindel_header($opts->{'mt'}, 'mt', $opts->{'pp'}, $opts->{'cmd'}, $opts->{'sp'}, $opts->{'as'});
     print $mt_out_sam_fh "\n";
   }
@@ -259,11 +262,11 @@ sub setup{
 
   pod2usage(-message  => "\nERROR: w|wtbam must be defined.\n", -verbose => 1,  -output => \*STDERR) unless($opts{'wt'});
   pod2usage(-message  => "\nERROR: w|wtbam |".$opts{'wt'}."| must be a valid file.\n", -verbose => 1,  -output => \*STDERR) unless(-f $opts{'wt'});
-  pod2usage(-message  => "\nERROR: w|wtbam |".$opts{'wt'}."| cannot locate index file.\n", -verbose => 1,  -output => \*STDERR) unless(-f $opts{'wt'}.'.bai');
+  pod2usage(-message  => "\nERROR: w|wtbam |".$opts{'wt'}."| cannot locate index file.\n", -verbose => 1,  -output => \*STDERR) unless(-f $opts{'wt'}.'.bai' || -f $opts{'wt'}.'.csi' || -f $opts{'wt'}.'.crai');
 
   pod2usage(-message  => "\nERROR: m|mtbam must be defined.\n", -verbose => 1,  -output => \*STDERR) unless($opts{'mt'});
   pod2usage(-message  => "\nERROR: m|mtbam |".$opts{'mt'}."| must be a valid file.\n", -verbose => 1,  -output => \*STDERR) unless(-f $opts{'mt'});
-  pod2usage(-message  => "\nERROR: w|wtbam |".$opts{'mt'}."| cannot locate index file.\n", -verbose => 1,  -output => \*STDERR) unless(-f $opts{'mt'}.'.bai');
+  pod2usage(-message  => "\nERROR: w|wtbam |".$opts{'mt'}."| cannot locate index file.\n", -verbose => 1,  -output => \*STDERR) unless(-f $opts{'mt'}.'.bai' || -f $opts{'mt'}.'.csi' || -f $opts{'mt'}.'.crai');
 
   pod2usage(-message  => "\nERROR: r|ref must be defined.\n", -verbose => 1,  -output => \*STDERR) unless($opts{'r'});
   pod2usage(-message  => "\nERROR: r|ref |".$opts{'r'}."| must be a valid file.\n", -verbose => 1,  -output => \*STDERR) unless(-f $opts{'r'});
@@ -285,8 +288,8 @@ pindel_2_combined_vcf.pl [options]
   Required parameters:
     -output    -o   File path to output. Defaults to STDOUT.
     -samoutput -so  File path-stub to sam file output. If present will create two sam files <path-stub>_wt|mt.sam containing the pindel call reads.
-    -wtbam     -wt  File path to the wild type bam file (index must be at the same location).
-    -mtbam     -mt  File path to the mutant bam file (index must be at the same location).
+    -wtbam     -wt  File path to the wild type bam/cram file (index must be co-located).
+    -mtbam     -mt  File path to the mutant bam/cram file (index must be co-located).
     -ref       -r   File path to the reference file used to provide the coordinate system.
 
   Optional parameters:
@@ -305,16 +308,14 @@ pindel_2_combined_vcf.pl [options]
     -accsource -a   String representing the source of the accession id (e.g. COSMIC_SAMPLE_ID, EGA etc...)
     -skipwt    -s   If present, will skip variants where there are more wt calls than mt.
     -idstart   -g   Will set a sequential id generator to the given integer value. If not present will assign UUIDs to each variant.
-    -assembly  -as  Reference assembly name, used when not found in BAM headers.
-    -species   -sp  Species name, used when not found in BAM headers.
+    -assembly  -as  Reference assembly name, used when not found in BAM/CRAM headers.
+    -species   -sp  Species name, used when not found in BAM/CRAM headers.
     -parent    -pp  Process information from parent program (where one exists)
 
   Other:
     -help      -h   Brief help message.
     -man       -m   Full documentation.
     -version   -v   Prints the version number.
-
-    pindel_2_combined_vcf.pl -i my.bam -o my.bam.bas -wt wt.bam -mt mt.bam
 
 =head1 OPTIONS
 
@@ -335,11 +336,11 @@ File path to output data. If this option is omitted the script will attempt to w
 
 =item B<-wtbam>
 
-File path to read. Accepts only .bam files. This file is treated as the wild type sample.
+File path to read. Accepts BAM/CRAM files. This file is treated as the wild type sample.
 
 =item B<-mtbam>
 
-File path to read. Accepts only .bam files. This file is treated as the mutant sample.
+File path to read. Accepts BAM/CRAM files. This file is treated as the mutant sample.
 
 =item B<-wtstudy>
 
