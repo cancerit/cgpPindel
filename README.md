@@ -10,9 +10,11 @@ The is a lightly modified version of pindel v2.0 with CGP specific processing fo
 
 * Input file generation
 * Conversion from pindel text output to:
-    * tumour and normal BAM alignment files
-    * VCF
-    * Application of VCF filters.
+  * tumour and normal BAM alignment files
+  * VCF
+  * Application of VCF filters.
+
+Contents:
 
 <!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
@@ -29,10 +31,8 @@ The is a lightly modified version of pindel v2.0 with CGP specific processing fo
 
 There are pre-built images containing this codebase on quay.io.
 
-* [dockstore-cgpwxs][ds-cgpwxs-git]
-  * Contains tools specific to WXS analysis.
-* [dockstore-cgpwgs][ds-cgpwgs-git]
-  * Contains additional tools for WGS analysis.
+* [dockstore-cgpwxs][ds-cgpwxs-git]: Contains tools specific to WXS analysis.
+* [dockstore-cgpwgs][ds-cgpwgs-git]: Contains additional tools for WGS analysis.
 
 These were primarily designed for use with dockstore.org but can be used as normal containers.
 

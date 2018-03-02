@@ -1,6 +1,6 @@
 # CHANGES
 
-## NEXT needs to be a major release
+## 3.0.0
 
 * Germline bed file is now merged for adjacent regions (#31)
 * More compressed intermediate files (#55)
@@ -12,7 +12,16 @@
 * Output will be aligned with inputs
   * bam vs cram
   * bai vs csi
-* Although ground work for csi input/output has been done `Bio::DB::HTS doesn't` support csi indexed input yet.
+* Although ground work for csi input/output has been done `Bio::DB::HTS` doesn't support csi indexed input yet.
+  * Created our own fork at [`cancerit/Bio::DB::HTS`][cancerit-biodbhts] so that this could be enabled.
+  * You will need to install this manually or use one of our images for this functionallity.
+    * [dockstore-cgpwxs][ds-cgpwxs-git]
+    * [dockstore-cgpwxs][ds-cgpwgs-git]
+
+<!-- -->
+[cancerit-biodbhts]: https://github.com/cancerit/Bio-DB-HTS/releases/tag/v2.10-rc1
+[ds-cgpwxs-git]: https://github.com/cancerit/dockstore-cgpwxs
+[ds-cgpwgs-git]: https://github.com/cancerit/dockstore-cgpwgs
 
 ## 2.2.4
 
