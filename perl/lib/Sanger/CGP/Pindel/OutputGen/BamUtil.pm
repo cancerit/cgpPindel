@@ -1,9 +1,9 @@
 package Sanger::CGP::Pindel::OutputGen::BamUtil;
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2018 Genome Research Ltd.
 #
-# Author: Keiran Raine <cgpit@sanger.ac.uk>
+# Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
 # This file is part of cgpPindel.
 #
@@ -33,25 +33,42 @@ use Carp;
 use Data::Dumper;
 use File::Which qw(which);
 use Bio::DB::HTS;
+use PerlIO::gzip;
 
 use Const::Fast qw(const);
 
 const my $PG_TEMPLATE => "\@PG\tID:%s\tPN:%s\tCL:%s\tPP:%s\tDS:%s\tVN:%s";
-const my $BAMSORT => ' inputformat=%s index=1 md5=1 O=%s indexfilename=%s md5filename=%s I=';
+const my $BAMSORT => ' inputformat=%s outputformat=%s reference=%s | tee %s | md5sum -b - > %s';
 
 sub sam_to_sorted_bam {
-  my ($path_prefix, $base_dir, $sam_files) = @_;
+  my ($path_prefix, $base_dir, $sam_files, $as_cram, $as_csi, $ref) = @_;
   $sam_files = Sanger::CGP::Pindel::Implement::fragmented_files($base_dir, $sam_files, '@', 'FINAL_MERGED.sam');
   update_header_when_no_reads($base_dir, $sam_files);
-  my $bam_file = $path_prefix.'.bam';
-  my $bai_file = $bam_file.'.bai';
-  my $md5_file = $bam_file.'.md5';
+  my $aln_fmt = 'bam';
+  my $idx_fmt = 'bai';
+  my $idx_switch = q{-b};
+  if($as_cram) {
+    $aln_fmt = 'cram';
+    $idx_fmt = 'crai';
+    $idx_switch = q{};
+  }
+  elsif($as_csi) {
+    $idx_fmt = 'csi';
+    $idx_switch = q{-c};
+  }
+  my $aln_out = $path_prefix.'.'.$aln_fmt;
+  my $aln_idx = $aln_out.'.'.$idx_fmt;
+  my $aln_md5 = $aln_out.'.md5';
   my $command = q{};
   $command .= "cd $base_dir; " unless($sam_files->[0] =~ m/FINAL_MERGED[.]sam$/);
+  $command .= sprintf ' zcat %s | ', join q{ }, @{$sam_files};
   $command .= which('bamsort');
-  $command .= sprintf $BAMSORT, 'sam', $bam_file, $bai_file, $md5_file;
-  $command .= join q{ I=}, @{$sam_files};
+  $command .= sprintf $BAMSORT, 'sam', $aln_fmt, $ref, $aln_out, $aln_md5;
   system($command);
+
+  $command = sprintf 'samtools index %s %s %s', $idx_switch, $aln_out, $aln_idx;
+  system($command);
+
   return 1;
 }
 
@@ -61,7 +78,7 @@ sub update_header_when_no_reads {
     my $sam = $base_dir.$sam_file;
     my @header;
     my $has_records = 0;
-    open my $IN, '<', $sam || die $!;
+    open my $IN, '<:gzip', $sam || die $!;
     while(<$IN>) {
       if($_ =~ m/^\@/) {
         chomp $_;
@@ -76,7 +93,7 @@ sub update_header_when_no_reads {
     unless($has_records) {
       if($header[0] =~ s/SO:unknown/SO:coordinate/) {
         warn "Updating sort order as no records\n";
-        open my $OUT, '>', $sam || die $!;
+        open my $OUT, '>:gzip', $sam || die $!;
         print $OUT join("\n",@header),"\n";
         close $OUT;
       }

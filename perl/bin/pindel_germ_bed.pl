@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2018 Genome Research Ltd.
 #
-# Author: Keiran Raine <cgpit@sanger.ac.uk>
+# Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
 # This file is part of cgpPindel.
 #
@@ -60,21 +60,35 @@ my $vcf = Vcf->new( file=>$options->{'input'},
                     version=>'4.1');
 $vcf->parse_header();
 
-my $has_entry = 0;
+my @segments;
 while(my $x = $vcf->next_data_array){
   next unless(";$x->[6];" =~ m/;$flag;/); # skip things that don't have this flag value
   my ($ref, $start, $alt) = (@{$x})[0,1,4];
   my $end = $start + length $alt;
-  # start is always the base before the change in VCF in/del so this magically ends up as half-open coord.
-  print $o_fh (join "\t", $ref, $start, $end),"\n" or die "Failed to write: $!";
-  $has_entry = 1;
+  if(scalar @segments == 0) {
+    push @segments, [$ref, $start, $end];
+    next;
+  }
+  if($ref ne $segments[-1][0]) {
+    push @segments, [$ref, $start, $end];
+    next;
+  }
+  if($start >= $segments[-1][1] && $start <= $segments[-1][2]) {
+    $segments[-1][2] = $end if($end > $segments[-1][2]); # as only sorted by start pos
+    next;
+  }
+  push @segments, [$ref, $start, $end];
 }
-#Fake line as first position of first contig unless we have had at least one bed entry
-if($has_entry == 0){
+
+if(scalar @segments == 0) {
   my $first_contig = (sort keys %{$vcf->get_header_line(key=>'contig')->[0]})[0];
   print $o_fh (join ("\t",$first_contig,0,1),"\n") or die "Failed to write: $!";
 }
-
+else {
+  for(@segments) {
+    printf $o_fh "%s\t%d\t%d\n", @{$_};
+  }
+}
 
 close $o_fh;
 
@@ -130,4 +144,3 @@ pindel_germ_bed.pl [options]
 
   Example:
     pindel_germ_bed.pl -i cgpPindel.flagged.vcf -o germline.bed -f F012
-

@@ -1,9 +1,9 @@
 package Sanger::CGP::Pindel::OutputGen::PindelRecordParser;
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2018 Genome Research Ltd.
 #
-# Author: Keiran Raine <cgpit@sanger.ac.uk>
+# Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
 # This file is part of cgpPindel.
 #
@@ -28,12 +28,12 @@ use strict;
 use Carp;
 use English qw( -no_match_vars );
 use Data::Dumper;
+use Const::Fast qw(const);
 
 use Sanger::CGP::Pindel::OutputGen::PindelRecord;
 
-# need to make these constants
-use constant MAX_REPEAT_UNIT_SIZE => 5;
-use constant MIN_REPEATS => 9;
+const my $MAX_REPEAT_UNIT_SIZE => 5;
+
 1;
 
 sub new{
@@ -322,9 +322,9 @@ sub _parse_alignment {
 
 	# This is used to work out the the number of repeats also used alswhere.....
 	if($record->alt_seq){
-		$record->min_change(_shrink_change($record->alt_seq,MAX_REPEAT_UNIT_SIZE)); # Shrink the change down to its minimum repeat component.
+		$record->min_change(_shrink_change($record->alt_seq,$MAX_REPEAT_UNIT_SIZE)); # Shrink the change down to its minimum repeat component.
 	}else{
-		$record->min_change(_shrink_change($ref_change,MAX_REPEAT_UNIT_SIZE)); # Shrink the change down to its minimum repeat component.
+		$record->min_change(_shrink_change($ref_change,$MAX_REPEAT_UNIT_SIZE)); # Shrink the change down to its minimum repeat component.
 	}
 
 	my $read_num = 1;
@@ -790,12 +790,3 @@ sub calmd_orig {
 	my $md = join q{}, @final_md;
 	return ('MD:Z:'.$md, 'NM:i:'.$nm, $final_end);
 }
-
-
-
-
-
-
-
-
-

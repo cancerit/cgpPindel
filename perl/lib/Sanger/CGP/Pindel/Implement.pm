@@ -1,9 +1,9 @@
 package Sanger::CGP::Pindel::Implement;
 
 ########## LICENCE ##########
-# Copyright (c) 2014-2017 Genome Research Ltd.
+# Copyright (c) 2014-2018 Genome Research Ltd.
 #
-# Author: Keiran Raine <cgpit@sanger.ac.uk>
+# Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
 # This file is part of cgpPindel.
 #
@@ -46,9 +46,10 @@ const my $PINDEL_GEN_COMM => q{ -b %s -o %s -t %s};
 const my $SAMTOOLS_FAIDX => q{ faidx %s %s > %s};
 const my $FIFO_FILTER_TO_PIN => q{gunzip -c %s | %s %s %s %s /dev/stdin | %s %s %s %s %s %s %s};
 const my $PIN_2_VCF => q{ -mt %s -wt %s -r %s -o %s -so %s -mtp %s -wtp %s -pp '%s' -i %s};
-const my $PIN_MERGE => q{ -o %s -i %s};
+const my $PIN_MERGE => q{ -o %s -i %s -r %s};
 const my $FLAG => q{ -a %s -u %s -s %s -i %s -o %s -r %s};
-const my $PIN_GERM => q{ -f F012 -i %s -o %s};
+const my $PIN_GERM => q{ -f %s -i %s -o %s};
+const my $BASE_GERM_RULE => 'F012'; # prefixed with additional F if fragment filtering.
 
 sub input {
   my ($index, $options) = @_;
@@ -78,6 +79,7 @@ sub input {
     my $command = "$^X ";
     $command .= _which('pindel_input_gen.pl');
     $command .= sprintf $PINDEL_GEN_COMM, $input, $gen_out, $max_threads;
+    $command .= " -r $options->{reference}";
     $command .= " -e $options->{badloci}" if(exists $options->{'badloci'});
 
     PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
@@ -229,7 +231,13 @@ sub merge_and_bam {
   my $outstub = File::Spec->catfile($options->{'outdir'}, $options->{'tumour_name'}.'_vs_'.$options->{'normal_name'});
   my $command = "$^X ";
   $command .= _which('pindel_merge_vcf_bam.pl');
-  $command .= sprintf $PIN_MERGE, $outstub, $vcf,;
+  $command .= sprintf $PIN_MERGE, $outstub, $vcf, $options->{'reference'};
+  if($options->{'tumour'} =~ m/\.cram$/) {
+    $command .= ' -c';
+  }
+  elsif(-e $options->{'tumour'}.'.csi') {
+    $command .= ' -s';
+  }
 
   PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
 
@@ -272,18 +280,36 @@ sub flag {
   my $tabix = _which('tabix');
   $tabix .= sprintf ' -p vcf %s', $vcf_gz;
 
-  my $germ_bed = "$stub.germline.bed";
-  my $germ = "$^X ";
-  $germ .= _which('pindel_germ_bed.pl');
-  $germ .= sprintf $PIN_GERM, $vcf_gz, $germ_bed;
+  my @commands = ($command, $bgzip, $tabix);
 
-  my @commands = ($command, $bgzip, $tabix, $germ);
+  my $germ_rule = find_germline_rule($options);
+  if(defined $germ_rule) {
+    my $germ_bed = "$stub.germline.bed";
+    my $germ = "$^X ";
+    $germ .= _which('pindel_germ_bed.pl');
+    $germ .= sprintf $PIN_GERM, find_germline_rule($options), $vcf_gz, $germ_bed;
+    push @commands, $germ;
+  }
 
   PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), \@commands, 0);
 
   unlink $new_vcf;
 
   PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
+}
+
+sub find_germline_rule {
+  my $options = shift;
+  open my $ffh, '<', $options->{'filters'} or die $!;
+  my $filter;
+  while(<$ffh>) {
+    if($_ =~ m/(F?$BASE_GERM_RULE)/) {
+      $filter = $1;
+      last;
+    }
+  }
+  close $ffh;
+  return $filter;
 }
 
 sub prepare {
@@ -379,7 +405,7 @@ sub fragmented_files {
   my $file_count = scalar @{$files};
   return $files if($file_count <= 100);
   warn "Extreme number of files, slow merging of $file_count files required\n";
-  my $grep_non_header = qq{grep -v '^$hprefix' %s >> %s};
+  my $grep_non_header = qq{zgrep -v '^$hprefix' %s >> %s};
   my $header_count;
 
   my $merged_file = $base_dir.$outfile;

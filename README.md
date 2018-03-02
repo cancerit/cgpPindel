@@ -1,11 +1,10 @@
-cgpPindel
-=========
+# cgpPindel
 
-cgpPindel contains the Cancer Genome Projects workflow for [pindel](http://gmt.genome.wustl.edu/pindel/current/).
+cgpPindel contains the Cancer Genome Projects workflow for [Pindel][pindel-core].
 
-| Master | Dev |
-|---|---|
-|  [![Build Status](https://travis-ci.org/cancerit/cgpPindel.svg?branch=master)](https://travis-ci.org/cancerit/cgpPindel) | [![Build Status](https://travis-ci.org/cancerit/cgpPindel.svg?branch=dev)](https://travis-ci.org/cancerit/cgpPindel) |
+| Master                                        | Develop                                         |
+| --------------------------------------------- | ----------------------------------------------- |
+| [![Master Badge][travis-master]][travis-base] | [![Develop Badge][travis-develop]][travis-base] |
 
 The is a lightly modified version of pindel v2.0 with CGP specific processing for:
 
@@ -15,47 +14,74 @@ The is a lightly modified version of pindel v2.0 with CGP specific processing fo
     * VCF
     * Application of VCF filters.
 
----
+<!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-###Dependencies/Install
+- [Docker, Singularity and Dockstore](#docker-singularity-and-dockstore)
+- [Dependencies/Install](#dependenciesinstall)
+- [Creating a release](#creating-a-release)
+	- [Preparation](#preparation)
+	- [Cutting the release](#cutting-the-release)
+- [LICENCE](#licence)
+
+<!-- /TOC -->
+
+## Docker, Singularity and Dockstore
+
+There are pre-built images containing this codebase on quay.io.
+
+* [dockstore-cgpwxs][ds-cgpwxs-git]
+  * Contains tools specific to WXS analysis.
+* [dockstore-cgpwgs][ds-cgpwgs-git]
+  * Contains additional tools for WGS analysis.
+
+These were primarily designed for use with dockstore.org but can be used as normal containers.
+
+The docker images are know to work correctly after import into a singularity image.
+
+## Dependencies/Install
 
 Please install the following first:
 
-* [PCAP-core v2.0+](http://github.com/ICGC-TCGA-PanCancer/PCAP-core/releases)
-* [cgpVcf v2.0+](http://github.com/cancerit/cgpVcf/releases)
+* [PCAP-core v2.0+][pcap-core-rel]
+* [cgpVcf v2.0+][cgpvcf-rel]
 
 Please see these for any child dependencies.
 
 Once complete please run:
 
+```
 ./setup.sh /some/install/location
+```
 
-Please use `setup.sh` to install any other dependencies.  Setting the environment variable `CGP_PERLLIBS` allows you to to append to `PERL5LIB` during install.  Without this all dependancies are installed into the target area.
+Please use `setup.sh` to install any other dependencies.  Setting the environment variable
+`CGP_PERLLIBS` allows you to to append to `PERL5LIB` during install.  Without this all dependancies
+are installed into the target area.
 
 Please be aware that this expects basic C compilation libraries and tools to be available.
 
----
+## Creating a release
 
-##Creating a release
-####Preparation
+### Preparation
+
 * Commit/push all relevant changes.
 * Pull a clean version of the repo and use this for the following steps.
 
-####Cutting the release
+### Cutting the release
+
 1. Update `perl/lib/Sanger/CGP/Pindel.pm` to the correct version (adding rc/beta to end if applicable).
-2. Update `CHANGES.md` to show major items.
-3. Run `./prerelease.sh`
-4. Check all tests and coverage reports are acceptable.
-5. Commit the updated docs and updated module/version.
-6. Push commits.
-7. Use the GitHub tools to draft a release.
+1. Update `CHANGES.md` to show major items.
+1. Run `./prerelease.sh`
+1. Check all tests and coverage reports are acceptable.
+1. Commit the updated docs and updated module/version.
+1. Push commits.
+1. Use the GitHub tools to draft a release.
 
-LICENCE
-=======
+## LICENCE
 
-Copyright (c) 2014-2016 Genome Research Ltd.
+```
+Copyright (c) 2014-2018 Genome Research Ltd.
 
-Author: Cancer Genome Project <cgpit@sanger.ac.uk>
+Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 
 This file is part of cgpPindel.
 
@@ -81,3 +107,16 @@ reads ‘Copyright (c) 2005, 2007, 2008, 2009, 2011, 2012’ and a copyright
 statement that reads ‘Copyright (c) 2005-2012’ should be interpreted as being
 identical to a statement that reads ‘Copyright (c) 2005, 2006, 2007, 2008,
 2009, 2010, 2011, 2012’."
+```
+
+<!-- References -->
+[cgpvcf-rel]: https://github.com/cancerit/cgpVcf/releases
+[pcap-core-rel]: https://github.com/cancerit/PCAP-core/releases
+[ds-cgpwxs-git]: https://github.com/cancerit/dockstore-cgpwxs
+[ds-cgpwgs-git]: https://github.com/cancerit/dockstore-cgpwgs
+[pindel-core]: http://gmt.genome.wustl.edu/pindel/current
+
+<!-- Travis -->
+[travis-base]: https://travis-ci.org/cancerit/cgpPindel
+[travis-master]: https://travis-ci.org/cancerit/cgpPindel.svg?branch=master
+[travis-develop]: https://travis-ci.org/cancerit/cgpPindel.svg?branch=dev

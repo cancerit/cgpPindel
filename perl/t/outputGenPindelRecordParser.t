@@ -1,7 +1,7 @@
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2018 Genome Research Ltd.
 #
-# Author: Keiran Raine <cgpit@sanger.ac.uk>
+# Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
 # This file is part of cgpPindel.
 #
@@ -269,7 +269,7 @@ subtest 'Non-object funcions' => sub {
 
     my $fai = Bio::DB::HTS::Fai->load($ref_file);
 
-    ##ÊThese are real coordinates from human build 37
+    ##ï¿½These are real coordinates from human build 37
     #genome.fa 22:30000000-30000050
     #ATCGCTTCCCGCATGAGCTTCAGCTCTCTCAAGAGGAAGCAACCCAAGACG
 

@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2018 Genome Research Ltd.
 #
-# Author: Keiran Raine <cgpit@sanger.ac.uk>
+# Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
 # This file is part of cgpPindel.
 #
@@ -222,8 +222,8 @@ pindel.pl [options]
   Required parameters:
     -outdir    -o   Folder to output result to.
     -reference -r   Path to reference genome file *.fa[.gz]
-    -tumour    -t   Tumour BAM file
-    -normal    -n   Normal BAM file
+    -tumour    -t   Tumour BAM/CRAM file (co-located index and bas files)
+    -normal    -n   Normal BAM/CRAM file (co-located index and bas files)
     -simrep    -s   Full path to tabix indexed simple/satellite repeats.
     -filter    -f   VCF filter rules file (see FlagVcf.pl for details)
     -genes     -g   Full path to tabix indexed coding gene footprints.

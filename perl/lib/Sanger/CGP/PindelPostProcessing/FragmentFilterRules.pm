@@ -1,4 +1,4 @@
-package Sanger::CGP::PindelPostProcessing::FilterRules;
+package Sanger::CGP::PindelPostProcessing::FragmentFilterRules;
 
 ########## LICENCE ##########
 # Copyright (c) 2014-2018 Genome Research Ltd.
@@ -25,66 +25,66 @@ use strict;
 use Bio::DB::HTS::Tabix;
 use Sanger::CGP::Pindel;
 
-my %RULE_DESCS = ('F001' => { 'tag' =>'INFO/LEN',
-                              'name' => 'F001',
+my %RULE_DESCS = ('FF001' => { 'tag' =>'INFO/LEN',
+                              'name' => 'FF001',
                               'desc' => 'Pass if Mt > Wt Reads: Likely GERMLINE',
                               'test' => \&flag_001 },
-                  'F002' => { 'tag'  => 'INFO/LEN',
-                              'name' => 'F002',
+                  'FF002' => { 'tag'  => 'INFO/LEN',
+                              'name' => 'FF002',
                               'desc' => 'No Wt calls in variants over 4bp in length: Likely GERMLINE',
                               'test' => \&flag_002},
-                  'F003' => { 'tag'  => 'INFO/LEN',
-                              'name' => 'F003',
+                  'FF003' => { 'tag'  => 'INFO/LEN',
+                              'name' => 'FF003',
                               'desc' => 'Tum low call count strand bias check',
                               'test' => \&flag_003},
-                  'F004' => { 'tag' =>'INFO/LEN',
-                              'name' => 'F004',
+                  'FF004' => { 'tag' =>'INFO/LEN',
+                              'name' => 'FF004',
                               'desc' => 'Tum medium read depth strand bias check: Calls In 8% Reads Bt Depth 10 And 200 (inclusive)',
                               'test' => \&flag_004 },
-                  'F005' => { 'tag'  => 'INFO/LEN',
-                              'name' => 'F005',
+                  'FF005' => { 'tag'  => 'INFO/LEN',
+                              'name' => 'FF005',
                               'desc' => 'Tum high read depth strand bias check: Calls In 4% Reads > Depth 200',
                               'test' => \&flag_005},
-                  'F006' => { 'tag'  => 'INFO/LEN',
-                              'name' => 'F006',
+                  'FF006' => { 'tag'  => 'INFO/LEN',
+                              'name' => 'FF006',
                               'desc' => 'Small call excessive repeat check: Fail if Length <= 4 and Repeats > 9',
                               'test' => \&flag_006},
-                  'F007' => { 'tag'  => 'INFO/LEN',
-                              'name' => 'F007',
+                  'FF007' => { 'tag'  => 'INFO/LEN',
+                              'name' => 'FF007',
                               'desc' => 'Sufficient Normal Depth: If Mt Depth > 5 then Wt > 8% tum depth',
                               'test' => \&flag_007},
-                  'F008' => { 'tag'  => 'INFO/REP',
-                              'name' => 'F008',
+                  'FF008' => { 'tag'  => 'INFO/REP',
+                              'name' => 'FF008',
                               'desc' => 'Wildtype contamination: Fail when wt reads > 5% mt reads.',
                               'test' => \&flag_008},
-                  'F009' => { 'tag'  => 'INFO/LEN',
-                              'name' => 'F009',
+                  'FF009' => { 'tag'  => 'INFO/LEN',
+                              'name' => 'FF009',
                               'desc' => 'Is coding: Pass when in gene footprint.',
                               'test' => \&flag_009},
-                  'F010' => { 'tag'  => 'INFO/LEN',
-                              'name' => 'F010',
+                  'FF010' => { 'tag'  => 'INFO/LEN',
+                              'name' => 'FF010',
                               'desc' => 'Variant must not exist within the Unmatched Normal Panel',
                               'test' => \&flag_010},
                   # 11 legacy
-                  'F012' => { 'tag'  => 'INFO/LEN',
-                              'name' => 'F012',
+                  'FF012' => { 'tag'  => 'INFO/LEN',
+                              'name' => 'FF012',
                               'desc' => 'Germline: When length < 11 and depth > 9, fail if the variant is seen in both 20% of normal reads AND 20% of tumour reads in either pindel or bwa',
                               'test' => \&flag_012},
                   # 13,14 legacy
-                  'F015' => { 'tag'  => 'INFO/LEN',
-                              'name' => 'F015',
+                  'FF015' => { 'tag'  => 'INFO/LEN',
+                              'name' => 'FF015',
                               'desc' => 'No normal calls',
                               'test' => \&flag_015},
-                  'F016' => { 'tag'  => 'INFO/REP',
-                              'name' => 'F016',
+                  'FF016' => { 'tag'  => 'INFO/REP',
+                              'name' => 'FF016',
                               'desc' => 'Verify indel condition',
                               'test' => \&flag_016},
-                  'F017' => { 'tag'  => 'INFO/LEN',
-                              'name' => 'F017',
+                  'FF017' => { 'tag'  => 'INFO/LEN',
+                              'name' => 'FF017',
                               'desc' => 'Variant must not overlap with a simple repeat',
                               'test' => \&flag_017},
-                  'F018' => { 'tag'  => 'INFO/LEN',
-                              'name' => 'F018',
+                  'FF018' => { 'tag'  => 'INFO/LEN',
+                              'name' => 'FF018',
                               'desc' => 'Sufficient Depth: Pass if depth > 10',
                               'test' => \&flag_018},
 );
@@ -132,8 +132,7 @@ sub flag_001 {
   my @nor_geno = split(':',$$RECORD[9]);
   my @tum_geno = split(':',$$RECORD[10]);
 
-  if($nor_geno[$previous_format_hash->{'PP'}] + $nor_geno[$previous_format_hash->{'NP'}]  >=
-    $tum_geno[$previous_format_hash->{'PP'}] + $tum_geno[$previous_format_hash->{'NP'}]){
+  if($nor_geno[$previous_format_hash->{'FC'}] >= $tum_geno[$previous_format_hash->{'FC'}]){
     return $FAIL;
   }
   return $PASS;
@@ -146,7 +145,7 @@ sub flag_002 {
 
   my @nor_geno = split(':',$$RECORD[9]);
 
-  if($nor_geno[$previous_format_hash->{'PP'}] + $nor_geno[$previous_format_hash->{'NP'}] > 0) {
+  if($nor_geno[$previous_format_hash->{'FC'}] > 0) {
     return $FAIL;
   }
   return $PASS;
@@ -157,11 +156,11 @@ sub flag_003 {
   use_prev($$RECORD[8]);
 
   my @tum_geno = split(':',$$RECORD[10]);
-  if(($tum_geno[$previous_format_hash->{'PP'}] >= 3 || $tum_geno[$previous_format_hash->{'NP'}] >= 3)){
+  if(($tum_geno[$previous_format_hash->{'PU'}] >= 3 || $tum_geno[$previous_format_hash->{'NU'}] >= 3)){
     return $PASS;
   }
 
-  if(($tum_geno[$previous_format_hash->{'PP'}] >= 2 && $tum_geno[$previous_format_hash->{'NP'}] >= 2)){
+  if(($tum_geno[$previous_format_hash->{'PU'}] >= 2 && $tum_geno[$previous_format_hash->{'NU'}] >= 2)){
     return $PASS;
   }
 
@@ -172,6 +171,7 @@ sub flag_004 {
   my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
   use_prev($$RECORD[8]);
 
+  # unchanged, not fragment based
   my $ret = $FAIL;
   my @tum_geno = split(':',$$RECORD[10]);
 
@@ -213,6 +213,7 @@ sub flag_005 {
   my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
   use_prev($$RECORD[8]);
 
+  # unchanged, not fragment based
   my $ret = $FAIL;
   my @tum_geno = split(':',$$RECORD[10]);
 
@@ -268,8 +269,8 @@ sub flag_007 {
   my @nor_geno = split(':',$$RECORD[9]);
   my @tum_geno = split(':',$$RECORD[10]);
 
-  my $nor_d = $nor_geno[$previous_format_hash->{'PR'}] + $nor_geno[$previous_format_hash->{'NR'}];
-  my $tum_d = $tum_geno[$previous_format_hash->{'PR'}] + $tum_geno[$previous_format_hash->{'NR'}];
+  my $nor_d = $nor_geno[$previous_format_hash->{'FD'}];
+  my $tum_d = $tum_geno[$previous_format_hash->{'FD'}];
 
   if($tum_d > 5){
     if($nor_d >= ($tum_d * 0.08)){
@@ -287,8 +288,7 @@ sub flag_008 {
   my @nor_geno = split(':',$$RECORD[9]);
   my @tum_geno = split(':',$$RECORD[10]);
 
-  if($nor_geno[$previous_format_hash->{'PP'}] + $nor_geno[$previous_format_hash->{'NP'}] >
-    ($tum_geno[$previous_format_hash->{'PP'}] + $tum_geno[$previous_format_hash->{'NP'}]) * 0.05){
+  if($nor_geno[$previous_format_hash->{'FC'}] > ($tum_geno[$previous_format_hash->{'FC'}] * 0.05)){
       return $FAIL;
 
   }
@@ -361,15 +361,11 @@ sub flag_012 {
     if(($tum_geno[$previous_format_hash->{'ND'}] + $tum_geno[$previous_format_hash->{'PD'}]) > 9 &&
        ($nor_geno[$previous_format_hash->{'ND'}] + $nor_geno[$previous_format_hash->{'PD'}]) > 9){
 
-      my $tum_target_depth = ($tum_geno[$previous_format_hash->{'ND'}] + $tum_geno[$previous_format_hash->{'PD'}]) * 0.2;
-      my $nor_target_depth = ($nor_geno[$previous_format_hash->{'ND'}] + $nor_geno[$previous_format_hash->{'PD'}]) * 0.2;
+      my $tum_target_depth = $tum_geno[$previous_format_hash->{'FD'}] * 0.2;
+      my $nor_target_depth = $nor_geno[$previous_format_hash->{'FD'}]* 0.2;
 
-      if((($nor_geno[$previous_format_hash->{'NP'}] + $nor_geno[$previous_format_hash->{'PP'}] >= $nor_target_depth) &&
-        ($tum_geno[$previous_format_hash->{'NP'}] + $tum_geno[$previous_format_hash->{'PP'}] >= $tum_target_depth))
-        ||
-        (($nor_geno[$previous_format_hash->{'NB'}] + $nor_geno[$previous_format_hash->{'PB'}] >= $nor_target_depth) &&
-        ($tum_geno[$previous_format_hash->{'NB'}] + $tum_geno[$previous_format_hash->{'PB'}] >= $tum_target_depth))
-        ){
+      if(($nor_geno[$previous_format_hash->{'FC'}] >= $nor_target_depth) &&
+         ($tum_geno[$previous_format_hash->{'FC'}] >= $tum_target_depth)){
         return $FAIL;
       }
     }
@@ -384,7 +380,7 @@ sub flag_015 {
 
   my @nor_geno = split(':',$$RECORD[9]);
 
-  if($nor_geno[$previous_format_hash->{'PU'}] + $nor_geno[$previous_format_hash->{'NU'}] == 0){
+  if($nor_geno[$previous_format_hash->{'FC'}] == 0){
     return $PASS;
   }
   return $FAIL;
