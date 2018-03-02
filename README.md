@@ -14,6 +14,17 @@ The is a lightly modified version of pindel v2.0 with CGP specific processing fo
     * VCF
     * Application of VCF filters.
 
+<!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
+
+- [Docker, Singularity and Dockstore](#docker-singularity-and-dockstore)
+- [Dependencies/Install](#dependenciesinstall)
+- [Creating a release](#creating-a-release)
+	- [Preparation](#preparation)
+	- [Cutting the release](#cutting-the-release)
+- [LICENCE](#licence)
+
+<!-- /TOC -->
+
 ## Docker, Singularity and Dockstore
 
 There are pre-built images containing this codebase on quay.io.
@@ -55,7 +66,7 @@ Please be aware that this expects basic C compilation libraries and tools to be 
 * Commit/push all relevant changes.
 * Pull a clean version of the repo and use this for the following steps.
 
-###Cutting the release
+### Cutting the release
 
 1. Update `perl/lib/Sanger/CGP/Pindel.pm` to the correct version (adding rc/beta to end if applicable).
 1. Update `CHANGES.md` to show major items.
