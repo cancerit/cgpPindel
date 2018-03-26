@@ -1,5 +1,9 @@
 # CHANGES
 
+## 3.0.1
+
+* Update tabix calls to directly use query_full (solves GRCh38 contig name issues).
+
 ## 3.0.0
 
 * Germline bed file is now merged for adjacent regions (#31)

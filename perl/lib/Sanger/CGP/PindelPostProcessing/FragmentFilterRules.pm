@@ -305,7 +305,7 @@ sub flag_009 {
 
   my $ret = eval{
     # as vcf POS for indels is the previous base pos is 0-based, but the new TABIX requires 1-based
-    my $iter = $main::VCF_IS_CODING_TABIX->query(sprintf '%s:%d-%d', $CHROM,$POS+1,($POS+$MATCH));
+    my $iter = $main::VCF_IS_CODING_TABIX->query_full($CHROM,$POS+1,($POS+$MATCH));
     return $FAIL if(!defined $iter); # no valid entries (chromosome not in index) so must FAIL
     while($iter->next){
       return $PASS;
@@ -337,7 +337,7 @@ sub flag_010 {
   $to += $length_off;
 
   my $ret = eval{
-    my $iter = $vcf_flagging_unmatched_normals_tabix->query(sprintf '%s:%d-%d', $CHROM,$from,$to);
+    my $iter = $vcf_flagging_unmatched_normals_tabix->query_full($CHROM,$from,$to);
     return $PASS if(!defined $iter); # no valid entries (chromosome not in index) so must pass
     while($iter->next){
       return $FAIL;
@@ -423,7 +423,7 @@ sub flag_017 {
 
   my $ret = eval{
     # as vcf POS for indels is the previous base pos is 0-based, but the new TABIX requires 1-based
-    my $iter = $vcf_flagging_repeats_tabix->query(sprintf '%s:%d-%d', $CHROM,$from,$to);
+    my $iter = $vcf_flagging_repeats_tabix->query_full($CHROM,$from,$to);
     return $PASS if(!defined $iter); # no valid entries (chromosome not in index) so must pass
     while($iter->next){
       return $FAIL;
