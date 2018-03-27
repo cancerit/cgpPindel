@@ -27,10 +27,19 @@
 [ds-cgpwxs-git]: https://github.com/cancerit/dockstore-cgpwxs
 [ds-cgpwgs-git]: https://github.com/cancerit/dockstore-cgpwgs
 
+## 2.2.5
+
+* Update tabix->query to tabix->query_full
+
 ## 2.2.4
 
 * Force sorting of FILTER field to make records easier to diff.
 * Fix sorting of final VCF to handle events with same start better when using comparison tools
+
+## 2.2.3
+
+Correct read sorting during collection of DI events.  Caused some events to be split into many and
+others to be missed (Thanks to @liangkaiye for patch)
 
 ## 2.2.3
 
