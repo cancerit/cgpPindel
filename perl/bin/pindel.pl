@@ -157,10 +157,11 @@ sub setup {
   delete $opts{'badloci'} unless(defined $opts{'badloci'});
   delete $opts{'apid'} unless(defined $opts{'apid'});
 
+  my @valid_seqs = Sanger::CGP::Pindel::Implement::valid_seqs(\%opts);
+  $opts{'val_seq_str'} = join ',', @valid_seqs;
   if(exists $opts{'process'}) {
     PCAP::Cli::valid_process('process', $opts{'process'}, \@VALID_PROCESS);
     if(exists $opts{'index'}) {
-      my @valid_seqs = Sanger::CGP::Pindel::Implement::valid_seqs(\%opts);
       my $refs = scalar @valid_seqs;
 
       my $max = $index_max{$opts{'process'}};

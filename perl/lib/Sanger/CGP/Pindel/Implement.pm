@@ -81,6 +81,7 @@ sub input {
     $command .= sprintf $PINDEL_GEN_COMM, $input, $gen_out, $max_threads;
     $command .= " -r $options->{reference}";
     $command .= " -e $options->{badloci}" if(exists $options->{'badloci'});
+    $command .= " -s $options->{val_seq_str}";
 
     PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
 

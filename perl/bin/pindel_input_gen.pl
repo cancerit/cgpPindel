@@ -45,7 +45,7 @@ use Sanger::CGP::Pindel::InputGen;
 {
   my $options = setup();
 
-  my $generator = Sanger::CGP::Pindel::InputGen->new($options->{'bam'}, $options->{'exclude'}, $options->{'reference'});
+  my $generator = Sanger::CGP::Pindel::InputGen->new($options->{'bam'}, $options->{'exclude'}, $options->{'reference'}, $options->{'sequences'});
   $generator->set_threads($options->{'threads'});
   $generator->set_outdir($options->{'outdir'});
   $generator->run;
@@ -61,6 +61,7 @@ sub setup {
               'o|outdir=s' => \$opts{'outdir'},
               'b|bam=s' => \$opts{'bam'},
               'r|reference=s' => \$opts{'reference'},
+              's|sequences=s' => \$opts{'sequences'},
   ) or pod2usage(2);
 
   pod2usage(-verbose => 1) if(defined $opts{'h'});
@@ -114,6 +115,7 @@ pindel_input_gen.pl [options]
   Optional:
     -exclude   -e   Tabix indexed BED file of locations to not accept as anchors
                      - e.g. hi-seq depth from UCSC
+    -sequences -s   Comma separated list of primary contigs.
 
   Other:
     -help      -h   Brief help message.

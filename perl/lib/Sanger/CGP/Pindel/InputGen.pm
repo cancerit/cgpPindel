@@ -51,18 +51,25 @@ use Sanger::CGP::Pindel::InputGen::Pair;
 
 const my $PAIRS_PER_THREAD => 500_000;
 
-const my $BED_INTERSECT_V => q{ intersect -ubam -v -abam %s -b %s };
-const my $BAMCOLLATE => q{%s outputformat=sam colsbs=268435456 collate=1 classes=F,F2 exclude=DUP,SECONDARY,QCFAIL,SUPPLEMENTARY T=%s filename=%s reference=%s inputformat=%s};
+const my $BAMCOLLATE => q{%s outputformat=sam colsbs=268435456 collate=1 classes=F,F2 exclude=DUP,SECONDARY,QCFAIL,SUPPLEMENTARY T=%s filename=%s reference=%s inputformat=%s ranges='%s'};
 
 sub new {
-  my ($class, $bam, $exclude, $ref) = @_;
+  my ($class, $bam, $exclude, $ref, $primary_seqs) = @_;
   my $self = {'rname_fhs' => {},
               'threads' => 1, };
   bless $self, $class;
   $self->set_input($bam) if(defined $bam);
   $self->set_reference($ref) if(defined $bam);
   $self->set_exclude($exclude) if(defined $exclude);
+  $self->set_primary($primary_seqs) if(defined $primary_seqs);
   return $self;
+}
+
+sub set_primary_seqs {
+  my ($self, $primary_seqs) = @_;
+  $self->{'primary_seqs'} = $primary_seqs;
+  $self->{'primary_seqs'} =~ s/,/ /g;
+  return $self->{'primary_seqs'};
 }
 
 sub set_reference {
@@ -132,13 +139,7 @@ sub run {
   my $collate = which('bamcollate2');
 
   # ensure that commands containing pipes give appropriate errors
-  my $command = _which('samtools');
-  $command .= ' view -F 3840 -u '.$input;
-  $command .= ' | ';
-  $command .= _which('bedtools');
-  $command .= sprintf $BED_INTERSECT_V, 'stdin', $self->{'bed'};
-  $command .= ' | ';
-  $command .= sprintf $BAMCOLLATE, $collate, File::Spec->catfile($tmpdir, 'collate_tmp'), $self->{'bam'}, $self->{'ref'}, $aln_fmt;
+  my $command .= sprintf $BAMCOLLATE, $collate, File::Spec->catfile($tmpdir, 'collate_tmp'), $self->{'bam'}, $self->{'ref'}, $aln_fmt, $self->{'primary_seqs'};
   try {
     my ($rg_pis, $sample_name);
     my $head_ob = Sanger::CGP::Pindel::InputGen::SamHeader->new($self->{'bam'});
