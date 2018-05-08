@@ -51,6 +51,7 @@ use Sanger::CGP::Pindel::InputGen::Pair;
 
 const my $PAIRS_PER_THREAD => 500_000;
 
+const my $BED_INTERSECT_V => q{ intersect -ubam -v -abam %s -b %s };
 const my $BAMCOLLATE => q{%s outputformat=sam colsbs=268435456 collate=1 classes=F,F2 exclude=DUP,SECONDARY,QCFAIL,SUPPLEMENTARY T=%s filename=%s reference=%s inputformat=%s};
 
 sub new {
@@ -131,7 +132,13 @@ sub run {
   my $collate = which('bamcollate2');
 
   # ensure that commands containing pipes give appropriate errors
-  my $command .= sprintf $BAMCOLLATE, $collate, File::Spec->catfile($tmpdir, 'collate_tmp'), $self->{'bam'}, $self->{'ref'}, $aln_fmt;
+  my $command = _which('samtools');
+  $command .= ' view -F 3840 -u '.$input;
+  $command .= ' | ';
+  $command .= _which('bedtools');
+  $command .= sprintf $BED_INTERSECT_V, 'stdin', $self->{'bed'};
+  $command .= ' | ';
+  $command .= sprintf $BAMCOLLATE, $collate, File::Spec->catfile($tmpdir, 'collate_tmp'), $self->{'bam'}, $self->{'ref'}, $aln_fmt;
   try {
     my ($rg_pis, $sample_name);
     my $head_ob = Sanger::CGP::Pindel::InputGen::SamHeader->new($self->{'bam'});
