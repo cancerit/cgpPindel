@@ -61,7 +61,7 @@ sub new {
   $self->set_input($bam) if(defined $bam);
   $self->set_reference($ref) if(defined $bam);
   $self->set_exclude($exclude) if(defined $exclude);
-  $self->set_primary($primary_seqs) if(defined $primary_seqs);
+  $self->set_primary_seqs($primary_seqs) if(defined $primary_seqs);
   return $self;
 }
 
