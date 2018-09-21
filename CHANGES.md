@@ -1,5 +1,9 @@
 # CHANGES
 
+## 3.0.2
+
+* Correct example rule files for *Fragment.lst files to use FFnnn filter types
+
 ## 3.0.1
 
 * Update tabix calls to directly use query_full (solves GRCh38 contig name issues).
