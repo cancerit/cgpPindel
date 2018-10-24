@@ -46,6 +46,6 @@ script:
  - cd ../
  - git clone --depth 1 --single-branch --branch dev https://github.com/cancerit/cgpVcf.git
  - cd cgpVcf
- - ./setup.sh $HOME/cgpVcf-opt $HOME/PCAP-opt
+ - ./setup.sh $HOME/PCAP-opt
  - cd ../
- - ./setup.sh $HOME/cgpPindel-opt $HOME/cgpVcf-opt:$HOME/PCAP-opt
+ - ./setup.sh $HOME/PCAP-opt

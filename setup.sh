@@ -108,7 +108,7 @@ echo $CPANM
 PCAP=`perl -le 'eval "require $ARGV[0]" and print $ARGV[0]->VERSION' PCAP`
 if [[ "x$PCAP" == "x" ]] ; then
   echo "PREREQUISITE: Please install PCAP-core before proceeding:"
-  echo "  https://github.com/ICGC-TCGA-PanCancer/PCAP-core/releases"
+  echo "  https://github.com/cancerit/PCAP-core/releases"
   exit 1;
 fi
 
