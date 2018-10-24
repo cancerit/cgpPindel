@@ -306,7 +306,7 @@ sub find_germline_rule {
     }
   }
   close $ffh;
-  $filter = 'NA' unless($filter)
+  $filter = 'NA' unless($filter);
   return $filter;
 }
 
