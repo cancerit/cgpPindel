@@ -1,5 +1,10 @@
 # CHANGES
 
+## 3.0.3
+
+Changes to how germline filter determined resulted in dummy germline bed file not being generated as previously.
+This release reinstates the old behaviour.
+
 ## 3.0.2
 
 * Correct example rule files for *Fragment.lst files to use FFnnn filter types
