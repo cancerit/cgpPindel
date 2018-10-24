@@ -61,23 +61,28 @@ my $vcf = Vcf->new( file=>$options->{'input'},
 $vcf->parse_header();
 
 my @segments;
-while(my $x = $vcf->next_data_array){
-  next unless(";$x->[6];" =~ m/;$flag;/); # skip things that don't have this flag value
-  my ($ref, $start, $alt) = (@{$x})[0,1,4];
-  my $end = $start + length $alt;
-  if(scalar @segments == 0) {
+if($flag eq 'NA') {
+  warn "Flag not applied, generating dummy bed file.\n";
+}
+else {
+  while(my $x = $vcf->next_data_array){
+    next unless(";$x->[6];" =~ m/;$flag;/); # skip things that don't have this flag value
+    my ($ref, $start, $alt) = (@{$x})[0,1,4];
+    my $end = $start + length $alt;
+    if(scalar @segments == 0) {
+      push @segments, [$ref, $start, $end];
+      next;
+    }
+    if($ref ne $segments[-1][0]) {
+      push @segments, [$ref, $start, $end];
+      next;
+    }
+    if($start >= $segments[-1][1] && $start <= $segments[-1][2]) {
+      $segments[-1][2] = $end if($end > $segments[-1][2]); # as only sorted by start pos
+      next;
+    }
     push @segments, [$ref, $start, $end];
-    next;
   }
-  if($ref ne $segments[-1][0]) {
-    push @segments, [$ref, $start, $end];
-    next;
-  }
-  if($start >= $segments[-1][1] && $start <= $segments[-1][2]) {
-    $segments[-1][2] = $end if($end > $segments[-1][2]); # as only sorted by start pos
-    next;
-  }
-  push @segments, [$ref, $start, $end];
 }
 
 if(scalar @segments == 0) {

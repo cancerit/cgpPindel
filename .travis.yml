@@ -21,13 +21,17 @@ addons:
    - unzip
    - libpng12-dev
    - libexpat1-dev
+   - libgoogle-perftools-dev
+   - lsof
+   - libbz2-dev
+   - liblzma-dev
 
 install: true
 
 language: perl
 
 perl:
- - "5.22"
+ - "5.22-shrplib"
 
 script:
  - set -e
@@ -36,12 +40,12 @@ script:
  - cd cgpBigWig
  - ./setup.sh $HOME/PCAP-opt
  - cd ../
- - git clone --depth 1 --single-branch --branch dev https://github.com/ICGC-TCGA-PanCancer/PCAP-core.git
+ - git clone --depth 1 --single-branch --branch develop https://github.com/cancerit/PCAP-core.git
  - cd PCAP-core
  - ./setup.sh $HOME/PCAP-opt
  - cd ../
  - git clone --depth 1 --single-branch --branch dev https://github.com/cancerit/cgpVcf.git
  - cd cgpVcf
- - ./setup.sh $HOME/cgpVcf-opt $HOME/PCAP-opt
+ - ./setup.sh $HOME/PCAP-opt
  - cd ../
- - ./setup.sh $HOME/cgpPindel-opt $HOME/cgpVcf-opt $HOME/PCAP-opt
+ - ./setup.sh $HOME/PCAP-opt
