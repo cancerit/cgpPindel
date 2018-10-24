@@ -31,7 +31,7 @@ install: true
 language: perl
 
 perl:
- - "5.22"
+ - "5.22-shrplib"
 
 script:
  - set -e
