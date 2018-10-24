@@ -48,4 +48,4 @@ script:
  - cd cgpVcf
  - ./setup.sh $HOME/cgpVcf-opt $HOME/PCAP-opt
  - cd ../
- - ./setup.sh $HOME/cgpPindel-opt $HOME/cgpVcf-opt $HOME/PCAP-opt
+ - ./setup.sh $HOME/cgpPindel-opt $HOME/cgpVcf-opt:$HOME/PCAP-opt

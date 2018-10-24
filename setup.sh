@@ -47,8 +47,8 @@ if [[ ($# -ne 1 && $# -ne 2) ]] ; then
   echo "Please provide an installation path and optionally perl lib paths to allow, e.g."
   echo "  ./setup.sh /opt/myBundle"
   echo "OR all elements versioned:"
-  echo "  ./setup.sh /opt/cgpVcf-X.X.X /opt/PCAP-X.X.X/lib/perl"
-  exit 0
+  echo "  ./setup.sh /opt/cgpPinel-X.X.X /opt/cgpVcf-X.X.X/lib/perl:/opt/PCAP-core-X.X.X/lib/perl"
+  exit 1
 fi
 
 INST_PATH=$1
