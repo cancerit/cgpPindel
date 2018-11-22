@@ -1,5 +1,9 @@
 # CHANGES
 
+## 3.0.4
+
+Output bug for pindel BAM/CRAM corrected.  When more than 1 chr in output files had no reads.
+
 ## 3.0.3
 
 Changes to how germline filter determined resulted in dummy germline bed file not being generated as previously.
