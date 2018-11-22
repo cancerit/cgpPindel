@@ -403,7 +403,9 @@ sub fragmented_files {
   my $file_count = scalar @{$files};
   return $files if($file_count <= 100);
   warn "Extreme number of files, slow merging of $file_count files required\n";
-  my $grep_non_header = qq{zgrep -v '^$hprefix' %s >> %s};
+  my $extra = ' | gzip -c ';
+  $extra = q{} if($outfile =~ m/vcf$/);
+  my $grep_non_header = qq{zgrep -v '^$hprefix' %s $extra >> %s};
   my $header_count;
 
   my $merged_file = $base_dir.$outfile;

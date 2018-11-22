@@ -42,7 +42,7 @@ const my $BAMSORT => ' inputformat=%s outputformat=%s reference=%s | tee %s | md
 
 sub sam_to_sorted_bam {
   my ($path_prefix, $base_dir, $sam_files, $as_cram, $as_csi, $ref) = @_;
-  $sam_files = Sanger::CGP::Pindel::Implement::fragmented_files($base_dir, $sam_files, '@', 'FINAL_MERGED.sam');
+  $sam_files = Sanger::CGP::Pindel::Implement::fragmented_files($base_dir, $sam_files, '@', 'FINAL_MERGED.sam.gz');
   update_header_when_no_reads($base_dir, $sam_files);
   my $aln_fmt = 'bam';
   my $idx_fmt = 'bai';
@@ -60,13 +60,24 @@ sub sam_to_sorted_bam {
   my $aln_idx = $aln_out.'.'.$idx_fmt;
   my $aln_md5 = $aln_out.'.md5';
   my $command = q{};
-  $command .= "cd $base_dir; " unless($sam_files->[0] =~ m/FINAL_MERGED[.]sam$/);
-  $command .= sprintf ' zcat %s | ', join q{ }, @{$sam_files};
+  if($sam_files->[0] =~ m/FINAL_MERGED[.]sam.gz$/) {
+    $command .= sprintf ' zcat %s | ', $sam_files->[0];
+  }
+  else {
+    my $first_file = shift @{$sam_files};
+    $command .= "cd $base_dir; ";
+    $command .= sprintf q{ (zcat %s ; zgrep -v '^@' %s) | }, $first_file, join q{ }, @{$sam_files};
+  }
+
   $command .= which('bamsort');
   $command .= sprintf $BAMSORT, 'sam', $aln_fmt, $ref, $aln_out, $aln_md5;
+
+  $command = sprintf q{bash -c "set -o pipefail; %s"}, $command;
+  warn "running: $command";
   system($command);
 
   $command = sprintf 'samtools index %s %s %s', $idx_switch, $aln_out, $aln_idx;
+  warn "running: $command";
   system($command);
 
   return 1;
@@ -75,7 +86,13 @@ sub sam_to_sorted_bam {
 sub update_header_when_no_reads {
   my ($base_dir, $sam_files) = @_;
   for my $sam_file (@{$sam_files}) {
-    my $sam = $base_dir.$sam_file;
+    my $sam;
+    if($sam_file =~ m/FINAL_MERGED[.]sam.gz$/) {
+      $sam = $sam_file
+    }
+    else {
+      $sam = $base_dir.$sam_file;
+    }
     my @header;
     my $has_records = 0;
     open my $IN, '<:gzip', $sam || die $!;
