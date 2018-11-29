@@ -199,7 +199,9 @@ sub parse_contigs{
 
       if(exists $contigs->{$name}){
       	croak "ERROR: Trying to merge contigs with conflicting data:\n".Dumper($contigs->{$name})."\n".Dumper($contig)
-          unless $contig->compare($contigs->{$name});
+          unless _compare_name_n_length($contig, $contigs->{$name});
+        croak "ERROR: Trying to merge contigs with conflicting data:\n".Dumper($contigs->{$name})."\n".Dumper($contig)
+          unless _compare_checksum($contig, $contigs->{$name});
       } else {
       	$contigs->{$name} = $contig;
       }
@@ -231,6 +233,33 @@ sub parse_samples{
     }
   }
   return $samples;
+}
+
+
+sub _compare_name_n_length{
+	my($contig,$contig1) = @_;
+	croak 'Incorrect input' unless ref $contig eq 'Sanger::CGP::Vcf::Contig';
+
+  # check for defined mismatch
+  return 0 if((defined $contig->name      ? 1 : 0) != (defined $contig1->name     ? 1 : 0));
+  return 0 if((defined $contig->length    ? 1 : 0) != (defined $contig1->length   ? 1 : 0));
+
+  return 0 if defined $contig1->name && $contig->name ne $contig1->name;
+  return 0 if defined $contig1->length && $contig->length != $contig1->length;
+
+  return 1;
+}
+
+sub _compare_checksum{
+	my($contig,$contig1) = @_;
+	croak 'Incorrect input' unless ref $contig eq 'Sanger::CGP::Vcf::Contig';
+  # check for defined mismatch
+  return 0 if((defined $contig->checksum  ? 1 : 0) != (defined $contig1->checksum ? 1 : 0));
+  # pass if checksum is not defined ...
+  return 1 if(!defined $contig1->checksum && !defined $contig1->checksum);
+  # fail if checksum is defined and not equal
+  return 0 if defined $contig1->checksum && $contig->checksum ne $contig1->checksum;
+  return 1;
 }
 
 1;
