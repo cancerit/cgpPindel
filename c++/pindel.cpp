@@ -114,7 +114,7 @@ unsigned int BalanceCutoff = 50;                         //#
 const bool Analyze_TD_INV_LI_Others = false;                    //#
 const unsigned int NumRead2ReportCutOff = 3;             //#
 short MaxRangeIndex = 9;// 5 or 6 or 7 or maximum 8//#
-const float MaximumAllowedMismatchRate = 0.1;            //#
+const float MaximumAllowedMismatchRate = 0.02;            //#  The value of the original is too big; revise in 2018.11.26 by Liang Hao
 const short Min_Num_Matched_Bases = 30;                  //#
 // #########################################################
 //const float Double_Seq_Error_Rate_Per_Side = Seq_Error_Rate_Per_Side * 2;
@@ -820,7 +820,7 @@ int main (int argc, char *argv[]) {
 		 }
 
 		 cerr << "Searching breakpoints of deletion events" << endl;
-		 for (short RangeIndex = 1; RangeIndex < MaxRangeIndex; RangeIndex++) {
+		 for (short RangeIndex = 0; RangeIndex < MaxRangeIndex; RangeIndex++) {       //RangeIndex begin from 0  revise in 2018.11.26 by Liang Hao
 
 			 CountFarEnd = 0;
 			 CountFarEndMinus = 0;
@@ -866,7 +866,7 @@ int main (int argc, char *argv[]) {
 		 }
 
 		 cerr << "Searching breakpoints of SI events" << endl;
-		 for (short RangeIndex = 1; RangeIndex < 2; RangeIndex++) {
+		 for (short RangeIndex = 0; RangeIndex < 2; RangeIndex++) {         //RangeIndex begin from 0  revise in 2018.11.26 by Liang Hao
 			 CountFarEnd = 0;
 			 CountFarEndMinus = 0;
 			 CountFarEndPlus = 0;
@@ -906,7 +906,7 @@ if (Analyze_TD_INV_LI_Others) {
 
 		 cerr << "Searching breakpoints of tandem duplication events" << endl;
 		 //int CountFarEnd, CountFarEndPlus, CountFarEndMinus;
-		 for (short RangeIndex = 1; RangeIndex < MaxRangeIndex; RangeIndex++) {
+		 for (short RangeIndex = 0; RangeIndex < MaxRangeIndex; RangeIndex++) {       //RangeIndex begin from 0  revise in 2018.11.26 by Liang Hao
 
 			 CountFarEnd = 0;
 			 CountFarEndMinus = 0;
@@ -964,7 +964,7 @@ if (Analyze_TD_INV_LI_Others) {
 		 cerr << "Searching breakpoints of inversions" << endl;
 		 unsigned ReadsUsedForD = 0;
 		 unsigned ReadsUsedForDI = 0;
-		 for (short RangeIndex = 1; RangeIndex < MaxRangeIndex; RangeIndex++) {
+		 for (short RangeIndex = 0; RangeIndex < MaxRangeIndex; RangeIndex++) {      //RangeIndex begin from 0  revise in 2018.11.26 by Liang Hao
 
 			 CountFarEnd = 0;
 			 CountFarEndMinus = 0;
@@ -2266,14 +2266,14 @@ void CheckLeft_Close(const SPLIT_READ & OneRead,
 		for (short i = 0; i <= OneRead.MAX_SNP_ERROR; i++) {
 			if (Left_PD[i].size() == 1 && CurrentLength >= BP_Left_Start + i) {
 				Sum = 0;
-				if (ADDITIONAL_MISMATCH)
-		   		for (short j = 1; j <= ADDITIONAL_MISMATCH; j++)
-			   		Sum += Left_PD[i + j].size();
-
-				if (Sum == 0 && i <= (short)(CurrentLength * Seq_Error_Rate + 1)) {
+				if (ADDITIONAL_MISMATCH)                               
+				   for (short j = 0; j <= i+ADDITIONAL_MISMATCH; j++)
+			   		  Sum += Left_PD[j].size();                      //Maybe the previous SNPS still exist; revise in 2018.11.26 by Liang Hao
+				if (Sum == 1 && i <= (short)(CurrentLength * Seq_Error_Rate + 1)) {       
 					UniquePoint TempOne;
 					TempOne.LengthStr = CurrentLength;
 					TempOne.AbsLoc = Left_PD[i][0];
+					
 					TempOne.Direction = FORWARD;
 					TempOne.Strand = ANTISENSE;
 					TempOne.Mismatches = i;
@@ -2356,11 +2356,10 @@ void CheckRight_Close(const SPLIT_READ & OneRead,
 	   for (short i = 0; i <= OneRead.MAX_SNP_ERROR; i++) {
 		   if (Right_PD[i].size() == 1 && CurrentLength >= BP_Right_Start + i) {
 				Sum = 0;
-				if (ADDITIONAL_MISMATCH)
-					for (short j = 1; j <= ADDITIONAL_MISMATCH; j++)
-						Sum += Right_PD[i + j].size();
-
-				if (Sum == 0 && i <= (short)(CurrentLength * Seq_Error_Rate + 1)) {
+				if (ADDITIONAL_MISMATCH)                               
+				   for (short j = 0; j <= i+ADDITIONAL_MISMATCH; j++)
+			   		  Sum += Right_PD[j].size();                      //Maybe the previous SNPS still exist; revise in 2018.11.26 by Liang Hao
+				if (Sum == 1 && i <= (short)(CurrentLength * Seq_Error_Rate + 1)) {
 					UniquePoint TempOne;
 					TempOne.LengthStr = CurrentLength;
 					TempOne.AbsLoc = Right_PD[i][0];
@@ -2447,11 +2446,10 @@ void CheckLeft_Far(const SPLIT_READ & OneRead,
 		for (short i = 0; i <= OneRead.MAX_SNP_ERROR; i++) {
 			if (Left_PD[i].size() == 1 && CurrentLength >= BP_Left_Start + i) {
 				Sum = 0;
-				if (ADDITIONAL_MISMATCH)
-		   		for (short j = 1; j <= ADDITIONAL_MISMATCH; j++)
-			   		Sum += Left_PD[i + j].size();
-
-				if (Sum == 0 && i <= (short)(CurrentLength * Seq_Error_Rate + 1)) {
+				if (ADDITIONAL_MISMATCH)                               
+				   for (short j = 0; j <= i+ADDITIONAL_MISMATCH; j++)
+			   		  Sum += Left_PD[j].size();                      //Maybe the previous SNPS still exist; revise in 2018.11.26 by Liang Hao
+				if (Sum == 1 && i <= (short)(CurrentLength * Seq_Error_Rate + 1)) {  
 					UniquePoint TempOne;
 					TempOne.LengthStr = CurrentLength;
 					TempOne.AbsLoc = Left_PD[i][0];
@@ -2567,11 +2565,10 @@ void CheckRight_Far(const SPLIT_READ & OneRead,
 	   for (short i = 0; i <= OneRead.MAX_SNP_ERROR; i++) {
 		   if (Right_PD[i].size() == 1 && CurrentLength >= BP_Right_Start + i) {
 				Sum = 0;
-				if (ADDITIONAL_MISMATCH)
-					for (short j = 1; j <= ADDITIONAL_MISMATCH; j++)
-						Sum += Right_PD[i + j].size();
-
-				if (Sum == 0 && i <= (short)(CurrentLength * Seq_Error_Rate + 1)) {
+				if (ADDITIONAL_MISMATCH)                               
+				   for (short j = 0; j <= i+ADDITIONAL_MISMATCH; j++)
+			   		  Sum += Right_PD[j].size();                      //Maybe the previous SNPS still exist; revise in 2018.11.26 by Liang Hao
+				if (Sum == 1 && i <= (short)(CurrentLength * Seq_Error_Rate + 1)) {
 					UniquePoint TempOne;
 					TempOne.LengthStr = CurrentLength;
 					TempOne.AbsLoc = Right_PD[i][0];
@@ -4497,7 +4494,7 @@ void GetCloseEnd(const string & CurrentChr, SPLIT_READ & Temp_One_Read) {
 					if (CurrentChr[pos] == LeftChar) {
 						PD[0].push_back(pos);
 					}
-					else PD[1].push_back(pos);
+					//else PD[1].push_back(pos);   find close_end: first Char of read is not mismatched; revise in 2018.11.26 by Liang Hao
 				}
 			}
 			else { //Match2N[(short)'A'] = 'N';
@@ -4528,7 +4525,7 @@ void GetCloseEnd(const string & CurrentChr, SPLIT_READ & Temp_One_Read) {
 					if (CurrentChr[pos] == RightChar) {
 						PD[0].push_back(pos);
 					}
-					else PD[1].push_back(pos);
+					//else PD[1].push_back(pos);    find close_end: first Char of read is not mismatched; revise in 2018.11.26 by Liang Hao
 				}
 			}
 			else { //Match2N[(short)'A'] = 'N';
@@ -4651,7 +4648,7 @@ void GetFarEnd_SingleStrandDownStreamInsertions(const string & CurrentChr, SPLIT
 
 		End = Temp_One_Read.UP_Close[0].AbsLoc + Temp_One_Read.UP_Close[0].LengthStr;
 		if (End > SpacerBeforeAfter + Temp_One_Read.InsertSize * 2 + DSizeArray[RangeIndex])
-		   Start = End - DSizeArray[RangeIndex] - Temp_One_Read.InsertSize * 2;
+		   Start = End - DSizeArray[RangeIndex] - Temp_One_Read.InsertSize * 2; 
 		else Start = SpacerBeforeAfter;
 
 
@@ -4792,7 +4789,7 @@ void GetFarEnd_SingleStrandDownStream(const string & CurrentChr, SPLIT_READ & Te
 
 		End = Temp_One_Read.UP_Close[0].AbsLoc + Temp_One_Read.UP_Close[0].LengthStr - Temp_One_Read.ReadLength;
 		if (End > SpacerBeforeAfter + Temp_One_Read.InsertSize * 2 + DSizeArray[RangeIndex])
-		   Start = End - DSizeArray[RangeIndex] - Temp_One_Read.InsertSize * 2;
+		   Start = End - DSizeArray[RangeIndex];// - Temp_One_Read.InsertSize * 2;     revise in 2018.11.26 by Liang Hao
 		else Start = SpacerBeforeAfter;
 
 
@@ -4849,7 +4846,7 @@ void GetFarEnd_SingleStrandDownStream(const string & CurrentChr, SPLIT_READ & Te
 
 		Start = Temp_One_Read.UP_Close[0].AbsLoc - Temp_One_Read.UP_Close[0].LengthStr + Temp_One_Read.ReadLength;
 		//Start = Temp_One_Read.MatchedRelPos + SpacerBeforeAfter;
-		End = Start + DSizeArray[RangeIndex] + Temp_One_Read.InsertSize * 2;
+		End = Start + DSizeArray[RangeIndex];// + Temp_One_Read.InsertSize * 2;      revise in 2018.11.26 by Liang Hao
 		if (End > CurrentChr.size() - SpacerBeforeAfter) End = CurrentChr.size() - SpacerBeforeAfter;
 
 		RightChar = CurrentReadSeq[Temp_One_Read.ReadLengthMinus];
@@ -4932,7 +4929,7 @@ void GetFarEnd_SingleStrandUpStream(const string & CurrentChr, SPLIT_READ & Temp
 		CurrentReadSeq = Temp_One_Read.UnmatchedSeq;
 
 		Start = Temp_One_Read.UP_Close[0].AbsLoc + Temp_One_Read.UP_Close[0].LengthStr;
-		End = Start + DSizeArray[RangeIndex] + Temp_One_Read.InsertSize * 2;
+		End = Start + DSizeArray[RangeIndex];// + Temp_One_Read.InsertSize * 2;      revise in 2018.11.26 by Liang Hao
 		if (End > CurrentChr.size() - SpacerBeforeAfter) End = CurrentChr.size() - SpacerBeforeAfter;
 
 		LeftChar = CurrentReadSeq[0];
@@ -4989,7 +4986,7 @@ void GetFarEnd_SingleStrandUpStream(const string & CurrentChr, SPLIT_READ & Temp
 		//Start = Temp_One_Read.MatchedRelPos + SpacerBeforeAfter;
 
 		if (End > DSizeArray[RangeIndex] + Temp_One_Read.InsertSize * 2 + SpacerBeforeAfter)
-			Start = End - DSizeArray[RangeIndex] - Temp_One_Read.InsertSize * 2;
+			Start = End - DSizeArray[RangeIndex];// - Temp_One_Read.InsertSize * 2;    The original search region is a bit large;  revise in 2018.11.26 by Liang Hao
 		else Start = SpacerBeforeAfter;
 
 		RightChar = CurrentReadSeq[Temp_One_Read.ReadLengthMinus];
@@ -5408,10 +5405,10 @@ void CheckBoth(const SPLIT_READ & OneRead,
 			if (PD_Plus[i].size() + PD_Minus[i].size() == 1 && CurrentLength >= BP_Start + i) {
 				Sum = 0;
 				if (ADDITIONAL_MISMATCH)
-		   		for (short j = 1; j <= ADDITIONAL_MISMATCH; j++)
-			   		Sum += PD_Plus[i + j].size() + PD_Minus[i + j].size();
-
-				if (Sum == 0 && i <= (short)(Seq_Error_Rate * CurrentLength + 1)) {
+		   		for (short j = 0; j <= i+ADDITIONAL_MISMATCH; j++)
+			   		Sum += PD_Plus[j].size() + PD_Minus[j].size();
+					//revise in 2018.11.26 by Liang Hao
+				if (Sum == 1 && i <= (short)(Seq_Error_Rate * CurrentLength + 1)) {
 					UniquePoint TempOne;
 					TempOne.LengthStr = CurrentLength;
 					if (PD_Plus[i].size() == 1) {
