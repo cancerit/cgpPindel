@@ -57,6 +57,12 @@ sub unmapped_pair {
   return 0;
 }
 
+sub qcfailed_pair {
+  my $self = shift;
+  return 1 if($self->{'r1'}->qc_failed && $self->{'r2'}->qc_failed);
+  return 0;
+}
+
 sub has_good_anchor {
   my $self = shift;
   my $r2_state = $self->{'r2'}->good_anchor; # to ensure both fully populates
@@ -73,6 +79,7 @@ sub has_good_query {
 
 sub keep_pair {
   my $self = shift;
+  return 0 if($self->qcfailed_pair);
   return 0 if($self->unmapped_pair);
   return 0 if($self->exact);
   return 0 unless($self->has_good_anchor);
