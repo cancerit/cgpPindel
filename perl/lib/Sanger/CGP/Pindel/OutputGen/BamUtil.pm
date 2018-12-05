@@ -241,13 +241,12 @@ sub _compare{
   # check for defined mismatch
   return 0 if((defined $contig->name      ? 1 : 0) != (defined $contig1->name     ? 1 : 0));
   return 0 if((defined $contig->length    ? 1 : 0) != (defined $contig1->length   ? 1 : 0));
-  return 0 if((defined $contig->checksum  ? 1 : 0) != (defined $contig1->checksum ? 1 : 0));
 
   return 0 if defined $contig1->name && $contig->name ne $contig1->name;
   return 0 if defined $contig1->length && $contig->length != $contig1->length;
 
-  return 1 if(!defined $contig1->checksum && !defined $contig1->checksum);
-  return 0 if defined $contig1->checksum && $contig->checksum ne $contig1->checksum;
+  return 1 if(!defined $contig->checksum || !defined $contig1->checksum);
+  return 0 if $contig->checksum ne $contig1->checksum;
   return 1;
 }
 
