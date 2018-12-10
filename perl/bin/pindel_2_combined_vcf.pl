@@ -240,7 +240,7 @@ sub setup{
               'wta|wtacc=s' => \$opts{'wta'},
               'mta|mtacc=s' => \$opts{'mta'},
               'as|assembly=s' => \$opts{'as'},
-              'sp|species=s' => \$opts{'sp'},
+              'sp|species=s{0,}' => \@{$opts{'sp'}},
               'a|accsource=s' => \$opts{'a'},
               's|skipwt' => \$opts{'s'},
               'g|idstart=i' => \$opts{'g'},
@@ -270,6 +270,10 @@ sub setup{
 
   pod2usage(-message  => "\nERROR: r|ref must be defined.\n", -verbose => 1,  -output => \*STDERR) unless($opts{'r'});
   pod2usage(-message  => "\nERROR: r|ref |".$opts{'r'}."| must be a valid file.\n", -verbose => 1,  -output => \*STDERR) unless(-f $opts{'r'});
+
+  if(scalar @{$opts{'sp'}} > 0 ){
+     $opts{'sp'}="@{$opts{'sp'}}";
+  }
 
   return \%opts;
 }

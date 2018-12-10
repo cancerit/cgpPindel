@@ -1,13 +1,16 @@
 # CHANGES
 
+## 3.0.5
+* Handles species names with spaces in it
+* modified checks for species,assembly and checksum
 ## 3.0.4
 
-Output bug for pindel BAM/CRAM corrected.  When more than 1 chr in output files had no reads.
+* Output bug for pindel BAM/CRAM corrected.  When more than 1 chr in output files had no reads.
 
 ## 3.0.3
 
-Changes to how germline filter determined resulted in dummy germline bed file not being generated as previously.
-This release reinstates the old behaviour.
+* Changes to how germline filter determined resulted in dummy germline bed file not being generated as previously.
+* This release reinstates the old behaviour.
 
 ## 3.0.2
 
