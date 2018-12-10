@@ -240,7 +240,7 @@ sub setup{
               'wta|wtacc=s' => \$opts{'wta'},
               'mta|mtacc=s' => \$opts{'mta'},
               'as|assembly=s' => \$opts{'as'},
-              'sp|species={0,}' => \@{$opts{'sp'}},
+              'sp|species=s{0,}' => \@{$opts{'sp'}},
               'a|accsource=s' => \$opts{'a'},
               's|skipwt' => \$opts{'s'},
               'g|idstart=i' => \$opts{'g'},

@@ -110,7 +110,7 @@ sub setup {
               'i|index=i' => \$opts{'index'},
               'v|version' => \$opts{'version'},
               # these are specifically for pin2vcf
-              'sp|species=s' => \$opts{'species'},
+              'sp|species=s{0,}' => \@{$opts{'sp'}},
               'as|assembly=s' => \$opts{'assembly'},
               'st|seqtype=s' => \$opts{'seqtype'},
               'sg|skipgerm' => \$opts{'skipgerm'},
@@ -204,6 +204,10 @@ sub setup {
   make_path($logs) unless(-d $logs);
 
   $opts{'tmp'} = $tmpdir;
+
+  if(scalar @{$opts{'sp'}} > 0 ){
+     $opts{'sp'}="@{$opts{'sp'}}";
+  }
 
   return \%opts;
 }
