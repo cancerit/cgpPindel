@@ -1,5 +1,7 @@
 # CHANGES
 
+## 3.0.6
+* Fixed version tag
 ## 3.0.5
 * Handles species names with spaces in it
 * modified checks for species,assembly and checksum
