@@ -25,6 +25,12 @@ addons:
    - lsof
    - libbz2-dev
    - liblzma-dev
+   - gnutls-dev
+   - libtasn1-6-dev
+   - p11-kit
+   - libxml2-dev
+   - libgd-dev
+   - psmisc
 
 install: true
 
