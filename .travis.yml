@@ -32,7 +32,7 @@ addons:
    - libxml2-dev
    - libgd-dev
    - psmisc
-   - libdb
+   - libdb-dev
 
 install: true
 
