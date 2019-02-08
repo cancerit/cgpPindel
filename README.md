@@ -43,7 +43,7 @@ There are pre-built images containing this codebase on quay.io.
 
 These were primarily designed for use with dockstore.org but can be used as normal containers.
 
-The docker images know to work correctly after import into a singularity image.
+The docker images are known to work correctly after import into a singularity image.
 
 ## Dependencies/Install
 
