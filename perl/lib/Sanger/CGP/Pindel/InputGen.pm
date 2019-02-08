@@ -51,7 +51,7 @@ use Sanger::CGP::Pindel::InputGen::Pair;
 
 const my $PAIRS_PER_THREAD => 500_000;
 
-const my $BAMCOLLATE => q{%s outputformat=sam colsbs=268435456 collate=1 classes=F,F2 exclude=DUP,SECONDARY,QCFAIL,SUPPLEMENTARY T=%s filename=%s reference=%s inputformat=%s};
+const my $BAMCOLLATE => q{%s outputformat=sam colsbs=268435456 collate=1 classes=F,F2 exclude=DUP,SECONDARY,SUPPLEMENTARY T=%s filename=%s reference=%s inputformat=%s};
 
 sub new {
   my ($class, $bam, $exclude, $ref) = @_;
@@ -238,8 +238,7 @@ sub reads_to_pindel {
   for(1..$total_pairs) {
     my $pair = Sanger::CGP::Pindel::InputGen::Pair->new(\shift @reads, \shift @reads, $tabix);
     next unless($pair->keep_pair);
-    $to_pindel->set_pair($pair);
-    push @records, @{$to_pindel->pair_to_pindel};
+    push @records, @{$to_pindel->pair_to_pindel($pair)};
 
   }
   my $retained = scalar @records;
