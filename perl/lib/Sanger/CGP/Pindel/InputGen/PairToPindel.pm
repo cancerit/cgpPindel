@@ -1,7 +1,7 @@
 package Sanger::CGP::Pindel::InputGen::PairToPindel;
 
 ########## LICENCE ##########
-# Copyright (c) 2014-2018 Genome Research Ltd.
+# Copyright (c) 2014-2019 Genome Research Ltd.
 #
 # Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
@@ -55,14 +55,9 @@ sub setup_rg_inserts {
   return 1;
 }
 
-sub set_pair {
-  my ($self, $pair) = @_;
-  croak "No pair provided" unless(defined $pair);
-  $self->{'pair'} = $pair;
-}
-
 sub pair_to_pindel {
-  my $self = shift;
+  my ($self, $pair_in) = @_;
+  $self->{'pair'} = $pair_in;
   my $r1 = $self->{'pair'}->{'r1'};
   my $r2 = $self->{'pair'}->{'r2'};
   my @pindel_records;

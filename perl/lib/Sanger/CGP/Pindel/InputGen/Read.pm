@@ -1,7 +1,7 @@
 package Sanger::CGP::Pindel::InputGen::Read;
 
 ########## LICENCE ##########
-# Copyright (c) 2014-2018 Genome Research Ltd.
+# Copyright (c) 2014-2019 Genome Research Ltd.
 #
 # Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
@@ -41,6 +41,7 @@ const my $UNMAPPED      => 4;
 const my $READ_REVERSED => 16; #0x0010 (set when reverse)
 const my $FIRST_IN_PAIR => 64;
 const my $SECOND_IN_PAIR => 128;
+const my $QC_FAIL => 512;
 
 const my $MIN_MAPQ => 0;
 const my $MIN_ANCHOR_MAPQ => 0;
@@ -100,6 +101,11 @@ sub unmapped {
 sub reversed {
   my $self = shift;
   (($self->{'flag'} | $READ_REVERSED) == $self->{'flag'}) ? 1 : 0;
+}
+
+sub qc_failed {
+  my $self = shift;
+  (($self->{'flag'} | $QC_FAIL) == $self->{'flag'}) ? 1 : 0;
 }
 
 sub strand {
@@ -191,6 +197,7 @@ sub good_query {
 
 sub _good_query {
   my $self = shift;
+  return 0 if($self->qc_failed);
   return 0 if(index($self->{'seq'},'NN') >= 0);
   return 0 if($self->frac_pbq_poor > $MAX_POOR_PBQ_FRAC);
   unless($self->unmapped) {

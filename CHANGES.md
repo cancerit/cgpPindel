@@ -1,10 +1,19 @@
 # CHANGES
 
+## 3.1.0
+
+* Incorporates updated pindel which improves sensitivity
+* Internally interpret QCFAIL to determine if whole pair fails
+
 ## 3.0.6
+
 * Fixed version tag
+
 ## 3.0.5
+
 * Handles species names with spaces in it
 * modified checks for species,assembly and checksum
+
 ## 3.0.4
 
 * Output bug for pindel BAM/CRAM corrected.  When more than 1 chr in output files had no reads.
