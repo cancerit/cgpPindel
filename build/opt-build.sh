@@ -9,7 +9,7 @@ fi
 set -u
 
 # cgpPindel
-VER_CGPPINDEL="v3.0.1"
+VER_CGPPINDEL="v3.1.0"
 
 #cgpVCFn& vcftools
 VER_CGPVCF="v2.2.1"

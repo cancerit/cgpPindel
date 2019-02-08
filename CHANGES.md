@@ -4,10 +4,15 @@
 
 * Added Dockerfile and docker documentation
 
+## 3.1.0
+
+* Incorporates updated pindel which improves sensitivity
+* Internally interpret QCFAIL to determine if whole pair fails
+
 ## 3.0.6
 
 * Fixed version tag
-  
+
 ## 3.0.5
 
 * Handles species names with spaces in it
@@ -137,15 +142,4 @@ Comparing sites in VCF files...
 Found 15321 SNPs common to both files.
 Found 0 SNPs only in main file.
 Found 0 SNPs only in second file.
-After filtering, kept 16309 out of a possible 16309 Sites
-Run Time = 6.00 seconds
-```
-
-## 2.0.4
-
-* Permits empty results files
-
-## 2.0.0
-
-* Migrates all Tabix and Bio::DB::Sam to Bio::DB::HTS::Tabix and Bio::DB::Sam
-* Cleans up install
+After
