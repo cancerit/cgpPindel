@@ -6,35 +6,39 @@ env:
  - CC=gcc
 
 before_install:
-  - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 6B05F25D762E3157
+  - sudo apt-get update
+  - sudo apt-get install -qy build-essential autoconf bsdtar time curl libcurl4-openssl-dev nettle-dev zlib1g-dev libncurses5-dev libpstreams-dev unzip libpng12-dev libexpat1-dev libgoogle-perftools-dev lsof libbz2-dev liblzma-dev libgnutls-dev libtasn1-6-dev p11-kit libxml2-dev libgd-dev psmisc
 
-addons:
- apt:
-  update: true
-  packages:
-   - build-essential
-   - autoconf
-   - bsdtar
-   - time
-   - curl
-   - libcurl4-openssl-dev
-   - nettle-dev
-   - zlib1g-dev
-   - libncurses5-dev
-   - libpstreams-dev
-   - unzip
-   - libpng12-dev
-   - libexpat1-dev
-   - libgoogle-perftools-dev
-   - lsof
-   - libbz2-dev
-   - liblzma-dev
-   - gnutls-dev
-   - libtasn1-6-dev
-   - p11-kit
-   - libxml2-dev
-   - libgd-dev
-   - psmisc
+#before_install:
+#  - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 6B05F25D762E3157
+
+# addons:
+#  apt:
+#   update: true
+#   packages:
+#    - build-essential
+#    - autoconf
+#    - bsdtar
+#    - time
+#    - curl
+#    - libcurl4-openssl-dev
+#    - nettle-dev
+#    - zlib1g-dev
+#    - libncurses5-dev
+#    - libpstreams-dev
+#    - unzip
+#    - libpng12-dev
+#    - libexpat1-dev
+#    - libgoogle-perftools-dev
+#    - lsof
+#    - libbz2-dev
+#    - liblzma-dev
+#    - libgnutls-dev
+#    - libtasn1-6-dev
+#    - p11-kit
+#    - libxml2-dev
+#    - libgd-dev
+#    - psmisc
 
 install: true
 
