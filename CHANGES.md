@@ -1,10 +1,18 @@
 # CHANGES
 
+## NEXT
+
+* Added Dockerfile and docker documentation
+
 ## 3.0.6
+
 * Fixed version tag
+  
 ## 3.0.5
+
 * Handles species names with spaces in it
 * modified checks for species,assembly and checksum
+  
 ## 3.0.4
 
 * Output bug for pindel BAM/CRAM corrected.  When more than 1 chr in output files had no reads.
