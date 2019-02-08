@@ -5,9 +5,6 @@ notifications:
 env:
  - CC=gcc
 
-#before_install:
-#  - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 6B05F25D762E3157
-
 addons:
  apt:
   update: true
@@ -35,6 +32,7 @@ addons:
    - libxml2-dev
    - libgd-dev
    - psmisc
+   - libdb
 
 install: true
 
