@@ -70,6 +70,19 @@ if [ ! -e $SETUP_DIR/vcftools.success ]; then
   touch $SETUP_DIR/vcftools.success
 fi
 
+### PCAP-core - override perl module for threaded test
+if [ ! -e $SETUP_DIR/PCAP.success ]; then
+  curl -sSL --retry 10 https://github.com/cancerit/PCAP-core/archive/feature/processStability.tar.gz > distro.tar.gz
+  rm -rf distro/*
+  tar --strip-components 1 -C distro -xzf distro.tar.gz
+  cd distro
+  cpanm --no-wget --no-interactive --notest --mirror http://cpan.metacpan.org --notest -l $INST_PATH --installdeps .
+  cpanm -v --no-wget --no-interactive --mirror http://cpan.metacpan.org -l $INST_PATH .
+  cd $SETUP_DIR
+  rm -rf distro.* distro/*
+  touch $SETUP_DIR/PCAP.success
+fi
+
 ### cgpVcf
 if [ ! -e $SETUP_DIR/cgpVcf.success ]; then
   curl -sSL --retry 10 https://github.com/cancerit/cgpVcf/archive/${VER_CGPVCF}.tar.gz > distro.tar.gz
@@ -83,12 +96,9 @@ if [ ! -e $SETUP_DIR/cgpVcf.success ]; then
   touch $SETUP_DIR/cgpVcf.success
 fi
 
-## cgpPindel
+## cgpPindel - should be the build root
 if [ ! -e $SETUP_DIR/cgpPindel.success ]; then
-  curl -sSL --retry 10 https://github.com/cancerit/cgpPindel/archive/${VER_CGPPINDEL}.tar.gz > distro.tar.gz
-  rm -rf distro/*
-  tar --strip-components 1 -C distro -xzf distro.tar.gz
-  cd distro
+  cd $INIT_DIR
   if [ ! -e $SETUP_DIR/cgpPindel_c.success ]; then
     g++ -O3 -o $INST_PATH/bin/pindel c++/pindel.cpp
     g++ -O3 -o $INST_PATH/bin/filter_pindel_reads c++/filter_pindel_reads.cpp
@@ -98,6 +108,22 @@ if [ ! -e $SETUP_DIR/cgpPindel.success ]; then
   cpanm --no-interactive --notest --mirror http://cpan.metacpan.org --notest -l $INST_PATH --installdeps .
   cpanm -v --no-interactive --mirror http://cpan.metacpan.org -l $INST_PATH .
   cd $SETUP_DIR
-  rm -rf distro.* distro/*
   touch $SETUP_DIR/cgpPindel.success
 fi
+# if [ ! -e $SETUP_DIR/cgpPindel.success ]; then
+#   curl -sSL --retry 10 https://github.com/cancerit/cgpPindel/archive/${VER_CGPPINDEL}.tar.gz > distro.tar.gz
+#   rm -rf distro/*
+#   tar --strip-components 1 -C distro -xzf distro.tar.gz
+#   cd distro
+#   if [ ! -e $SETUP_DIR/cgpPindel_c.success ]; then
+#     g++ -O3 -o $INST_PATH/bin/pindel c++/pindel.cpp
+#     g++ -O3 -o $INST_PATH/bin/filter_pindel_reads c++/filter_pindel_reads.cpp
+#     touch $SETUP_DIR/cgpPindel_c.success
+#   fi
+#   cd perl
+#   cpanm --no-interactive --notest --mirror http://cpan.metacpan.org --notest -l $INST_PATH --installdeps .
+#   cpanm -v --no-interactive --mirror http://cpan.metacpan.org -l $INST_PATH .
+#   cd $SETUP_DIR
+#   rm -rf distro.* distro/*
+#   touch $SETUP_DIR/cgpPindel.success
+# fi

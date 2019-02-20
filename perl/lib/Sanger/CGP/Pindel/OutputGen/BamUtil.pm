@@ -66,7 +66,7 @@ sub sam_to_sorted_bam {
   else {
     my $first_file = shift @{$sam_files};
     $command .= "cd $base_dir; ";
-    $command .= sprintf q{ (zcat %s ; zgrep -v '^@' %s) | }, $first_file, join q{ }, @{$sam_files};
+    $command .= sprintf q{ (zcat %s ; zcat %s | grep -v '^@' ) | }, $first_file, join q{ }, @{$sam_files};
   }
 
   $command .= which('bamsort');

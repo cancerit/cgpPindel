@@ -21,8 +21,12 @@ ENV LD_LIBRARY_PATH $OPT/lib
 ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 
-ADD build/opt-build.sh build/
+#ADD build/opt-build.sh build/
+#RUN bash build/opt-build.sh $OPT
+
+COPY . .
 RUN bash build/opt-build.sh $OPT
+
 
 FROM ubuntu:16.04
 
