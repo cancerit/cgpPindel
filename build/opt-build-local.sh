@@ -49,30 +49,17 @@ export MANPATH=`echo $INST_PATH/man:$INST_PATH/share/man:$MANPATH | perl -pe 's/
 export PERL5LIB=`echo $INST_PATH/lib/perl5:$PERL5LIB | perl -pe 's/:\$//;'`
 set -u
 
-## vcftools
-if [ ! -e $SETUP_DIR/vcftools.success ]; then
-  curl -sSL --retry 10 https://github.com/vcftools/vcftools/releases/download/v${VER_VCFTOOLS}/vcftools-${VER_VCFTOOLS}.tar.gz > distro.tar.gz
-  rm -rf distro/*
-  tar --strip-components 2 -C distro -xzf distro.tar.gz
-  cd distro
-  ./configure --prefix=$INST_PATH --with-pmdir=lib/perl5
-  make -j$CPU
-  make install
-  cd $SETUP_DIR
-  rm -rf distro.* distro/*
-  touch $SETUP_DIR/vcftools.success
-fi
-
-### cgpVcf
-if [ ! -e $SETUP_DIR/cgpVcf.success ]; then
-  curl -sSL --retry 10 https://github.com/cancerit/cgpVcf/archive/${VER_CGPVCF}.tar.gz > distro.tar.gz
-  rm -rf distro/*
-  tar --strip-components 1 -C distro -xzf distro.tar.gz
-  cd distro
+## cgpPindel - should be the build root
+if [ ! -e $SETUP_DIR/cgpPindel.success ]; then
+  cd $INIT_DIR
+  if [ ! -e $SETUP_DIR/cgpPindel_c.success ]; then
+    g++ -O3 -o $INST_PATH/bin/pindel c++/pindel.cpp
+    g++ -O3 -o $INST_PATH/bin/filter_pindel_reads c++/filter_pindel_reads.cpp
+    touch $SETUP_DIR/cgpPindel_c.success
+  fi
+  cd perl
   cpanm --no-interactive --notest --mirror http://cpan.metacpan.org --notest -l $INST_PATH --installdeps .
   cpanm -v --no-interactive --mirror http://cpan.metacpan.org -l $INST_PATH .
   cd $SETUP_DIR
-  rm -rf distro.* distro/*
-  touch $SETUP_DIR/cgpVcf.success
+  touch $SETUP_DIR/cgpPindel.success
 fi
-
