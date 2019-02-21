@@ -1,5 +1,9 @@
 # CHANGES
 
+## 3.1.1
+
+* Fix regression - ability to cope with chromosomes with no events.
+
 ## 3.1.0
 
 * Incorporates updated pindel which improves sensitivity
