@@ -1,5 +1,9 @@
 # CHANGES
 
+## 3.1.2
+
+* 3.0.5 introduced species parsing bug causing single word species names to be invalid.
+
 ## 3.1.1
 
 * Fix regression - ability to cope with chromosomes with no events.
