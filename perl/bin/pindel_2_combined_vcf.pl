@@ -272,7 +272,10 @@ sub setup{
   pod2usage(-message  => "\nERROR: r|ref |".$opts{'r'}."| must be a valid file.\n", -verbose => 1,  -output => \*STDERR) unless(-f $opts{'r'});
 
   if(scalar @{$opts{'sp'}} > 0 ){
-     $opts{'sp'}="@{$opts{'sp'}}";
+    $opts{'sp'}="@{$opts{'sp'}}";
+  }
+  else {
+    delete $opts{'sp'};
   }
 
   return \%opts;
