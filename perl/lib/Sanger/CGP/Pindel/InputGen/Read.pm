@@ -160,7 +160,8 @@ sub _good_anchor {
 
 sub _interval_hit {
   my $self = shift;
-  return @{$self->{'tabix'}->{$self->{'rname'}}->fetch($self->{'pos'} - 1, $self->{'pos'})};
+  return 0 unless (exists $self->{'tabix'}->{$self->{'rname'}});
+  return scalar @{$self->{'tabix'}->{$self->{'rname'}}->fetch($self->{'pos'} - 1, $self->{'pos'})};
 }
 
 sub frac_pbq_poor {
