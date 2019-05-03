@@ -32,8 +32,6 @@ use List::MoreUtils qw(first_index last_index);
 
 use Sanger::CGP::Pindel;
 
-# remove before release
-use Carp qw(croak);
 use Data::Dumper;
 
 const my $PROPER_MAPPED => 2;
@@ -153,21 +151,16 @@ sub _good_anchor {
   my $self = shift;
   return 0 if($self->unmapped);
   return 0 if($self->{'mapq'} <= $MIN_ANCHOR_MAPQ);
+  return 0 if(exists $self->{'tabix'} && $self->_interval_hit);
   return 0 if($self->mapped_seq <= $MIN_ANCHOR_MAPPED);
   return 0 if((scalar @{$self->_cigar_operations}) > $MAX_CIGAR_OPS_FOR_ANCHOR);
   return 0 if($self->frac_pbq_poor > $MAX_POOR_PBQ_FRAC);
-  return 0 if(exists $self->{'tabix'} && $self->_tabix_hit);
   1;
 }
 
-sub _tabix_hit {
+sub _interval_hit {
   my $self = shift;
-  my $iter = $self->{'tabix'}->query_full($self->{'rname'}, $self->{'pos'}, $self->{'pos'});
-  return 0 unless(defined $iter);
-  while(my $ret = $iter->next){
-    return 1;
-  }
-  return 0;
+  return @{$self->{'tabix'}->{$self->{'rname'}}->fetch($self->{'pos'} - 1, $self->{'pos'})};
 }
 
 sub frac_pbq_poor {
