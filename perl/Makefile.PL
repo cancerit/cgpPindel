@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 ########## LICENCE ##########
-# Copyright (c) 2014-2018 Genome Research Ltd.
+# Copyright (c) 2014-2019 Genome Research Ltd.
 #
 # Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
@@ -46,5 +46,6 @@ WriteMakefile(
                      'Devel::Cover' => 1.09,
                      'Pod::Coverage' => 0.23,
                      'PerlIO::gzip' => 0.20,
+                     'Set::IntervalTree' => 0.12,
                    }
 );
