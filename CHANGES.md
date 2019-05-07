@@ -1,5 +1,12 @@
 # CHANGES
 
+## 3.2.0
+
+* Tabix search for high depth/excluded regions now performed in memory using IntervalTrees
+  * Reduces runtime of input step by ~50%
+  * Improved disk access profile
+  * Zero impact on results
+
 ## 3.1.2
 
 * 3.0.5 introduced species parsing bug causing single word species names to be invalid.
