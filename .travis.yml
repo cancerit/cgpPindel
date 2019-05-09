@@ -2,58 +2,31 @@ notifications:
   slack: wtsi-cgpit:ptUMR1tkNyZJYd9TpGoss8WR
   email: false
 
-env:
- - CC=gcc
+sudo: false
 
-addons:
- apt:
-  update: true
-  packages:
-   - build-essential
-   - autoconf
-   - bsdtar
-   - time
-   - curl
-   - libcurl4-openssl-dev
-   - nettle-dev
-   - zlib1g-dev
-   - libncurses5-dev
-   - libpstreams-dev
-   - unzip
-   - libpng12-dev
-   - libexpat1-dev
-   - libgoogle-perftools-dev
-   - lsof
-   - libbz2-dev
-   - liblzma-dev
-   - libgnutls-dev
-   - libtasn1-6-dev
-   - p11-kit
-   - libxml2-dev
-   - libgd-dev
-   - psmisc
-   - libdb-dev
-
-install: true
-
-language: perl
-
-perl:
- - "5.22-shrplib"
+services:
+  - docker
 
 script:
  - set -e
- - export PATH=$HOME/install/bin:$HOME/install/biobambam2/bin:$PATH
- - git clone --depth 1 --single-branch --branch develop https://github.com/cancerit/cgpBigWig.git
- - cd cgpBigWig
- - ./setup.sh $HOME/PCAP-opt
- - cd ../
- - git clone --depth 1 --single-branch --branch develop https://github.com/cancerit/PCAP-core.git
- - cd PCAP-core
- - ./setup.sh $HOME/PCAP-opt
- - cd ../
- - git clone --depth 1 --single-branch --branch dev https://github.com/cancerit/cgpVcf.git
- - cd cgpVcf
- - ./setup.sh $HOME/PCAP-opt
- - cd ../
- - ./setup.sh $HOME/PCAP-opt
+ - echo 'Build and check docker image'
+ - docker build -t cgpPindel .
+ - docker images | grep -c cgpPindel
+ - echo 'Verify program(s) from each inherited base image - dockstore-cgpbigwig'
+ - docker run -t --rm cgpPindel bwjoin --version
+ - echo 'Verify program(s) from each inherited base image - dockstore-cgpmap'
+ - docker run -t --rm cgpPindel ds-cgpmap.pl -h
+ - docker run -t --rm cgpPindel bwa_mem.pl -version
+ - docker run -t --rm dcgpPindel bammarkduplicates2 --version
+ - docker run -t --rm cgpPindel samtools --version
+ - docker run -t --rm cgpPindel bash -c 'bwa 2>&1 | grep Version'
+ - echo 'Verify program(s) from this repo'
+ - docker run -t --rm cgpPindel pindel.pl --version
+ - docker run -t --rm cgpPindel pindel_input_gen.pl --version
+ - docker run -t --rm cgpPindel pindel_2_combined_vcf.pl --version
+ - docker run -t --rm cgpPindel FlagVcf.pl --version
+ - docker run -t --rm cgpPindel pindel_merge_vcf_bam.pl --version
+ - docker run -t --rm cgpPindel pindel_np_from_vcf.pl --version
+ - docker run -t --rm cgpPindel pindel_germ_bed.pl --version
+ - docker run -t --rm cgpPindel pindel --version
+ - docker run -t --rm cgpPindel filter_pindel_reads --version
