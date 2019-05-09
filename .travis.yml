@@ -15,9 +15,8 @@ script:
  - echo 'Verify program(s) from each inherited base image - dockstore-cgpbigwig'
  - docker run -t --rm cgppindel bwjoin --version
  - echo 'Verify program(s) from each inherited base image - dockstore-cgpmap'
- - docker run -t --rm cgppindel ds-cgpmap.pl -h
  - docker run -t --rm cgppindel bwa_mem.pl -version
- - docker run -t --rm dcgpPindel bammarkduplicates2 --version
+ - docker run -t --rm cgppindel bammarkduplicates2 --version
  - docker run -t --rm cgppindel samtools --version
  - docker run -t --rm cgppindel bash -c 'bwa 2>&1 | grep Version'
  - echo 'Verify program(s) from this repo'
@@ -28,5 +27,5 @@ script:
  - docker run -t --rm cgppindel pindel_merge_vcf_bam.pl --version
  - docker run -t --rm cgppindel pindel_np_from_vcf.pl --version
  - docker run -t --rm cgppindel pindel_germ_bed.pl --version
- - docker run -t --rm cgppindel pindel --version
- - docker run -t --rm cgppindel filter_pindel_reads --version
+ - docker run -t --rm cgppindel which pindel
+ - docker run -t --rm cgppindel which filter_pindel_reads
