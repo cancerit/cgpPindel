@@ -1,6 +1,10 @@
-FROM  quay.io/wtsicgp/dockstore-cgpmap:3.0.4 as builder
+FROM  quay.io/wtsicgp/dockstore-cgpmap:3.1.4 as builder
 
 USER  root
+
+# ALL tool versions used by opt-build.sh
+ENV VER_CGPVCF="v2.2.1"
+ENV VER_VCFTOOLS="0.1.16"
 
 RUN apt-get -yq update
 RUN apt-get install -yq --no-install-recommends\
@@ -21,8 +25,13 @@ ENV LD_LIBRARY_PATH $OPT/lib
 ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 
+# build tools from other repos
 ADD build/opt-build.sh build/
 RUN bash build/opt-build.sh $OPT
+
+# build the tools in this repo, separate to reduce build time on errors
+COPY . .
+RUN bash build/opt-build-local.sh $OPT
 
 FROM ubuntu:16.04
 
