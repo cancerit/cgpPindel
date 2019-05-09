@@ -10,23 +10,23 @@ services:
 script:
  - set -e
  - echo 'Build and check docker image'
- - docker build -t cgpPindel .
- - docker images | grep -c cgpPindel
+ - docker build -t cgppindel .
+ - docker images | grep -c cgppindel
  - echo 'Verify program(s) from each inherited base image - dockstore-cgpbigwig'
- - docker run -t --rm cgpPindel bwjoin --version
+ - docker run -t --rm cgppindel bwjoin --version
  - echo 'Verify program(s) from each inherited base image - dockstore-cgpmap'
- - docker run -t --rm cgpPindel ds-cgpmap.pl -h
- - docker run -t --rm cgpPindel bwa_mem.pl -version
+ - docker run -t --rm cgppindel ds-cgpmap.pl -h
+ - docker run -t --rm cgppindel bwa_mem.pl -version
  - docker run -t --rm dcgpPindel bammarkduplicates2 --version
- - docker run -t --rm cgpPindel samtools --version
- - docker run -t --rm cgpPindel bash -c 'bwa 2>&1 | grep Version'
+ - docker run -t --rm cgppindel samtools --version
+ - docker run -t --rm cgppindel bash -c 'bwa 2>&1 | grep Version'
  - echo 'Verify program(s) from this repo'
- - docker run -t --rm cgpPindel pindel.pl --version
- - docker run -t --rm cgpPindel pindel_input_gen.pl --version
- - docker run -t --rm cgpPindel pindel_2_combined_vcf.pl --version
- - docker run -t --rm cgpPindel FlagVcf.pl --version
- - docker run -t --rm cgpPindel pindel_merge_vcf_bam.pl --version
- - docker run -t --rm cgpPindel pindel_np_from_vcf.pl --version
- - docker run -t --rm cgpPindel pindel_germ_bed.pl --version
- - docker run -t --rm cgpPindel pindel --version
- - docker run -t --rm cgpPindel filter_pindel_reads --version
+ - docker run -t --rm cgppindel pindel.pl --version
+ - docker run -t --rm cgppindel pindel_input_gen.pl --version
+ - docker run -t --rm cgppindel pindel_2_combined_vcf.pl --version
+ - docker run -t --rm cgppindel FlagVcf.pl --version
+ - docker run -t --rm cgppindel pindel_merge_vcf_bam.pl --version
+ - docker run -t --rm cgppindel pindel_np_from_vcf.pl --version
+ - docker run -t --rm cgppindel pindel_germ_bed.pl --version
+ - docker run -t --rm cgppindel pindel --version
+ - docker run -t --rm cgppindel filter_pindel_reads --version
