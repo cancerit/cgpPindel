@@ -110,7 +110,7 @@ sub setup {
               'i|index=i' => \$opts{'index'},
               'v|version' => \$opts{'version'},
               # these are specifically for pin2vcf
-              'sp|species=s{0,}' => \@{$opts{'sp'}},
+              'sp|species=s{0,}' => \@{$opts{'species'}},
               'as|assembly=s' => \$opts{'assembly'},
               'st|seqtype=s' => \$opts{'seqtype'},
               'sg|skipgerm' => \$opts{'skipgerm'},
@@ -205,8 +205,11 @@ sub setup {
 
   $opts{'tmp'} = $tmpdir;
 
-  if(scalar @{$opts{'sp'}} > 0 ){
-     $opts{'sp'}="@{$opts{'sp'}}";
+  if(scalar @{$opts{'species'}} > 0 ){
+    $opts{'species'}="@{$opts{'species'}}";
+  }
+  else {
+    delete $opts{'species'};
   }
 
   return \%opts;

@@ -4,6 +4,17 @@
 
 * Added Dockerfile and docker documentation
 
+## 3.2.0
+
+* Tabix search for high depth/excluded regions now performed in memory using IntervalTrees
+  * Reduces runtime of input step by ~50%
+  * Improved disk access profile
+  * Zero impact on results
+
+## 3.1.2
+
+* 3.0.5 introduced species parsing bug causing single word species names to be invalid.
+
 ## 3.1.1
 
 * Fix regression - ability to cope with chromosomes with no events.
@@ -21,7 +32,7 @@
 
 * Handles species names with spaces in it
 * modified checks for species,assembly and checksum
-  
+
 ## 3.0.4
 
 * Output bug for pindel BAM/CRAM corrected.  When more than 1 chr in output files had no reads.

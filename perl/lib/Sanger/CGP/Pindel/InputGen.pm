@@ -32,9 +32,9 @@ use Carp qw( croak );
 use File::Which qw(which);
 use Try::Tiny qw(try catch finally);
 use File::Spec;
+use Set::IntervalTree;
+use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
 use Data::Dumper;
-
-use Bio::DB::HTS::Tabix;
 
 use Sanger::CGP::Pindel;
 
@@ -202,6 +202,22 @@ sub _process_set {
   }
 }
 
+sub _tabix_to_interval_tree {
+  my $bed = shift;
+  my %tree;
+  my $z = IO::Uncompress::Gunzip->new($bed, MultiStream => 1) or die "gunzip failed: $GunzipError\n";
+  my $value = 1;
+  while(my $line = <$z>) {
+    next if ($line =~ m/^#/);
+    chomp $line;
+    my ($chr, $s, $e) = split /\t/, $line;
+    $tree{$chr} = Set::IntervalTree->new() unless(exists $tree{$chr});
+    $tree{$chr}->insert(\$value, $s, $e);
+  }
+  close $z;
+  return \%tree;
+}
+
 sub _completed_threads {
   my $self = shift;
   my @output_objects;
@@ -223,17 +239,19 @@ sub reads_to_pindel {
   warn "Thread Worker $tid: started\n";
 
   my $convert_start = time;
+
+  my $tabix;
+  if(defined $bed) {
+    # was tabix, keeping name for consistency
+    $tabix = _tabix_to_interval_tree($bed);
+  }
+
   @reads = @{$reads[0]} if(ref $reads[0] eq 'ARRAY');
 
   my $total_reads = scalar @reads;
   my @records;
   my $to_pindel = Sanger::CGP::Pindel::InputGen::PairToPindel->new($sample_name, $rg_pis);
   my $total_pairs = $total_reads / 2;
-
-  my $tabix;
-  if(defined $bed) {
-    $tabix = new Bio::DB::HTS::Tabix(filename => $bed);
-  }
 
   for(1..$total_pairs) {
     my $pair = Sanger::CGP::Pindel::InputGen::Pair->new(\shift @reads, \shift @reads, $tabix);
@@ -242,9 +260,9 @@ sub reads_to_pindel {
 
   }
   my $retained = scalar @records;
-  my $excluded = $total_pairs - $retained;
+  my $excluded = $total_reads - $retained;
   my $convert_took = time - $convert_start;
-  warn "Thread Worker $tid: Excluded $excluded/$total_pairs (${convert_took}s)\n";
+  warn "Thread Worker $tid: Excluded $excluded/$total_reads (${convert_took}s)\n";
   warn "Thread Worker $tid: Generated $retained records\n";
   return \@records if($thread == -1);
   return @records;
