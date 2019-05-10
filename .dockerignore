@@ -5,5 +5,6 @@
 /LICENCE
 /CHANGES.md
 /.gitignore
+/.git
 /perl/docs
 /perl/docs.tar.gz
