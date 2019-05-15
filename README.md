@@ -2,6 +2,8 @@
 
 cgpPindel contains the Cancer Genome Projects workflow for [Pindel][pindel-core].
 
+[![Quay Badge][quay-status]][quay-repo]
+
 | Master                                        | Develop                                         |
 | --------------------------------------------- | ----------------------------------------------- |
 | [![Master Badge][travis-master]][travis-base] | [![Develop Badge][travis-develop]][travis-base] |
@@ -18,12 +20,16 @@ Contents:
 
 <!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-- [Docker, Singularity and Dockstore](#docker-singularity-and-dockstore)
-- [Dependencies/Install](#dependenciesinstall)
-- [Creating a release](#creating-a-release)
-	- [Preparation](#preparation)
-	- [Cutting the release](#cutting-the-release)
-- [LICENCE](#licence)
+- [cgpPindel](#cgppindel)
+  - [Docker, Singularity and Dockstore](#docker-singularity-and-dockstore)
+  - [Dependencies/Install](#dependenciesinstall)
+  - [Creating a release](#creating-a-release)
+    - [Preparation](#preparation)
+    - [Release process](#release-process)
+      - [Code changes](#code-changes)
+      - [Docker image](#docker-image)
+      - [Cutting the release](#cutting-the-release)
+  - [LICENCE](#licence)
 
 <!-- /TOC -->
 
@@ -31,12 +37,13 @@ Contents:
 
 There are pre-built images containing this codebase on quay.io.
 
+* [cgpPindel][cgpPindel-git]: Contained within this repository - contains the cgpPindel package
 * [dockstore-cgpwxs][ds-cgpwxs-git]: Contains tools specific to WXS analysis.
 * [dockstore-cgpwgs][ds-cgpwgs-git]: Contains additional tools for WGS analysis.
 
 These were primarily designed for use with dockstore.org but can be used as normal containers.
 
-The docker images are know to work correctly after import into a singularity image.
+The docker images are known to work correctly after import into a singularity image.
 
 ## Dependencies/Install
 
@@ -66,15 +73,34 @@ Please be aware that this expects basic C compilation libraries and tools to be 
 * Commit/push all relevant changes.
 * Pull a clean version of the repo and use this for the following steps.
 
-### Cutting the release
+### Release process
 
-1. Update `perl/lib/Sanger/CGP/Pindel.pm` to the correct version (adding rc/beta to end if applicable).
-1. Update `CHANGES.md` to show major items.
-1. Run `./prerelease.sh`
-1. Check all tests and coverage reports are acceptable.
-1. Commit the updated docs and updated module/version.
-1. Push commits.
+This project is maintained using HubFlow.
+
+#### Code changes
+
+1. Make appropriate changes
+2. Update `perl/lib/Sanger/CGP/Pindel.pm` to the correct version (adding rc/beta to end if applicable).
+3. Update `CHANGES.md` to show major items.
+4. Run `./prerelease.sh`
+5. Check all tests and coverage reports are acceptable.
+6. Commit the updated docs and updated module/version.
+7. Push commits.
+
+#### Docker image
+
 1. Use the GitHub tools to draft a release.
+2. Build image locally
+3. Run example inputs and verify any changes are acceptable
+4. Bump version in `Dockerfile`
+5. Push changes
+
+#### Cutting the release
+
+1. Check state on Travis
+2. Generate the release (add notes to GitHub)
+3. Confirm that image has been built on [quay.io][quay-builds]
+4. Update the [dockstore][dockstore-cgpPindel] entry, see [their docs][dockstore-get-started].
 
 ## LICENCE
 
@@ -114,9 +140,18 @@ identical to a statement that reads ‘Copyright (c) 2005, 2006, 2007, 2008,
 [pcap-core-rel]: https://github.com/cancerit/PCAP-core/releases
 [ds-cgpwxs-git]: https://github.com/cancerit/dockstore-cgpwxs
 [ds-cgpwgs-git]: https://github.com/cancerit/dockstore-cgpwgs
+[cgpPindel-git]: https://github.com/cancerit/cgpPindel
 [pindel-core]: http://gmt.genome.wustl.edu/pindel/current
 
 <!-- Travis -->
 [travis-base]: https://travis-ci.org/cancerit/cgpPindel
 [travis-master]: https://travis-ci.org/cancerit/cgpPindel.svg?branch=master
 [travis-develop]: https://travis-ci.org/cancerit/cgpPindel.svg?branch=dev
+
+<!-- Quay.io -->
+[quay-status]: https://quay.io/repository/wtsicgp/cgpPindel/status
+[quay-repo]: https://quay.io/repository/wtsicgp/cgpPindel
+[quay-builds]: https://quay.io/repository/wtsicgp/cgpPindel?tab=builds
+
+<!-- Dockstore -->
+[dockstore-cgpPindel]: https://dockstore.org/containers/quay.io/wtsicgp/cgpPindel
