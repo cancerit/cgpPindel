@@ -1,6 +1,6 @@
 # CHANGES
 
-## NEXT
+## 3.2.1
 
 * Added Dockerfile and docker documentation
 

@@ -20,16 +20,15 @@ Contents:
 
 <!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-- [cgpPindel](#cgppindel)
-  - [Docker, Singularity and Dockstore](#docker-singularity-and-dockstore)
-  - [Dependencies/Install](#dependenciesinstall)
-  - [Creating a release](#creating-a-release)
-    - [Preparation](#preparation)
-    - [Release process](#release-process)
-      - [Code changes](#code-changes)
-      - [Docker image](#docker-image)
-      - [Cutting the release](#cutting-the-release)
-  - [LICENCE](#licence)
+* [Docker, Singularity and Dockstore](#docker-singularity-and-dockstore)
+* [Dependencies/Install](#dependenciesinstall)
+* [Creating a release](#creating-a-release)
+  * [Preparation](#preparation)
+  * [Release process](#release-process)
+    * [Code changes](#code-changes)
+    * [Docker image](#docker-image)
+    * [Cutting the release](#cutting-the-release)
+* [LICENCE](#licence)
 
 <!-- /TOC -->
 
@@ -37,7 +36,10 @@ Contents:
 
 There are pre-built images containing this codebase on quay.io.
 
-* [cgpPindel][cgpPindel-git]: Contained within this repository - contains the cgpPindel package
+* [cgpPindel][cgpPindel-git]: Contained within this repository
+  * Smallest build required to use cgpPindel
+  * Not linked to Dockstore (yet)
+  * Updated most frequently
 * [dockstore-cgpwxs][ds-cgpwxs-git]: Contains tools specific to WXS analysis.
 * [dockstore-cgpwgs][ds-cgpwgs-git]: Contains additional tools for WGS analysis.
 
@@ -149,9 +151,6 @@ identical to a statement that reads ‘Copyright (c) 2005, 2006, 2007, 2008,
 [travis-develop]: https://travis-ci.org/cancerit/cgpPindel.svg?branch=dev
 
 <!-- Quay.io -->
-[quay-status]: https://quay.io/repository/wtsicgp/cgpPindel/status
-[quay-repo]: https://quay.io/repository/wtsicgp/cgpPindel
-[quay-builds]: https://quay.io/repository/wtsicgp/cgpPindel?tab=builds
-
-<!-- Dockstore -->
-[dockstore-cgpPindel]: https://dockstore.org/containers/quay.io/wtsicgp/cgpPindel
+[quay-status]: https://quay.io/repository/wtsicgp/cgppindel/status
+[quay-repo]: https://quay.io/repository/wtsicgp/cgppindel
+[quay-builds]: https://quay.io/repository/wtsicgp/cgppindel?tab=builds
