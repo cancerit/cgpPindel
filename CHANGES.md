@@ -1,5 +1,9 @@
 # CHANGES
 
+## 3.2.1
+
+* Added Dockerfile and docker documentation
+
 ## 3.2.0
 
 * Tabix search for high depth/excluded regions now performed in memory using IntervalTrees
@@ -153,15 +157,4 @@ Comparing sites in VCF files...
 Found 15321 SNPs common to both files.
 Found 0 SNPs only in main file.
 Found 0 SNPs only in second file.
-After filtering, kept 16309 out of a possible 16309 Sites
-Run Time = 6.00 seconds
-```
-
-## 2.0.4
-
-* Permits empty results files
-
-## 2.0.0
-
-* Migrates all Tabix and Bio::DB::Sam to Bio::DB::HTS::Tabix and Bio::DB::Sam
-* Cleans up install
+After
