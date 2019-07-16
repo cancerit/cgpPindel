@@ -1,5 +1,9 @@
 # CHANGES
 
+## 3.2.2
+
+* Handle Input files that may have no reads at all, specifically an issue when generating a normal panel.
+
 ## 3.2.1
 
 * Added Dockerfile and docker documentation
