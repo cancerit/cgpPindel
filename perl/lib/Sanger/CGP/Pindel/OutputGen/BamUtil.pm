@@ -66,7 +66,7 @@ sub sam_to_sorted_bam {
   else {
     my $header_from = $sam_files->[0];
     $command .= "cd $base_dir; ";
-    $command .= sprintf q{ (samtools view -H %s ; zcat %s | grep -v '^@' ) | }, $header_from, join q{ }, @{$sam_files};
+    $command .= sprintf q{ (samtools view -H %s ; zcat %s | grep -v '^@' || true ) | }, $header_from, join q{ }, @{$sam_files};
   }
 
   $command .= which('bamsort');
