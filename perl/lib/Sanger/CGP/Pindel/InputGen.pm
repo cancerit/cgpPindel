@@ -296,6 +296,16 @@ sub reads_to_disk {
   }
 }
 
+sub corrupt_pindel_input {
+  my ($filename, $expect_bytes) = @_;
+  # !! not an object method !!
+
+  # stub until tests written
+  # will return name of corrupt file or undef
+
+  return undef;
+}
+
 1;
 
 __END__
