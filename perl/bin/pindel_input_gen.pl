@@ -49,6 +49,7 @@ use Sanger::CGP::Pindel::InputGen;
   $generator->set_threads($options->{'threads'});
   $generator->set_outdir($options->{'outdir'});
   $generator->run;
+  $generator->validate;
 }
 
 sub setup {

@@ -71,6 +71,8 @@ subtest 'reads_to_disk checks' => sub{
   $obj->set_outdir($out_folder);
   ok($obj->reads_to_disk($RECORD_SET), 'create output');
   is($obj->{'rname_bytes'}->{'22'}, $RECORD_OUT_BYTES, 'Verify bytes written captured');
+
+  ok($obj->validate, 'validate returns true')
 };
 
 done_testing();

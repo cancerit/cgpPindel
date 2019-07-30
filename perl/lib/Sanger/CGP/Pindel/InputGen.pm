@@ -183,6 +183,23 @@ sub run {
   };
 }
 
+sub validate {
+  my $self = shift;
+  my $rname_fh = $self->{'rname_fhs'}; # paths, not handles
+  my $rname_bytes = $self->{'rname_bytes'};
+  my @bad_files;
+  for my $chr(keys %{$rname_bytes}) {
+    my $problem = corrupt_pindel_input($rname_fh->{$chr}, $rname_bytes->{$chr});
+    if(defined $problem) {
+      push @bad_files, $problem;
+    }
+  }
+  if(@bad_files > 0) {
+    croak join "\t\n", (sprintf q{%d generated files are corrupt:}, scalar @bad_files), @bad_files;
+  }
+  return 1;
+}
+
 sub _process_set {
   my ($self, $rg_pis, $sample_name, $pairs) = @_;
   my $max_threads = $self->{'threads'};
