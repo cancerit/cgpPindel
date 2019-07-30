@@ -61,7 +61,7 @@ sub new {
               'threads' => 1, };
   bless $self, $class;
   $self->set_input($bam) if(defined $bam);
-  $self->set_reference($ref) if(defined $bam);
+  $self->set_reference($ref) if(defined $ref);
   $self->set_exclude($exclude) if(defined $exclude);
   return $self;
 }
