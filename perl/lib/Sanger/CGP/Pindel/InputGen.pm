@@ -53,6 +53,8 @@ const my $PAIRS_PER_THREAD => 500_000;
 
 const my $BAMCOLLATE => q{%s outputformat=sam colsbs=268435456 collate=1 classes=F,F2 exclude=DUP,SECONDARY,SUPPLEMENTARY T=%s filename=%s reference=%s inputformat=%s};
 
+const my $VERIFY_GENERATED => q{bash -c 'gzip -cd %s | tee >(grep -alP "\x00" || true) | wc -c'};
+
 sub new {
   my ($class, $bam, $exclude, $ref) = @_;
   my $self = {'rname_fhs' => {},
@@ -300,10 +302,25 @@ sub corrupt_pindel_input {
   my ($filename, $expect_bytes) = @_;
   # !! not an object method !!
 
-  # stub until tests written
   # will return name of corrupt file or undef
+  my $result = undef;
 
-  return undef;
+  my $command = sprintf $VERIFY_GENERATED, $filename;
+  my ($pid, $process, $bytes);
+  $pid = open $process, q{-|}, $command or croak 'Could not fork: '.$OS_ERROR;
+  while (my $tmp = <$process>) {
+    chomp $tmp;
+    $bytes = $tmp;
+  }
+  close $process;
+  if($bytes !~ m/^[0-9]+$/) {
+    croak "corrupt_pindel_input() doesn't appear to have generated valid number as a byte count";
+  }
+  if ($bytes != $expect_bytes) {
+    $result = $filename;
+  }
+
+  return $result;
 }
 
 1;
