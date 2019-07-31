@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 ########## LICENCE ##########
-# Copyright (c) 2014-2018 Genome Research Ltd.
+# Copyright (c) 2014-2019 Genome Research Ltd.
 #
 # Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
@@ -49,6 +49,7 @@ use Sanger::CGP::Pindel::InputGen;
   $generator->set_threads($options->{'threads'});
   $generator->set_outdir($options->{'outdir'});
   $generator->run;
+  $generator->validate;
 }
 
 sub setup {

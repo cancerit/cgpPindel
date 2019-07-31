@@ -1,5 +1,9 @@
 # CHANGES
 
+## 3.3.0
+
+* I/O hardening, see [milestone 3](https://github.com/cancerit/cgpPindel/milestone/3)
+
 ## 3.2.2
 
 * Handle Input files that may have no reads at all, specifically an issue when generating a normal panel.

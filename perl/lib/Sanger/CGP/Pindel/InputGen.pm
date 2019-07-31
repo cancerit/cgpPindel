@@ -53,13 +53,16 @@ const my $PAIRS_PER_THREAD => 500_000;
 
 const my $BAMCOLLATE => q{%s outputformat=sam colsbs=268435456 collate=1 classes=F,F2 exclude=DUP,SECONDARY,SUPPLEMENTARY T=%s filename=%s reference=%s inputformat=%s};
 
+const my $VERIFY_GENERATED => q{bash -c 'gzip -cd %s | tee >(grep -alP "\x00" || true) | wc -c'};
+
 sub new {
   my ($class, $bam, $exclude, $ref) = @_;
   my $self = {'rname_fhs' => {},
+              'rname_bytes' => {},
               'threads' => 1, };
   bless $self, $class;
   $self->set_input($bam) if(defined $bam);
-  $self->set_reference($ref) if(defined $bam);
+  $self->set_reference($ref) if(defined $ref);
   $self->set_exclude($exclude) if(defined $exclude);
   return $self;
 }
@@ -180,6 +183,23 @@ sub run {
   };
 }
 
+sub validate {
+  my $self = shift;
+  my $rname_fh = $self->{'rname_fhs'}; # paths, not handles
+  my $rname_bytes = $self->{'rname_bytes'};
+  my @bad_files;
+  for my $chr(keys %{$rname_bytes}) {
+    my $problem = corrupt_pindel_input($rname_fh->{$chr}, $rname_bytes->{$chr});
+    if(defined $problem) {
+      push @bad_files, $problem;
+    }
+  }
+  if(@bad_files > 0) {
+    croak join "\t\n", (sprintf q{%d generated files are corrupt:}, scalar @bad_files), @bad_files;
+  }
+  return 1;
+}
+
 sub _process_set {
   my ($self, $rg_pis, $sample_name, $pairs) = @_;
   my $max_threads = $self->{'threads'};
@@ -279,6 +299,7 @@ sub reads_to_disk {
     }
   }
   my $rname_fh = $self->{'rname_fhs'};
+  my $rname_bytes = $self->{'rname_bytes'};
   for my $rname(keys %grouped) {
     my $mode = '>>';
     unless(exists $rname_fh->{$rname}) {
@@ -290,10 +311,38 @@ sub reads_to_disk {
     my $gzip = sprintf 'gzip --fast -c %s %s', $mode, $rname_fh->{$rname};
     open my $fh, '|-', $gzip or die "Can't start gzip";
     for my $record(@{$grouped{$rname}}) {
-      print $fh (join "\n", $record),"\n";
+      my $to_write = (join "\n", $record)."\n";
+      print $fh $to_write;
+      $rname_bytes->{$rname} += length $to_write;
     }
     close $fh;
   }
+  return 1;
+}
+
+sub corrupt_pindel_input {
+  my ($filename, $expect_bytes) = @_;
+  # !! not an object method !!
+
+  # will return name of corrupt file or undef
+  my $result = undef;
+
+  my $command = sprintf $VERIFY_GENERATED, $filename;
+  my ($pid, $process, $bytes);
+  $pid = open $process, q{-|}, $command or croak 'Could not fork: '.$OS_ERROR;
+  while (my $tmp = <$process>) {
+    chomp $tmp;
+    $bytes = $tmp;
+  }
+  close $process;
+  if($bytes !~ m/^[0-9]+$/) {
+    croak "corrupt_pindel_input() doesn't appear to have generated valid number as a byte count";
+  }
+  if ($bytes != $expect_bytes) {
+    $result = $filename;
+  }
+
+  return $result;
 }
 
 1;
