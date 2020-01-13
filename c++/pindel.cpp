@@ -1216,7 +1216,7 @@ if (Analyze_TD_INV_LI_Others) {
                                      }
 
 									 {
-										 if (Reads[ReadIndex].IndelSize >= MIN_IndelSize_NT && Reads[ReadIndex].IndelSize > Reads[ReadIndex].NT_size)
+										 if (Reads[ReadIndex].IndelSize >= MIN_IndelSize_NT)
 										 {
 											 DI[Reads[ReadIndex].BPLeft / BoxSize].push_back(ReadIndex);
 											 Reads[ReadIndex].Used = true;
@@ -1274,7 +1274,7 @@ if (Analyze_TD_INV_LI_Others) {
                                      }
 
 									 {
-										 if (Reads[ReadIndex].IndelSize >= MIN_IndelSize_NT && Reads[ReadIndex].IndelSize > Reads[ReadIndex].NT_size)
+										 if (Reads[ReadIndex].IndelSize >= MIN_IndelSize_NT)
 										 {
 											 DI[Reads[ReadIndex].BPLeft / BoxSize].push_back(ReadIndex);
 											 Reads[ReadIndex].Used = true;
@@ -2266,14 +2266,14 @@ void CheckLeft_Close(const SPLIT_READ & OneRead,
 		for (short i = 0; i <= OneRead.MAX_SNP_ERROR; i++) {
 			if (Left_PD[i].size() == 1 && CurrentLength >= BP_Left_Start + i) {
 				Sum = 0;
-				if (ADDITIONAL_MISMATCH)                               
+				if (ADDITIONAL_MISMATCH)
 				   for (short j = 0; j <= i+ADDITIONAL_MISMATCH; j++)
 			   		  Sum += Left_PD[j].size();                      //Maybe the previous SNPS still exist; revise in 2018.11.26 by Liang Hao
-				if (Sum == 1 && i <= (short)(CurrentLength * Seq_Error_Rate + 1)) {       
+				if (Sum == 1 && i <= (short)(CurrentLength * Seq_Error_Rate + 1)) {
 					UniquePoint TempOne;
 					TempOne.LengthStr = CurrentLength;
 					TempOne.AbsLoc = Left_PD[i][0];
-					
+
 					TempOne.Direction = FORWARD;
 					TempOne.Strand = ANTISENSE;
 					TempOne.Mismatches = i;
@@ -2356,7 +2356,7 @@ void CheckRight_Close(const SPLIT_READ & OneRead,
 	   for (short i = 0; i <= OneRead.MAX_SNP_ERROR; i++) {
 		   if (Right_PD[i].size() == 1 && CurrentLength >= BP_Right_Start + i) {
 				Sum = 0;
-				if (ADDITIONAL_MISMATCH)                               
+				if (ADDITIONAL_MISMATCH)
 				   for (short j = 0; j <= i+ADDITIONAL_MISMATCH; j++)
 			   		  Sum += Right_PD[j].size();                      //Maybe the previous SNPS still exist; revise in 2018.11.26 by Liang Hao
 				if (Sum == 1 && i <= (short)(CurrentLength * Seq_Error_Rate + 1)) {
@@ -2446,10 +2446,10 @@ void CheckLeft_Far(const SPLIT_READ & OneRead,
 		for (short i = 0; i <= OneRead.MAX_SNP_ERROR; i++) {
 			if (Left_PD[i].size() == 1 && CurrentLength >= BP_Left_Start + i) {
 				Sum = 0;
-				if (ADDITIONAL_MISMATCH)                               
+				if (ADDITIONAL_MISMATCH)
 				   for (short j = 0; j <= i+ADDITIONAL_MISMATCH; j++)
 			   		  Sum += Left_PD[j].size();                      //Maybe the previous SNPS still exist; revise in 2018.11.26 by Liang Hao
-				if (Sum == 1 && i <= (short)(CurrentLength * Seq_Error_Rate + 1)) {  
+				if (Sum == 1 && i <= (short)(CurrentLength * Seq_Error_Rate + 1)) {
 					UniquePoint TempOne;
 					TempOne.LengthStr = CurrentLength;
 					TempOne.AbsLoc = Left_PD[i][0];
@@ -2565,7 +2565,7 @@ void CheckRight_Far(const SPLIT_READ & OneRead,
 	   for (short i = 0; i <= OneRead.MAX_SNP_ERROR; i++) {
 		   if (Right_PD[i].size() == 1 && CurrentLength >= BP_Right_Start + i) {
 				Sum = 0;
-				if (ADDITIONAL_MISMATCH)                               
+				if (ADDITIONAL_MISMATCH)
 				   for (short j = 0; j <= i+ADDITIONAL_MISMATCH; j++)
 			   		  Sum += Right_PD[j].size();                      //Maybe the previous SNPS still exist; revise in 2018.11.26 by Liang Hao
 				if (Sum == 1 && i <= (short)(CurrentLength * Seq_Error_Rate + 1)) {
@@ -4648,7 +4648,7 @@ void GetFarEnd_SingleStrandDownStreamInsertions(const string & CurrentChr, SPLIT
 
 		End = Temp_One_Read.UP_Close[0].AbsLoc + Temp_One_Read.UP_Close[0].LengthStr;
 		if (End > SpacerBeforeAfter + Temp_One_Read.InsertSize * 2 + DSizeArray[RangeIndex])
-		   Start = End - DSizeArray[RangeIndex] - Temp_One_Read.InsertSize * 2; 
+		   Start = End - DSizeArray[RangeIndex] - Temp_One_Read.InsertSize * 2;
 		else Start = SpacerBeforeAfter;
 
 
