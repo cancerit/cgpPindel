@@ -1,23 +1,23 @@
 package Sanger::CGP::Pindel::OutputGen::PindelRecord;
 
 ########## LICENCE ##########
-# Copyright (c) 2014-2018 Genome Research Ltd. 
-#  
+# Copyright (c) 2014-2018 Genome Research Ltd.
+#
 # Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
-#  
+#
 # This file is part of cgpPindel.
-#  
-# cgpPindel is free software: you can redistribute it and/or modify it under 
-# the terms of the GNU Affero General Public License as published by the Free 
-# Software Foundation; either version 3 of the License, or (at your option) any 
-# later version. 
-#  
-# This program is distributed in the hope that it will be useful, but WITHOUT 
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
-# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more 
-# details. 
-#  
-# You should have received a copy of the GNU Affero General Public License 
+#
+# cgpPindel is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation; either version 3 of the License, or (at your option) any
+# later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ########## LICENCE ##########
 
@@ -55,6 +55,8 @@ sub new{
 		_repeats => $args{'-repeats'},
 		_num_samples => $args{'-num_samples'},
 		_sample_contrib => $args{'-sample_contrib'},
+		_ref_left => $args{'-ref_left'},
+		_ref_right => $args{'-ref_right'},
 	};
     bless $self, $class;
     return $self;
@@ -127,6 +129,14 @@ sub get_reads{
 	return $self->{_reads}->{$sample_name}->{$strand};
 }
 
+sub get_read_counts{
+	my($self,$sample_name,$strand) = @_;
+	if(exists $self->{_reads}->{$sample_name}->{$strand}) {
+		return scalar @{$self->{_reads}->{$sample_name}->{$strand}};
+	}
+	return 0;
+}
+
 =head samples
 Returns an array of UNORDERED sample names asscociated with the record.
 
@@ -176,6 +186,18 @@ sub min_change{
 	my($self,$value) = @_;
 	$self->{_min_change} = $value if defined $value;
 	return $self->{_min_change};
+}
+
+sub ref_left {
+	my($self,$value) = @_;
+	$self->{_ref_left} = $value if defined $value;
+	return $self->{_ref_left};
+}
+
+sub ref_right {
+	my($self,$value) = @_;
+	$self->{_ref_right} = $value if defined $value;
+	return $self->{_ref_right};
 }
 
 sub lub{

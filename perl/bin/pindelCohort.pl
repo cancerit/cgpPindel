@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 ########## LICENCE ##########
-# Copyright (c) 2014-2018 Genome Research Ltd.
+# Copyright (c) 2020 Genome Research Ltd.
 #
 # Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
@@ -21,7 +21,6 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ########## LICENCE ##########
 
-
 BEGIN {
   use Cwd qw(abs_path cwd);
   use File::Basename;
@@ -31,74 +30,44 @@ BEGIN {
 use strict;
 use warnings FATAL => 'all';
 use autodie qw(:all);
-
-use File::Path qw(remove_tree make_path);
-use File::Spec;
-use List::Util qw(first);
 use Const::Fast qw(const);
-use File::Copy;
 
 use PCAP::Cli;
 use Sanger::CGP::Pindel::Implement;
 
-const my @VALID_PROCESS => qw(input pindel pin2vcf merge flag);
-my %index_max = ( 'input'   => 2,
+use Data::Dumper;
+
+const my @VALID_PROCESS => qw(input pindel ???);
+my %index_max = ( 'input'   => -1,
                   'pindel'  => -1,
-                  'pin2vcf' => -1,
-                  'merge'   => 1,
-                  'flag'    => 1,);
+                  '???' => 1,
+                  );
 
 {
   my $options = setup();
-  Sanger::CGP::Pindel::Implement::prepare($options);
   my $threads = PCAP::Threaded->new($options->{'threads'});
   &PCAP::Threaded::disable_out_err if(exists $options->{'index'});
 
   # register any process that can run in parallel here
-  $threads->add_function('input', \&Sanger::CGP::Pindel::Implement::input, exists $options->{'index'} ? 1 : 2);
+  $threads->add_function('input', \&Sanger::CGP::Pindel::Implement::input_cohort);
   $threads->add_function('pindel', \&Sanger::CGP::Pindel::Implement::pindel);
-  $threads->add_function('pin2vcf', \&Sanger::CGP::Pindel::Implement::pindel_to_vcf);
 
   # start processes here (in correct order obviously), add conditions for skipping based on 'process' option
-  $threads->run(2, 'input', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'input');
-
-  # count the valid input files, gives constant job count for downstream
-  if(!exists $options->{'process'} || first { $options->{'process'} eq $_ } ('pindel', 'pin2vcf')) {
+  if(!exists $options->{'process'} || $options->{'process'} eq 'input') {
+    my $jobs = scalar @{$options->{'hts_files'}};
+    $jobs = $options->{'limit'} if(exists $options->{'limit'} && defined $options->{'limit'});
+    $threads->run($jobs, 'input', $options);
+  }
+  if(!exists $options->{'process'} || $options->{'process'} eq 'pindel') {
     my $jobs = Sanger::CGP::Pindel::Implement::determine_jobs($options); # method still needed to populate info
     $jobs = $options->{'limit'} if(exists $options->{'limit'} && defined $options->{'limit'});
-    $threads->run($jobs, 'pindel', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'pindel');
-    $threads->run($jobs, 'pin2vcf', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'pin2vcf');
-  }
-
-  Sanger::CGP::Pindel::Implement::merge_and_bam($options) if(!exists $options->{'process'} || $options->{'process'} eq 'merge');
-
-  if(!exists $options->{'process'} || $options->{'process'} eq 'flag') {
-    Sanger::CGP::Pindel::Implement::flag($options);
-    cleanup($options) unless($options->{'debug'});
+    $threads->run($jobs, 'pindel', $options);
   }
 }
 
-sub cleanup {
-  my $options = shift;
-  my $tmpdir = $options->{'tmp'};
-  move(File::Spec->catdir($tmpdir, 'logs'), File::Spec->catdir($options->{'outdir'}, 'logs')) || die $!;
-  remove_tree $tmpdir if(-e $tmpdir);
-  opendir(my $dh, $options->{'outdir'});
-  while(readdir $dh) {
-    unlink File::Spec->catfile($options->{'outdir'}, $_) if($_ =~ /\.vcf\.gz(\.tbi)?$/ && $_ !~ /\.flagged\.vcf\.gz(\.tbi)?$/);
-  }
-  closedir $dh;
-	return 0;
-}
-
-sub setup {
-  my $opts = Sanger::CGP::Pindel::Implement::shared_setup(
-    ['tumour', 'normal'],
-    {'t|tumour=s' => 'tumour', 'n|normal=s' => 'normal'}
-  );
-  PCAP::Cli::file_for_reading('tumour', $opts->{'tumour'});
-  PCAP::Cli::file_for_reading('normal', $opts->{'normal'});
-
+sub index_check {
+  my $opts = shift;
+  my $max_files = @{$opts->{'hts_files'}};
   if(exists $opts->{'process'}) {
     PCAP::Cli::valid_process('process', $opts->{'process'}, \@VALID_PROCESS);
     if(exists $opts->{'index'}) {
@@ -109,43 +78,53 @@ sub setup {
       if($max==-1){
         if(exists $opts->{'limit'}) {
           $max = $opts->{'limit'} > $refs ? $refs : $opts->{'limit'};
+        } else {
+          if($opts->{'process'} eq 'input') {
+            $max = $max_files;
+          } else {
+            $max = $refs;
+          }
         }
-        else {
-      	  $max = $refs;
-      	}
       }
-
-      die "ERROR: based on reference and exclude option index must be between 1 and $refs\n" if($opts->{'index'} < 1 || $opts->{'index'} > $max);
+      if($opts->{'index'} < 1 || $opts->{'index'} > $max) {
+        if($opts->{'process'} eq 'input') {
+          die "ERROR: based on number of inputs option -index must be between 1 and $max_files\n";
+        } else {
+          die "ERROR: based on reference and exclude option -index must be between 1 and $refs\n";
+        }
+      }
       PCAP::Cli::opt_requires_opts('index', $opts, ['process']);
-
       die "No max has been defined for this process type\n" if($max == 0);
-
-      PCAP::Cli::valid_index_by_factor('index', $opts->{'index'}, $max, 1);
     }
   }
   elsif(exists $opts->{'index'}) {
     die "ERROR: -index cannot be defined without -process\n";
   }
+}
+
+sub setup {
+  my $opts = Sanger::CGP::Pindel::Implement::shared_setup([],{});
+
+  # add hts_files from the remains of @ARGV
+  Sanger::CGP::Pindel::Implement::cohort_files($opts);
+  index_check($opts);
 
   return $opts;
 }
 
 __END__
 
-=head1 pindel.pl
+=head1 pindelCohort.pl
 
-Reference implementation of Cancer Genome Project indel calling
-pipeline.
+Similar to pindel.pl but processes 1 or more samples. References to BAM can ber replaced with CRAM.
 
 =head1 SYNOPSIS
 
-pindel.pl [options]
+pindelCohort.pl [options] sample1.bam [sample2.bam sample3.bam...]
 
   Required parameters:
     -outdir    -o   Folder to output result to.
     -reference -r   Path to reference genome file *.fa[.gz]
-    -tumour    -t   Tumour BAM/CRAM file (co-located index and bas files)
-    -normal    -n   Normal BAM/CRAM file (co-located index and bas files)
     -simrep    -s   Full path to tabix indexed simple/satellite repeats.
     -filter    -f   VCF filter rules file (see FlagVcf.pl for details)
     -genes     -g   Full path to tabix indexed coding gene footprints.
@@ -182,9 +161,14 @@ pindel.pl [options]
     -version   -v   Version
 
   File list can be full file names or wildcard, e.g.
-    pindel.pl -c 4 -r some/genome.fa[.gz] -o myout -t tumour.bam -n normal.bam
 
-  Run with '-m' for possible input file types.
+    pindelCohort.pl -c 4 -r some/genome.fa[.gz] -o myout sample1.bam sample2.bam
+    or
+    pindelCohort.pl -c 4 -r some/genome.fa[.gz] -o myout sample*.bam
+    or
+    pindelCohort.pl -c 4 -r some/genome.fa[.gz] -o myout sample*.cram
+
+  Please note that colocated index and *.bas files are required.
 
 =head1 OPTIONS
 
@@ -194,21 +178,15 @@ pindel.pl [options]
 
 Available processes for this tool are:
 
-  input
-  pindel
-  pin2vcf
-  merge
+  ???
 
 =item B<-index>
 
 Possible index ranges for processes above are:
 
-  input   = 1..2
-  pindel  = 1..<total_refs_less_exclude>
-  pin2vcf = 1..<total_refs_less_exclude>
-  merge   = 1
-  flag    = 1
+  ?
 
 If you want STDOUT/ERR to screen ensure index is set even for single job steps.
 
 =back
+

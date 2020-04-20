@@ -1,10 +1,12 @@
-FROM  quay.io/wtsicgp/dockstore-cgpmap:3.1.4 as builder
+FROM  quay.io/wtsicgp/pcap-core:5.0.4 as builder
 
 USER  root
 
 # ALL tool versions used by opt-build.sh
-ENV VER_CGPVCF="v2.2.1"
-ENV VER_VCFTOOLS="0.1.16"
+# need to keep in sync with setup.sh
+ENV VER_CGPVCF="v2.2.1"\
+    VER_VCFTOOLS="0.1.16"\
+    VER_BLAT="v385"
 
 RUN apt-get -yq update
 RUN apt-get install -yq --no-install-recommends \
@@ -29,8 +31,11 @@ ENV LANG en_US.UTF-8
 ADD build/opt-build.sh build/
 RUN bash build/opt-build.sh $OPT
 
+ADD build/opt-build-local.sh build/
+COPY c++ c++
+COPY perl perl
+
 # build the tools in this repo, separate to reduce build time on errors
-COPY . .
 RUN bash build/opt-build-local.sh $OPT
 
 FROM ubuntu:16.04
@@ -54,6 +59,7 @@ zlib1g \
 liblzma5 \
 libncurses5 \
 p11-kit \
+moreutils \
 unattended-upgrades && \
 unattended-upgrade -d -v && \
 apt-get remove -yq unattended-upgrades && \

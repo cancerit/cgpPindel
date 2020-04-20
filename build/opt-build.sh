@@ -75,3 +75,6 @@ if [ ! -e $SETUP_DIR/cgpVcf.success ]; then
   rm -rf distro.* distro/*
   touch $SETUP_DIR/cgpVcf.success
 fi
+
+curl -sSL http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64.${VER_BLAT}/blat/blat > $INST_PATH/bin/blat
+chmod ugo+x $INST_PATH/bin/blat

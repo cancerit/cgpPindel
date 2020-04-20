@@ -25,6 +25,7 @@ package Sanger::CGP::Pindel::Implement;
 use strict;
 use warnings FATAL => 'all';
 use autodie qw(:all);
+use Cwd qw(cwd);
 use Const::Fast qw(const);
 use File::Spec;
 use File::Which qw(which);
@@ -34,6 +35,8 @@ use File::Temp qw(tempfile);
 use Capture::Tiny;
 use List::Util qw(first);
 use FindBin qw($Bin);
+use Getopt::Long;
+use Pod::Usage qw(pod2usage);
 
 use Sanger::CGP::Pindel;
 
@@ -50,6 +53,46 @@ const my $PIN_MERGE => q{ -o %s -i %s -r %s};
 const my $FLAG => q{ -a %s -u %s -s %s -i %s -o %s -r %s};
 const my $PIN_GERM => q{ -f %s -i %s -o %s};
 const my $BASE_GERM_RULE => 'F012'; # prefixed with additional F if fragment filtering.
+
+sub input_cohort{
+  my ($index, $options) = @_;
+  return 1 if(exists $options->{'index'} && $index != $options->{'index'});
+
+  my $tmp = $options->{'tmp'};
+  return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
+
+  my @inputs = @{$options->{'hts_files'}};
+  my $iter = 1;
+  for my $input(@inputs) {
+    next if($iter++ != $index); # skip to the relevant input in the list
+
+    ## build command for this index
+    #
+
+    my $max_threads = $options->{'threads'};
+    unless (exists $options->{'index'}) {
+      $max_threads = int ($max_threads / scalar @inputs);
+    }
+    $max_threads = 1 if($max_threads == 0);
+
+    my $sample = sanitised_sample_from_bam($input);
+    my $gen_out = File::Spec->catdir($tmp, $sample);
+    make_path($gen_out) unless(-e $gen_out);
+
+    my $command = "$^X ";
+    $command .= _which('pindel_input_gen.pl');
+    $command .= sprintf $PINDEL_GEN_COMM, $input, $gen_out, $max_threads;
+    $command .= " -r $options->{reference}";
+    $command .= " -e $options->{badloci}" if(exists $options->{'badloci'});
+
+    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
+
+    #
+    ## The rest is auto-magical
+    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
+  }
+  return 1;
+}
 
 sub input {
   my ($index, $options) = @_;
@@ -355,7 +398,17 @@ sub determine_jobs {
   my $tmp = $options->{'tmp'};
   my @valid_seqs = valid_seqs($options);
   my %seqs;
-  for my $in_bam($options->{'tumour'}, $options->{'normal'}) {
+  my @samples;
+  if(exists $options->{'tumour'} && exists $options->{'normal'}) {
+    push @samples, $options->{'tumour'} && exists $options->{'normal'};
+  }
+  elsif(exists $options->{'hts_files'}) {
+    @samples = @{$options->{'hts_files'}};
+  }
+  else {
+    die "ERROR: Unexpected combination of BAM/CRAM inputs";
+  }
+  for my $in_bam(@samples) {
     my $samp_path = File::Spec->catdir($tmp, sanitised_sample_from_bam($in_bam));
     my @files = file_list($samp_path, qr/\.txt(:?\.gz)$/);
     for my $file(@files) {
@@ -429,6 +482,131 @@ sub _which {
   my $path = File::Spec->catfile($l_bin, $prog);
   $path = which($prog) unless(-e $path);
   return $path;
+}
+
+sub shared_setup {
+  my ($are_paths, $extra_opts) = @_;
+  my %opts;
+  pod2usage(-msg  => "\nERROR: Option must be defined.\n", -verbose => 1,  -output => \*STDERR) if(scalar @ARGV == 0);
+  $opts{'cmd'} = join " ", $0, @ARGV;
+  my %load_opts = (
+    'h|help' => \$opts{'h'},
+    'm|man' => \$opts{'m'},
+    'c|cpus=i' => \$opts{'threads'},
+    'r|reference=s' => \$opts{'reference'},
+    'o|outdir=s' => \$opts{'outdir'},
+    'e|exclude=s' => \$opts{'exclude'},
+    'b|badloci=s' => \$opts{'badloci'},
+    'p|process=s' => \$opts{'process'},
+    'i|index=i' => \$opts{'index'},
+    'v|version' => \$opts{'version'},
+    # these are specifically for pin2vcf
+    'sp|species=s{0,}' => \@{$opts{'species'}},
+    'as|assembly=s' => \$opts{'assembly'},
+    'st|seqtype=s' => \$opts{'seqtype'},
+    'sg|skipgerm' => \$opts{'skipgerm'},
+    # specifically for FlagVCF
+    's|simrep=s' => \$opts{'simrep'},
+    'f|filters=s' => \$opts{'filters'},
+    'g|genes=s' => \$opts{'genes'},
+    'u|unmatched=s' => \$opts{'unmatched'},
+    'sf|softfil=s' => \$opts{'softfil'},
+    'l|limit=i' => \$opts{'limit'},
+    'd|debug' => \$opts{'debug'},
+    'a|apid:s' => \$opts{'apid'},
+  );
+  for my $opt_key(keys %{$extra_opts}) {
+    my $v = $extra_opts->{$opt_key};
+    $load_opts{$opt_key} = \$opts{$v};
+  }
+  GetOptions(%load_opts) or pod2usage(2);
+
+  pod2usage(-verbose => 1) if(defined $opts{'h'});
+  pod2usage(-verbose => 2) if(defined $opts{'m'});
+
+  if($opts{'version'}) {
+    print 'Version: ',Sanger::CGP::Pindel::Implement->VERSION,"\n";
+    exit 0;
+  }
+
+  PCAP::Cli::file_for_reading('reference', $opts{'reference'});
+  PCAP::Cli::file_for_reading('simrep', $opts{'simrep'});
+  PCAP::Cli::file_for_reading('filters', $opts{'filters'});
+  PCAP::Cli::file_for_reading('genes', $opts{'genes'});
+  PCAP::Cli::file_for_reading('unmatched', $opts{'unmatched'});
+  PCAP::Cli::file_for_reading('softfil', $opts{'softfil'}) if(defined $opts{'softfil'});
+  PCAP::Cli::out_dir_check('outdir', $opts{'outdir'});
+  my $final_logs = File::Spec->catdir($opts{'outdir'}, 'logs');
+  if(-e $final_logs) {
+    warn "NOTE: Presence of '$final_logs' directory suggests successful complete analysis, please delete to rerun\n";
+    exit 0;
+  }
+
+  delete $opts{'process'} unless(defined $opts{'process'});
+  delete $opts{'index'} unless(defined $opts{'index'});
+  delete $opts{'limit'} unless(defined $opts{'limit'});
+
+  delete $opts{'exclude'} unless(defined $opts{'exclude'});
+  delete $opts{'badloci'} unless(defined $opts{'badloci'});
+  delete $opts{'apid'} unless(defined $opts{'apid'});
+
+  # now safe to apply defaults
+  $opts{'threads'} = 1 unless(defined $opts{'threads'});
+  $opts{'seqtype'} = 'WGS' unless(defined $opts{'seqtype'});
+
+
+  # make all things that appear to be paths complete (absolute not great if BAM/BAI in different locations)
+  for my $key (keys %opts) {
+    next unless( first {$key eq $_} (qw(reference outdir badloci simrep filters genes unmatched softfil), @{$are_paths}) );
+    $opts{$key} = cwd().'/'.$opts{$key} if(defined $opts{$key} && -e $opts{$key} && $opts{$key} !~ m/^\//);
+  }
+
+  my $tmpdir = File::Spec->catdir($opts{'outdir'}, 'tmpPindel');
+  make_path($tmpdir) unless(-d $tmpdir);
+  my $progress = File::Spec->catdir($tmpdir, 'progress');
+  make_path($progress) unless(-d $progress);
+  my $logs = File::Spec->catdir($tmpdir, 'logs');
+  make_path($logs) unless(-d $logs);
+
+  $opts{'tmp'} = $tmpdir;
+
+  if(scalar @{$opts{'species'}} > 0 ){
+    $opts{'species'}="@{$opts{'species'}}";
+  }
+  else {
+    delete $opts{'species'};
+  }
+
+  return \%opts;
+}
+
+sub cohort_files {
+  my $opts = shift;
+  my @files;
+  my %uniq_chk;
+  for my $candidate(sort @ARGV) {
+    if(-e $candidate && -s _ && $candidate =~ m/[.](bam|cram)$/) {
+      $candidate = cwd().'/'.$candidate if($candidate !~ m{^/});
+      if(exists $uniq_chk{$candidate}) {
+        die "Same file defined multiple times: $candidate";
+      }
+      $uniq_chk{$candidate} = 1;
+      push @files, $candidate;
+    }
+  }
+  if(@files == 0) {
+    die "ERROR: Failed to find list of bam/cram files following arguments";
+  }
+  for my $hts(@files) {
+    if(!-e "$hts.bai" && !-e "$hts.csi" && !-e "$hts.crai") {
+      die "ERROR: Failed to identify appropriate bam/cram index for $hts";
+    }
+    unless(-e "$hts.bas") {
+      die "ERROR: Failed to identify appropriate *.bas file for $hts";
+    }
+  }
+  $opts->{'hts_files'} = \@files;
+  return 1;
 }
 
 1;

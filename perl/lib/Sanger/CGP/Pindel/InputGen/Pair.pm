@@ -47,33 +47,34 @@ sub new {
 
 sub exact {
   my $self = shift;
-  return 1 if($self->{'r1'}->exact && $self->{'r2'}->exact);
+  # r2 least likely to be exact so test it first, short-circuit by not testing r1 if not exact
+  return 1 if($self->{'r2'}->exact && $self->{'r1'}->exact);
   return 0;
 }
 
 sub unmapped_pair {
   my $self = shift;
+  # r1 least likely to be unmapped so test it first, short-circuit by not testing r2 if unmapped
   return 1 if($self->{'r1'}->unmapped && $self->{'r2'}->unmapped);
   return 0;
 }
 
 sub qcfailed_pair {
   my $self = shift;
+  # r1 least likely to be qc_fail so test it first, short-circuit by not testing r2 if qc_fail
   return 1 if($self->{'r1'}->qc_failed && $self->{'r2'}->qc_failed);
   return 0;
 }
 
 sub has_good_anchor {
   my $self = shift;
-  my $r2_state = $self->{'r2'}->good_anchor; # to ensure both fully populates
-  return 1 if($self->{'r1'}->good_anchor || $r2_state);
+  return 1 if($self->{'r1'}->good_anchor || $self->{'r2'}->good_anchor);
   return 0;
 }
 
 sub has_good_query {
   my $self = shift;
-  my $r2_state = $self->{'r2'}->good_query; # to ensure both fully populates
-  return 1 if($self->{'r1'}->good_query || $r2_state);
+  return 1 if($self->{'r1'}->good_query || $self->{'r2'}->good_query);
   return 0;
 }
 

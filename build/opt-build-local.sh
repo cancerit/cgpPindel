@@ -63,3 +63,5 @@ if [ ! -e $SETUP_DIR/cgpPindel.success ]; then
   cd $SETUP_DIR
   touch $SETUP_DIR/cgpPindel.success
 fi
+
+rm -rf $SETUP_DIR

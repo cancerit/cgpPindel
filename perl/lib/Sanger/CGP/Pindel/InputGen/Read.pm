@@ -55,11 +55,9 @@ const my $MAX_CIGAR_OPS_FOR_ANCHOR => 7*2; #cigar operations array both elements
 
 sub new {
   my ($class, $sam, $end, $tabix) = @_;
-#  my @elements = (split /\t/, ${$sam})[0,1,2,3,4,5,8,9,10];
   my ($qname, $flag, $rname, $pos, $mapq, $cigar, $seq, $qual) = (split /\t/, ${$sam})[0,1,2,3,4,5,9,10];
   # just clean this up as it is of no use
   $cigar =~ s/[[:digit:]]+H//g if(index($cigar, 'H') != -1);
-  my ($rg) = ${$sam} =~ m/\tRG:Z:([^\t]+)/;
   my $self = {'qname' => $qname,
               'flag' => int $flag,
               'rname' => $rname,
@@ -69,7 +67,7 @@ sub new {
               'seq' => $seq,
               'qual' => $qual,
               'end' => int $end,
-              'rg' => defined $rg ? $rg : '.',
+              'rg' => ${$sam} =~ m/\tRG:Z:([^\t]+)/ ? $1 : q{.},
               };
   $self->{'tabix'} = $tabix if(defined $tabix);
   bless $self, $class;
