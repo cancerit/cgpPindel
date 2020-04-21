@@ -76,7 +76,7 @@ sub process_pindel_file {
 my $records = 0;
   while(my $record = $prp->next_record) {
 #next unless($record->idx eq 'D36');
-last if($records > 40);
+#last if($records > 40);
     print $out_fh $record_converter->gen_record($record);
 $records++;
 #die "told to exit for testing";

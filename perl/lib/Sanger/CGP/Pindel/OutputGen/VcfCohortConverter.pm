@@ -59,6 +59,8 @@ const my $T_STARTS => 20;
 const my $Q_SEQ => 21;
 const my $T_SEQ => 22;
 
+const my $SD_MULT => 2;
+
 1;
 
 sub new{
@@ -91,8 +93,8 @@ sub _max_inserts {
   for my $s(keys %bas) {
     my $max_ins = 0;
     for my $rg($bas{$s}->read_groups) {
-      my $m_sd2 = $bas{$s}->get($rg, 'mean_insert_size') + ($bas{$s}->get($rg, 'insert_size_sd') * 2);
-      $max_ins = $m_sd2 if($m_sd2 > $max_ins);
+      my $m_sd = $bas{$s}->get($rg, 'mean_insert_size') + ($bas{$s}->get($rg, 'insert_size_sd') * $SD_MULT);
+      $max_ins = $m_sd if($m_sd > $max_ins);
     }
     $ins_by_sample{$s} = $max_ins;
   }
@@ -226,7 +228,8 @@ sub gen_record{
 
   my ($q_start, $q_end, $change_pos, $change_ref, $change_alt) = $self->blat_ref_alt($fh_target, $record);
 
-  my $change_pos_low = $change_pos - 1; # coords are 0-based in blat output
+  my $change_pos_low = $change_pos;
+  $change_pos_low-- if($record->type eq 'D');
   my $range_l = ($record->range_end - $record->range_start) + 1;
   my $change_pos_high = $change_pos_low + $range_l; # REF based range, adjusted in func
   my $change_l = $record->end - $record->start + 1;
@@ -321,17 +324,19 @@ sub blat_reads {
 sub blat_counts {
   my ($self, $blat) = @_;
   $self->{read_map} = {};
-#$self->_dump_rec_detail;
-#exit;
   my @lines = split /\n/, ${$blat};
   for my $l(@lines) {
-    chomp $l;
-    $self->parse_deletion(\$l);
+#next unless($l =~ m/HX1_20016:2:1214:9678:44450/);
+#print $l."\n";
+    $self->parse_event(\$l);
   }
   my (%wtr, %mtr);
   for my $read(sort keys %{$self->{read_map}}) {
     my $hits = scalar @{$self->{read_map}->{$read}};
-    die "More than 2 hits!".Dumper($self->{read_map}->{$read}) if($hits > 2);
+    if($hits > 2) {
+      print "More than 2 hits!".Dumper($self->{read_map}->{$read});
+      exit 1;
+    }
 
     # this handles prevents double counting should read 1&2 align across the same positiob
     # also allows them to be counted if they go to ALT and REF
@@ -366,14 +371,12 @@ sub sam_depth {
   my ($self, $sample, $record) = @_;
   my $mid_point = int ($record->range_start + (($record->range_end - $record->range_start)*0.5));
   my $c_samcount = sprintf $SAM_DEPTH_PN, $self->hts_file_by_sample($sample), $record->chro, $mid_point, $mid_point;
-#warn $c_samcount;
   my ($c_out, $c_err, $c_exit) = capture { system($c_samcount); };
   if($c_exit) {
     warn "An error occurred while executing $c_samcount\n";
     warn "\tERROR$c_err\n";
     exit $c_exit;
   }
-#  print $c_out;
   return (split /\n/, $c_out);
 }
 
@@ -386,16 +389,22 @@ sub _dump_rec_detail {
   return 0;
 }
 
-sub parse_deletion {
+sub parse_event {
   my ($self, $rec) = @_;
-  #$self->_dump_rec_detail;
+
   my @rec_d = split /\t/, ${$rec};
+  if(exists $self->{read_map}->{$rec_d[$Q_NAME]}) {
+    my @recs = @{$self->{read_map}->{$rec_d[$Q_NAME]}};
+    for my $r(@recs) {
+      if($r->{'target'} eq $rec_d[$T_NAME] && $r->{'strand'} eq $rec_d[$STRAND]) {
+        return 0;
+      }
+    }
+  }
   # clean up trailing commas
   $rec_d[$Q_SEQ] =~ s/,$//;
   $rec_d[$T_SEQ] =~ s/,$//;
   $self->{rec_d} = \@rec_d;
-
-#return 0 unless($rec_d[$Q_NAME] eq 'HX1_20016:2:1116:7791:42060/2');
 
   # specific to deletion class
   my $change_seq = $self->{change_ref};
@@ -406,19 +415,26 @@ sub parse_deletion {
   }
   $self->{change_seq} = $change_seq;
 
+#my %lookup = map { $_ => 1 } (qw(HX1_20016:2:1101:2402:12683/2 HX1_20016:2:1102:20983:27363/2 HX1_20016:2:1106:7679:42745/1 HX1_20016:2:1110:29944:60290/1 HX1_20016:2:1120:29589:3348/2 HX1_20016:2:1210:9100:28681/2 HX1_20016:2:1218:22049:68271/1 HX1_20016:2:2122:17208:35977/2 HX1_20016:2:2205:16234:70574/2 HX1_20016:2:2210:28879:48177/2 HX1_20016:2:2216:17888:66056/2));
+#if(exists $lookup{$self->{rec_d}->[$Q_NAME]}) {
+#  print "$self->{rec_d}->[$Q_NAME]\n";
+#}
+#else { return 0;}
+
   # all the reads that don't span the range
   return 0 unless($rec_d[$T_START] <= $self->{change_pos_low} && $rec_d[$T_END] > $change_pos_high);
 
   my $result = {target => $rec_d[$T_NAME], strand => $rec_d[$STRAND], rec => $rec};
-    if($self->gap_ok($change_pos_high)) {
-      push @{$self->{read_map}->{$rec_d[$Q_NAME]}}, $result;
-      return 1;
-    }
+  if($self->gap_ok($change_pos_high)) {
+    push @{$self->{read_map}->{$rec_d[$Q_NAME]}}, $result;
+    return 1;
+  }
   return 0;
 }
 
 sub gap_ok {
   my ($self, $change_pos_high) = @_;
+
   my @b_sizes = split q{,}, $self->{rec_d}->[$BLOCK_SIZES];
   my @t_starts = split q{,}, $self->{rec_d}->[$T_STARTS];
   my $iter = @b_sizes - 1;
@@ -435,15 +451,20 @@ sub match_ok {
   # check the expected seq is found at the index of the low boudary
   my $exp_index = $self->{change_pos_low} - $t_start;
   return 0 if($exp_index < 0);
+
   return 1 if(index($self->{rec_d}->[$Q_SEQ], $self->{change_seq}, $exp_index) == $exp_index);
   return 0 if(index($self->{change_seq}, q{,}) >= 0); # don't allow gaps in the target for remaining checks
   # allow for a minimal number of mismatches
   my $change_len = length $self->{change_seq};
   my $q_exp = substr($self->{rec_d}->[$Q_SEQ], $exp_index, $change_len);
+#print "cs: $self->{change_seq}\n";
+#print "qe: $q_exp\n";
+
+  return 0 if( substr($self->{change_seq}, 0, 1) ne substr($q_exp, 0, 1) || substr( $self->{change_seq}, -1, 1) ne substr($q_exp, -1, 1));
   return 0 if(index($q_exp, q{,}) >= 0); # don't allow gaps in the query for remaining checks
   return 0 if(length($q_exp) < $change_len);
   my $mismatch = ($q_exp ^ $self->{change_seq}) =~ tr/\0//c;
-  return 1 if(($mismatch / $change_len) < 0.1);
+  return 1 if(($mismatch / $change_len) < 0.2);
   return 0;
 }
 
@@ -467,6 +488,7 @@ sub blat_ref_alt {
     $ref = $record->ref_seq;
     $alt = $record->alt_seq;
   }
+
   my $q_start = $record->start - $change_at; # correcting for position handled in change_at
   my $q_end = $record->end + length $ref_right;
 
@@ -477,10 +499,26 @@ sub blat_ref_alt {
   my $seq_left = substr($ref_left, -1);
   # -1 as includes the base before and after which would be -2 but need to correct for coord maths
   # (for Del and Ins, unsure about DI at the moment)
-  my $seq_right = substr($ref_right, 0, ($record->range_end - $record->range_start) - 1);
+  my $seq_right;
+  if($record->type eq 'D') {
+    $seq_right = substr($ref_right, 0, ($record->range_end - $record->range_start) - 1);
+  }
+  elsif($record->type eq 'I') {
+    $seq_right = substr($ref_right, 0, ($record->range_end - $record->range_start));
+  }
+
 
   my $change_ref = lc ($seq_left.$ref.$seq_right);
   my $change_alt = lc ($seq_left.$alt.$seq_right);
+
+# printf "%s\n", $record->ref_left;
+# printf "%s\n", $record->ref_seq;
+# printf "%s\n", $record->alt_seq;
+# printf "%s\n", $record->ref_right;
+# printf "%s\n", $record->type;
+# printf "%s\n", $change_ref;
+# printf "%s\n", $change_alt;
+# #exit;
 
   return $q_start, $q_end, $change_at, $change_ref, $change_alt;
 }
