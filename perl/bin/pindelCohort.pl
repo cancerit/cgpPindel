@@ -31,26 +31,33 @@ use strict;
 use warnings FATAL => 'all';
 use autodie qw(:all);
 use Const::Fast qw(const);
+use File::Copy;
+use File::Path qw(remove_tree make_path);
 
 use PCAP::Cli;
 use Sanger::CGP::Pindel::Implement;
 
 use Data::Dumper;
 
-const my @VALID_PROCESS => qw(input pindel ???);
-my %index_max = ( 'input'   => -1,
+const my %INDEX_MAX => (
+                  'input'   => -1,
                   'pindel'  => -1,
-                  '???' => 1,
+                  'parse' => 1, # reads all pout, makes raw-vcf and splits to even sized for blat
+                  'blat' => -1,
+                  'concat' => 1,
                   );
+const my @VALID_PROCESS => keys %INDEX_MAX;
 
 {
   my $options = setup();
   my $threads = PCAP::Threaded->new($options->{'threads'});
-  &PCAP::Threaded::disable_out_err if(exists $options->{'index'});
+  #&PCAP::Threaded::disable_out_err if(exists $options->{'index'});
 
   # register any process that can run in parallel here
   $threads->add_function('input', \&Sanger::CGP::Pindel::Implement::input_cohort);
   $threads->add_function('pindel', \&Sanger::CGP::Pindel::Implement::pindel);
+  $threads->add_function('blat', \&Sanger::CGP::Pindel::Implement::blat);
+
 
   # start processes here (in correct order obviously), add conditions for skipping based on 'process' option
   if(!exists $options->{'process'} || $options->{'process'} eq 'input') {
@@ -63,6 +70,27 @@ my %index_max = ( 'input'   => -1,
     $jobs = $options->{'limit'} if(exists $options->{'limit'} && defined $options->{'limit'});
     $threads->run($jobs, 'pindel', $options);
   }
+  if(!exists $options->{'process'} || $options->{'process'} eq 'parse') {
+    Sanger::CGP::Pindel::Implement::parse($options);
+  }
+  $options->{'split_files'} = Sanger::CGP::Pindel::Implement::split_files($options) unless(exists $options->{'split_files'});
+  if(!exists $options->{'process'} || $options->{'process'} eq 'blat') {
+    my $jobs = scalar @{$options->{'split_files'}};
+    $jobs = $options->{'limit'} if(exists $options->{'limit'} && defined $options->{'limit'});
+    $threads->run($jobs, 'blat', $options);
+  }
+  if(!exists $options->{'process'} || $options->{'process'} eq 'concat') {
+    Sanger::CGP::Pindel::Implement::concat($options);
+    cleanup($options) unless($options->{'debug'});
+  }
+}
+
+sub cleanup {
+  my $options = shift;
+  my $tmpdir = $options->{'tmp'};
+  move(File::Spec->catdir($tmpdir, 'logs'), File::Spec->catdir($options->{'outdir'}, 'logs')) || die $!;
+  remove_tree $tmpdir if(-e $tmpdir);
+	return 0;
 }
 
 sub index_check {
@@ -74,14 +102,19 @@ sub index_check {
       my @valid_seqs = Sanger::CGP::Pindel::Implement::valid_seqs($opts);
       my $refs = scalar @valid_seqs;
 
-      my $max = $index_max{$opts->{'process'}};
-      if($max==-1){
+      my $max = $INDEX_MAX{$opts->{'process'}};
+      if($max == -1){
         if(exists $opts->{'limit'}) {
           $max = $opts->{'limit'} > $refs ? $refs : $opts->{'limit'};
         } else {
           if($opts->{'process'} eq 'input') {
             $max = $max_files;
-          } else {
+          }
+          elsif($opts->{'process'} eq 'blat') {
+            $opts->{'split_files'} = Sanger::CGP::Pindel::Implement::split_files($opts);
+            $max = scalar @{$opts->{'split_files'}};
+          }
+          else {
             $max = $refs;
           }
         }
@@ -116,22 +149,18 @@ __END__
 
 =head1 pindelCohort.pl
 
-Similar to pindel.pl but processes 1 or more samples. References to BAM can ber replaced with CRAM.
+Similar to pindel.pl but processes 1 sample. References to BAM can be replaced with CRAM.
 
 =head1 SYNOPSIS
 
-pindelCohort.pl [options] sample1.bam [sample2.bam sample3.bam...]
+pindelCohort.pl [options] sample1.bam
 
   Required parameters:
     -outdir    -o   Folder to output result to.
     -reference -r   Path to reference genome file *.fa[.gz]
-    -simrep    -s   Full path to tabix indexed simple/satellite repeats.
-    -filter    -f   VCF filter rules file (see FlagVcf.pl for details)
-    -genes     -g   Full path to tabix indexed coding gene footprints.
-    -unmatched -u   Full path to tabix indexed gff3 of unmatched normal panel
-                      - see pindel_np_from_vcf.pl
 
   Optional
+    -all            Generate BLAT counts for all samples regardless of pindel call state.
     -seqtype   -st  Sequencing protocol, expect all input to match [WGS]
     -assembly  -as  Name of assembly in use
                      -  when not available in BAM header SQ line.
@@ -139,12 +168,10 @@ pindelCohort.pl [options] sample1.bam [sample2.bam sample3.bam...]
                      -  when not available in BAM header SQ line.
     -exclude   -e   Exclude this list of ref sequences from processing, wildcard '%'
                      - comma separated, e.g. NC_007605,hs37d5,GL%
-    -badloci   -b   Tabix indexed BED file of locations to not accept as anchors
+    -badloci   -b   Tabix indexed BED file of locations to not accept as anchors or valid events
                      - e.g. hi-seq depth from UCSC
-    -skipgerm  -sg  Don't output events with more evidence in normal BAM.
     -cpus      -c   Number of cores to use. [1]
                      - recommend max 4 during 'input' process.
-    -softfil   -sf  VCF filter rules to be indicated in INFO field as soft flags
     -limit     -l   When defined with '-cpus' internally thread concurrent processes.
                      - requires '-p', specifically for pindel/pin2vcf steps
     -debug     -d   Don't cleanup workarea on completion.

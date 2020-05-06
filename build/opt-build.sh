@@ -75,6 +75,10 @@ if [ ! -e $SETUP_DIR/cgpVcf.success ]; then
   rm -rf distro.* distro/*
   touch $SETUP_DIR/cgpVcf.success
 fi
-
-curl -sSL http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64.${VER_BLAT}/blat/blat > $INST_PATH/bin/blat
-chmod ugo+x $INST_PATH/bin/blat
+set -x
+if [ ! -e $SETUP_DIR/ucscTools.success ]; then
+  curl -sSL http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64.${VER_BLAT}/blat/blat > $INST_PATH/bin/blat
+  curl -sSL http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64.${VER_BLAT}/pslPretty > $INST_PATH/bin/pslPretty
+  chmod ugo+x $INST_PATH/bin/blat $INST_PATH/bin/pslPretty
+  touch $SETUP_DIR/ucscTools.success
+fi

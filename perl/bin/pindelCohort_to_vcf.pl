@@ -31,6 +31,7 @@ use lib "$Bin/../lib";
 
 use File::Basename;
 use Getopt::Long;
+use Data::UUID;
 
 use Sanger::CGP::Pindel::Implement;
 use Sanger::CGP::Pindel::OutputGen::VcfCohortConverter;
@@ -56,6 +57,7 @@ use Data::Dumper;
     -hts_set => $hts_by_sample,
     -bas_set => $bas_by_sample,
     -all => $options->{'all'},
+    -badloci => $options->{'badloci'},
   );
   my $input_source = basename($0). '_v'. Sanger::CGP::Pindel->VERSION;
   my $header = $record_converter->gen_header($options->{'reference'}, $input_source, $vcfsamp_by_sample, $options);
@@ -64,6 +66,7 @@ use Data::Dumper;
   for my $in_file(@{$options->{'input'}}) {
     process_pindel_file($options, $in_file, $out_fh, $record_converter);
   }
+  close $options->{'output'} if($options->{'output'} ne \*STDOUT);
 }
 
 sub process_pindel_file {
@@ -72,14 +75,15 @@ sub process_pindel_file {
     -path => $pindel_file,
     -fai => Bio::DB::HTS::Fai->load($options->{'reference'}),
     -noreads => 1,
+
   );
+  my $uuid_gen = Data::UUID->new;
 my $records = 0;
   while(my $record = $prp->next_record) {
-#next unless($record->idx eq 'D36');
+    $record->id($uuid_gen->to_string($uuid_gen->create));
 #last if($records > 40);
     print $out_fh $record_converter->gen_record($record);
-$records++;
-#die "told to exit for testing";
+#$records++;
   }
 }
 
@@ -210,7 +214,8 @@ sub setup{
               'as|assembly:s' => \$opts{'assembly'},
               'sp|species=s{0,}' => \@{$opts{'species'}},
               'pp|parent:s' => \$opts{'pp'},
-              'a|all' => \$opts{'all'}
+              'a|all' => \$opts{'all'},
+              'b|badloci:s' => \$opts{'badloci'},
   );
 
   if(defined $opts{'v'}){
@@ -222,12 +227,25 @@ sub setup{
   pod2usage(-verbose => 2) if(defined $opts{'m'});
 
   PCAP::Cli::file_for_reading('ref', $opts{'reference'});
-  my $i=1;
+  my @full_inputs;
   for my $if(@{$opts{'input'}}) {
-    PCAP::Cli::file_for_reading(sprintf('input(%d)', $i++), $if);
+    if($if =~ s/%/*/g) {
+      push @full_inputs, glob $if;
+    }
+    else {
+      push @full_inputs, $if;
+    }
   }
+  for my $if(@full_inputs) {
+    PCAP::Cli::file_for_reading('input (possibly expanded)', $if);
+  }
+  $opts{'input'} = \@full_inputs;
 
-  $opts{'output'} = \*STDOUT unless($opts{'output'});
+  if($opts{'output'}) {
+    open my $fh, '>', $opts{'output'};
+    $opts{'output'} = $fh;
+  }
+  else { $opts{'output'} = \*STDOUT; }
 
   # add hts_files from the remains of @ARGV
   Sanger::CGP::Pindel::Implement::cohort_files(\%opts);
@@ -240,7 +258,7 @@ __END__
 
 =head1 NAME
 
-pindelCohort_to_vcf.pl - Takes a raw Pindel file and a set of bam files and produces a vcf file.
+pindelCohort_to_vcf.pl - Takes raw Pindel files and a set of bam files to produces a collated vcf file.
 
 =head1 SYNOPSIS
 
@@ -248,12 +266,13 @@ pindelCohort_to_vcf.pl [options] SAMPLE1.bam [SAMPLE2.bam ...]
 
   Required parameters:
     -ref       -r   File path to the reference file used to provide the coordinate system.
-    -input     -i   Files to read in, repeatable
+    -input     -i   Files to read in, repeatable or '%' wildcard
 
   Optional parameters:
     -output    -o   File path to output to. Defaults to STDOUT.
     -all       -a   Generate VAF for all samples, even when not seen by Pindel.
-
+    -badloci   -b   Tabix indexed BED file of locations reject as events
+                     - e.g. hi-seq depth from UCSC
     -project   -prj String representing the project data is from.
     -prot      -p   String representing the sequencing protocol (e.g. genomic, targeted, RNA-seq).
     -assembly  -as  Reference assembly name, used when not found in BAM/CRAM headers.
@@ -271,7 +290,7 @@ pindelCohort_to_vcf.pl [options] SAMPLE1.bam [SAMPLE2.bam ...]
 
 =item B<-input>
 
-File path(s) to read. Accepts only raw pindel files, repeat for multiple.
+File path(s) to read. Accepts only raw pindel files, repeat or '%' as wildcard for multiple.
 
 =item B<-output>
 
@@ -310,8 +329,6 @@ Prints the version number and exits.
 
 =head1 DESCRIPTION
 
-B<pindelCohort_to_vcf.pl> will attempt to generate a vcf file from a Pindel output file.
-
-For every variant called by Pindel a blat will be performed and the results merged into a single vcf record.
+B<pindelCohort_to_vcf.pl> will attempt to generate a vcf file from a set of Pindel output files.
 
 =cut

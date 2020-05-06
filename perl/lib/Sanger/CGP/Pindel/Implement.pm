@@ -37,6 +37,8 @@ use List::Util qw(first);
 use FindBin qw($Bin);
 use Getopt::Long;
 use Pod::Usage qw(pod2usage);
+use File::Basename;
+use File::Spec::Functions;
 
 use Sanger::CGP::Pindel;
 
@@ -53,6 +55,8 @@ const my $PIN_MERGE => q{ -o %s -i %s -r %s};
 const my $FLAG => q{ -a %s -u %s -s %s -i %s -o %s -r %s};
 const my $PIN_GERM => q{ -f %s -i %s -o %s};
 const my $BASE_GERM_RULE => 'F012'; # prefixed with additional F if fragment filtering.
+const my $COHORT_2_VCF => q{ -r %s -i %s -o %s %s%s};
+const my $VCF_SPLIT_SIZE => 5_000;
 
 sub input_cohort{
   my ($index, $options) = @_;
@@ -207,6 +211,105 @@ sub pindel {
     #
     ## The rest is auto-magical
 
+    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
+  }
+  return 1;
+}
+
+sub parse {
+  my ($options) = @_;
+  my $tmp = $options->{'tmp'};
+
+  my $pout = File::Spec->catdir($tmp, 'pout');
+  my $vcf = File::Spec->catdir($tmp, 'vcf');
+  make_path($vcf) unless(-e $vcf);
+  my $collated_vcf = File::Spec->catfile($vcf, 'raw.vcf');
+
+  unless(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 'tovcf')) {
+    my $bad_loci = q{};
+    if($options->{badloci}) {
+      $bad_loci = sprintf q{ -b %s }, $options->{badloci};
+    }
+    my $command = $^X.' '._which('pindelCohort_to_vcf.pl');
+    $command .= sprintf $COHORT_2_VCF,
+                        $options->{'reference'},
+                        File::Spec->catfile($pout, '%_%_%'),
+                        $collated_vcf,
+                        $bad_loci,
+                        join(q{ }, @{$options->{hts_files}});
+    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 'tovcf');
+    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 'tovcf');
+  }
+  unless(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 'split')) {
+    #perl pindel_vcfSortNsplit.pl run_PD26988a/tmpPindel/vcf/raw.vcf 10000 tsrt
+    my $command = $^X.' '._which('pindel_vcfSortNsplit.pl');
+    $command .= sprintf q{ %s %d %s},
+                        $collated_vcf,
+                        $VCF_SPLIT_SIZE,
+                        $vcf;
+    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 'split');
+    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 'split');
+  }
+  return 1;
+}
+
+sub concat {
+  my ($options) = @_;
+  my $tmp = $options->{'tmp'};
+
+  my $vcf = File::Spec->catdir($tmp, 'vcf');
+  my $sample_name = (PCAP::Bam::sample_name($options->{'hts_files'}->[0]))[0];
+  my $vcf_gz = File::Spec->catfile($options->{'outdir'}, sprintf('%s.pindel.vcf.gz', $sample_name));
+  unless(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 'concat')) {
+    #vcf-concat blat_*.vcf
+    my $command = _which('vcf-concat');
+    $command .= sprintf q{ %s | bgzip -c > %s},
+                File::Spec->catfile($vcf, 'blat_*.vcf'),
+                $vcf_gz;
+    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 'concat');
+    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 'concat');
+  }
+  unless(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 'tabix')) {
+    my $command = _which('tabix');
+    $command .= sprintf q{ -f -p vcf %s}, $vcf_gz;
+    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 'tabix');
+    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 'tabix');
+  }
+  return 1;
+}
+
+sub split_files {
+  my $options = shift;
+  my $vcf = File::Spec->catdir($options->{'tmp'}, 'vcf');
+  my $patt = catfile($vcf, 'split_*.vcf');
+  my @files = sort glob $patt;
+  return \@files;
+}
+
+sub blat {
+  my ($index_in, $options) = @_;
+  my $tmp = $options->{'tmp'};
+  my $vcf = File::Spec->catdir($tmp, 'vcf');
+  # -i run_PD26988a/tmpPindel/vcf/raw.vcf
+
+  return 1 if(exists $options->{'index'} && $index_in != $options->{'index'});
+
+  my @split_files = @{$options->{'split_files'}};
+  my @indicies = limited_indicies($options, $index_in, scalar @split_files);
+	for my $index(@indicies) {
+    next if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
+
+    my $split_file = $split_files[$index-1];
+    my $blat_file = $split_file;
+    $blat_file =~ s/split_([a-z]+)/blat_$1/;
+    my $command = $^X.' '._which('pindel_blat_vaf.pl');
+    $command .= sprintf q{ -r %s -hts %s -i %s -o %s},
+                        $options->{'reference'},
+                        $options->{hts_files}->[0],
+                        $split_file,
+                        $blat_file;
+
+    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
     PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
   }
   return 1;
@@ -486,9 +589,10 @@ sub _which {
 
 sub shared_setup {
   my ($are_paths, $extra_opts) = @_;
+  my $script_name = basename($0);
   my %opts;
   pod2usage(-msg  => "\nERROR: Option must be defined.\n", -verbose => 1,  -output => \*STDERR) if(scalar @ARGV == 0);
-  $opts{'cmd'} = join " ", $0, @ARGV;
+  $opts{'cmd'} = join " ", $script_name, @ARGV;
   my %load_opts = (
     'h|help' => \$opts{'h'},
     'm|man' => \$opts{'m'},
@@ -514,6 +618,8 @@ sub shared_setup {
     'l|limit=i' => \$opts{'limit'},
     'd|debug' => \$opts{'debug'},
     'a|apid:s' => \$opts{'apid'},
+    # specifically for cohort
+    'all' => \$opts{'all'},
   );
   for my $opt_key(keys %{$extra_opts}) {
     my $v = $extra_opts->{$opt_key};
@@ -529,13 +635,17 @@ sub shared_setup {
     exit 0;
   }
 
+  if($script_name eq 'pindel.pl') {
+    PCAP::Cli::file_for_reading('simrep', $opts{'simrep'});
+    PCAP::Cli::file_for_reading('filters', $opts{'filters'});
+    PCAP::Cli::file_for_reading('genes', $opts{'genes'});
+    PCAP::Cli::file_for_reading('unmatched', $opts{'unmatched'});
+    PCAP::Cli::file_for_reading('softfil', $opts{'softfil'}) if(defined $opts{'softfil'});
+  }
+
   PCAP::Cli::file_for_reading('reference', $opts{'reference'});
-  PCAP::Cli::file_for_reading('simrep', $opts{'simrep'});
-  PCAP::Cli::file_for_reading('filters', $opts{'filters'});
-  PCAP::Cli::file_for_reading('genes', $opts{'genes'});
-  PCAP::Cli::file_for_reading('unmatched', $opts{'unmatched'});
-  PCAP::Cli::file_for_reading('softfil', $opts{'softfil'}) if(defined $opts{'softfil'});
   PCAP::Cli::out_dir_check('outdir', $opts{'outdir'});
+
   my $final_logs = File::Spec->catdir($opts{'outdir'}, 'logs');
   if(-e $final_logs) {
     warn "NOTE: Presence of '$final_logs' directory suggests successful complete analysis, please delete to rerun\n";
@@ -545,7 +655,6 @@ sub shared_setup {
   delete $opts{'process'} unless(defined $opts{'process'});
   delete $opts{'index'} unless(defined $opts{'index'});
   delete $opts{'limit'} unless(defined $opts{'limit'});
-
   delete $opts{'exclude'} unless(defined $opts{'exclude'});
   delete $opts{'badloci'} unless(defined $opts{'badloci'});
   delete $opts{'apid'} unless(defined $opts{'apid'});
@@ -553,7 +662,6 @@ sub shared_setup {
   # now safe to apply defaults
   $opts{'threads'} = 1 unless(defined $opts{'threads'});
   $opts{'seqtype'} = 'WGS' unless(defined $opts{'seqtype'});
-
 
   # make all things that appear to be paths complete (absolute not great if BAM/BAI in different locations)
   for my $key (keys %opts) {

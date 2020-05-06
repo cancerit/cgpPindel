@@ -222,7 +222,7 @@ sub _process_set {
   }
 }
 
-sub _tabix_to_interval_tree {
+sub tabix_to_interval_tree {
   my $bed = shift;
   my %tree;
   my $z = IO::Uncompress::Gunzip->new($bed, MultiStream => 1) or die "gunzip failed: $GunzipError\n";
@@ -263,7 +263,7 @@ sub reads_to_pindel {
   my $tabix;
   if(defined $bed) {
     # was tabix, keeping name for consistency
-    $tabix = _tabix_to_interval_tree($bed);
+    $tabix = tabix_to_interval_tree($bed);
   }
 
   @reads = @{$reads[0]} if(ref $reads[0] eq 'ARRAY');

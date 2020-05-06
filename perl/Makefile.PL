@@ -37,6 +37,8 @@ WriteMakefile(
                         bin/pindel_germ_bed.pl
                         bin/pindelCohort.pl
                         bin/pindelCohort_to_vcf.pl
+                        bin/pindel_vcfSortNsplit.pl
+                        bin/pindel_blat_vaf.pl
                         )],
   PREREQ_PM     => {
                      'Const::Fast' => 0.014,

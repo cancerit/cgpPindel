@@ -516,6 +516,7 @@ between bwa and pindel.
 =cut
 sub _parse_read {
 	my ($record, $chr, $start_pos, $read, $ref_seq_length, $read_idx, $change_ref_start, $change_ref_end, $_buffer_region, $_buffer_region_start, $no_read_data) = @_;
+	$no_read_data ||= 0;
 
 	my @bits = split /\t+/, ${$read};
 	my $sample = $bits[-2];
