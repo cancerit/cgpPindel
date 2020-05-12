@@ -18,7 +18,9 @@ use Sanger::CGP::Pindel::OutputGen::VcfBlatAugment;
     input => $options->{input},
     ref => $options->{ref},
     ofh => $options->{output},
+    sam => $options->{align},
     hts_file => $options->{hts},
+    pad_mult => $options->{pad},
   );
   $augment->output_header;
   $augment->process_records;
@@ -32,9 +34,11 @@ sub setup{
   GetOptions( 'h|help' => \$opts{h},
               'm|man' => \$opts{m},
               'v|version' => \$opts{v},
-              'o|output:s' => \$opts{output},
+              'o|output=s' => \$opts{output},
+              'a|align=s' => \$opts{align},
               'r|ref=s' => \$opts{ref},
               'i|input=s' => \$opts{input},
+              'p|pad:f' => \$opts{pad},
               'd|debug' => \$opts{debug},
               'hts=s' => \$opts{hts},
   );
@@ -57,11 +61,12 @@ sub setup{
     die "ERROR: Unable to find *.bas file for $opts{hts}\n";
   }
 
-  if($opts{'output'}) {
-    open my $fh, '>', $opts{output};
-    $opts{output} = $fh;
-  }
-  else { $opts{output} = \*STDOUT; }
+  $opts{align} = $opts{output}.'.sam' unless(defined $opts{align});
+
+  open my $ofh, '>', $opts{output};
+  $opts{output} = $ofh;
+  open my $sfh, '>', $opts{align};
+  $opts{align} = $sfh;
 
   return \%opts;
 }
@@ -82,9 +87,11 @@ pindel_blat_vaf.pl [options] SAMPLE.bam
     -ref       -r   File path to the reference file used to provide the coordinate system.
     -input     -i   VCF file to read in.
     -hts            BAM/CRAM file for associated sample.
+    -output    -o   File path for VCF output (not compressed)
 
   Optional parameters:
-    -output    -o   File path to output to. Defaults to STDOUT.
+    -align     -a   File path for accepted alignments (SAM records, no header) [defaults to -o .sam]
+    -pad       -p   Multiples (>=1) of max readlength to pad blat target seq with [default 1]
 
   Other:
     -help      -h   Brief help message.

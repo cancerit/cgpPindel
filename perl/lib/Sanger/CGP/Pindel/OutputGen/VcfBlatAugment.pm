@@ -47,6 +47,7 @@ const my $READS_AND_BLAT => q{bash -c 'set -o pipefail ; samtools view -uF 3840 
 # returns +ve and then -ve results
 const my $SAM_DEPTH_PN => q{bash -c "set -o pipefail ; samtools view -uF 3844 %s %s | pee 'samtools view -c -F 16 -' 'samtools view -c -f 16 -'"};
 const my $LOCI_FMT => '%s:%d-%d';
+const my $TARGET_PAD_MULTIPLIER => 1;
 
 1;
 
@@ -58,8 +59,10 @@ sub new{
   my $self = {
     input => $args{input},
     ref => $args{ref},
-    ofh => $args{ofh},
+    ofh => $args{ofh}, # vcf
+    sfh => $args{sam}, # sam reads
     hts_file => $args{hts_file},
+    target_pad_multiplier => $args{pad_mult} || $TARGET_PAD_MULTIPLIER,
   };
   bless $self, $class;
   $self->_init;
@@ -120,7 +123,7 @@ sub _buffer_sizes {
     }
   }
   $self->{max_insert} = $max_ins;
-  $self->{max_rl} = $max_rl;
+  $self->{target_pad} = int($max_rl * $self->{target_pad_multiplier});
   return $sample;
 }
 
@@ -157,10 +160,12 @@ sub _add_headers {
   $vcf->add_header_line({'key'=>'source', 'value' => basename($0)}, 'append' => 1);
 
     my @format = (
-    {key => 'FORMAT', ID => 'WTP', Number => 1, Type => 'Integer', Description => '+ve strand reads BLATed (or count for large deletions) to reference at this location'},
-    {key => 'FORMAT', ID => 'WTN', Number => 1, Type => 'Integer', Description => '-ve strand reads BLATed (or count for large deletions) to reference at this location'},
+    {key => 'FORMAT', ID => 'WTP', Number => 1, Type => 'Integer', Description => '+ve strand reads BLATed (or count for large deletions) to reference sequence at this location'},
+    {key => 'FORMAT', ID => 'WTN', Number => 1, Type => 'Integer', Description => '-ve strand reads BLATed (or count for large deletions) to reference sequence at this location'},
+    {key => 'FORMAT', ID => 'WTM', Number => 1, Type => 'Float', Description => 'Mismatch fraction of reads BLATed to reference sequence at this location (to 3 d.p.)'},
     {key => 'FORMAT', ID => 'MTP', Number => 1, Type => 'Integer', Description => '+ve strand reads BLATed to alternate sequence at this location'},
     {key => 'FORMAT', ID => 'MTN', Number => 1, Type => 'Integer', Description => '-ve strand reads BLATed to alternate sequence at this location'},
+    {key => 'FORMAT', ID => 'MTM', Number => 1, Type => 'Float', Description => 'Mismatch fraction of reads BLATed to alternate sequence at this location (to 3 d.p.)'},
     {key => 'FORMAT', ID => 'VAF', Number => 1, Type => 'Float', Description => 'Variant allele fraction using reads that unambiguously map to ref or alt seq (to 3 d.p.)'},
   );
   $self->{fmt_ext} = q{};
@@ -217,18 +222,14 @@ sub process_records {
   my $fh = $self->{ofh};
 my $count=0;
   while(my $v_d = $self->{vcf}->next_data_array) {
-$count++;
-#next if($count != 8); # important the one relating to the bug
-#next if($count != 21247);
-#printf "%s\n", join "\t", @{$v_d};
+#$count++;
+#next if($count != 1);
     my $v_h = $self->to_data_hash($v_d);
-#next if($v_h->{'POS'} != 49092625);
     my @extra_gt = $self->blat_record($v_h);
     $v_d->[$V_FMT] .= $self->{fmt_ext};
     $v_d->[$V_GT] = join q{:}, $v_d->[$V_GT], @extra_gt;
     printf $fh "%s\n", join "\t", @{$v_d};
 #last;
-#last if($count == 250);
   }
 }
 
@@ -276,7 +277,6 @@ sub blat_reads {
   close $fh_psl or die "Failed to close $file_psl (psl output)";
 
   my $c_blat = sprintf $READS_AND_BLAT, $self->{hts_file}, $self->read_ranges($v_h), $file_query, $file_target, $file_query, $file_psl, $file_psl, $file_target, $file_query;
-#print "$c_blat\n";
   my ($c_out, $c_err, $c_exit) = capture { system($c_blat); };
   if($c_exit) {
     warn "An error occurred while executing $c_blat\n";
@@ -284,21 +284,29 @@ sub blat_reads {
     exit $c_exit;
   }
 
-# print "query.fa\n";
+## redirect output and the following will give you relevant files and the command
+## $ tail -n 5 output  | head -n 4 > target.fa && head -n -5 output > query.fa && tail -n 1 output
 #system("cat $file_query");
-# print "target.fa\n";
 #system("cat $file_target");
-#print "\n$c_out\n";
-# exit 1;
+#print "$c_blat\n";
 
-  my ($wtp, $wtn, $mtp, $mtn) = $self->psl_axt_parser(\$c_out, $v_h);
+  my ($wtp, $wtn, $mtp, $mtn, $wt_bmm, $mt_bmm) = $self->psl_axt_parser(\$c_out, $v_h);
+  my ($wtm, $mtm) = (q{.}, q{.});
+  my $wtr = $wtp + $wtn;
   if($wtp + $wtn == 0) {
     ($wtp, $wtn) = $self->sam_depth($v_h);
+    $wtr = $wtp + $wtn;
+  }
+  else {
+    $wtm = sprintf("%.3f", $wt_bmm / $wtr);
   }
   my $mtr = $mtp+$mtn;
-  my $depth = $wtp+$wtn+$mtr;
+  if($mtr > 0) {
+    $mtm = sprintf("%.3f", $mt_bmm / $mtr);
+  }
+  my $depth = $wtr+$mtr;
   my $vaf = $depth ? sprintf("%.3f", $mtr/$depth) : 0;
-  return ($wtp, $wtn, $mtp, $mtn, $vaf);
+  return ($wtp, $wtn, $wtm, $mtp, $mtn, $mtm, $vaf);
 }
 
 sub psl_axt_parser {
@@ -310,13 +318,16 @@ sub psl_axt_parser {
   my %reads;
   for(my $i = 0; $i<$line_c; $i+=4) {
     my ($id, $t_name, $t_start, $t_end, $q_name, $q_start, $q_end, $strand, $score) = split q{ }, $lines[$i];
-    push @{$reads{$q_name}{$score}}, [$t_name, $t_start, $t_end, $q_name, $q_start, $q_end, $strand, $score, $lines[$i+1], $lines[$i+2]];
+    my $clean_qname = $q_name;
+    $clean_qname =~ s{/([12])$}{};
+    push @{$reads{$clean_qname}{$score}}, [$t_name, $t_start, $t_end, $q_name, $q_start, $q_end, $strand, $score, $lines[$i+1], $lines[$i+2]];
   }
 
 #print Dumper(\%reads);
 my $SKIP_EVENT = q{};
 
-  my %TYPE_STRAND;
+  my %type_strand;
+  my %bmm_sums;
   # sort keys for consistency
   READ: for my $read(sort keys %reads) {
     # get the alignment with the highest score
@@ -328,18 +339,29 @@ my $SKIP_EVENT = q{};
       }
       my $record = $records[0];
       if($self->parse_axt_event($v_h, $record) == 1) {
-        $TYPE_STRAND{$record->[0].$record->[6]} += 1;
+        $type_strand{$record->[0].$record->[6]} += 1;
+        $bmm_sums{$record->[0]} += bmm($record->[8], $record->[9]);
       }
 #$SKIP_EVENT = <STDIN> unless($SKIP_EVENT eq q{1});
 #chomp $SKIP_EVENT;
       next READ; # remaining items are worse alignments
     }
   }
-  my $wtp = $TYPE_STRAND{'REF+'} || 0;
-  my $wtn = $TYPE_STRAND{'REF-'} || 0;
-  my $mtp = $TYPE_STRAND{'ALT+'} || 0;
-  my $mtn = $TYPE_STRAND{'ALT-'} || 0;
-  return ($wtp, $wtn, $mtp, $mtn);
+  my $wtp = $type_strand{'REF+'} || 0;
+  my $wtn = $type_strand{'REF-'} || 0;
+  my $mtp = $type_strand{'ALT+'} || 0;
+  my $mtn = $type_strand{'ALT-'} || 0;
+  return ($wtp, $wtn, $mtp, $mtn, $bmm_sums{REF}, $bmm_sums{ALT});
+}
+
+sub bmm {
+  my ($a, $b) = @_; # need a copy of the strings anyway
+  my $len = length $a;
+  my $diffs = 0;
+  for(0..($len-1)) {
+    $diffs++ if(chop $a ne chop $b);
+  }
+  return $diffs/$len;
 }
 
 sub parse_axt_event {
@@ -379,16 +401,59 @@ sub parse_axt_event {
     if($exp_pos <= length $q_seq) {
       my $sub_q_seq = substr($q_seq, $exp_pos, length $change_seq);
       if(length $change_seq == length $sub_q_seq # same length
+        && index($t_seq, q{-}) == -1 # no gaps
         && index($q_seq, q{-}) == -1 # no gaps
         && substr($change_seq,0,1) eq substr($sub_q_seq,0,1) # matching first base
         && substr($change_seq,-1,1) eq substr($sub_q_seq,-1,1) # matching last base
       ) {
         $retval = 1;
+        $self->sam_record($v_h, $rec);
       }
     }
   }
 #print "KEEP: $retval\n";
   return $retval;
+}
+
+sub sam_record {
+  my($self, $v_h, $rec) = @_;
+#  warn Dumper($v_h);
+#  warn Dumper($rec);
+
+  my $qname = $rec->[3];
+  my $seq = $rec->[9];
+  my $flag = 0; # not paired
+  $flag += 16 if($rec->[6] eq '-');
+
+  # POS is the base preceeing any change, seq start it this - target_pad
+  my $pos = ($v_h->{POS} - $self->{target_pad}) + $rec->[1];
+  my $cigar = q{};
+  if($rec->[0] eq 'REF') {
+    $cigar = length($seq).'M';
+  }
+  else {
+    my $m_c = ($v_h->{change_pos} - $rec->[1]) + 1;
+    $m_c += 1 if($v_h->{PC} eq 'I');
+    $cigar = $m_c.'M';
+#print $cigar."\n";
+    my $change_ref = length($v_h->{REF});
+    my $change_alt = length($v_h->{ALT});
+    if($change_ref) {
+      $cigar .= $change_ref.'D';
+#print $cigar."\n";
+    }
+    if($change_alt) {
+      $cigar .= $change_alt.'I';
+#print $cigar."\n";
+      $m_c += $change_alt; # as consumes read
+    }
+    $cigar .= (length($seq) - $m_c).'M';
+#print $cigar."\n";
+  }
+#printf "%s:%d-%d\n", $v_h->{CHROM}, $pos, $pos + 100;
+  printf {$self->{sfh}} "%s\n", join "\t", $qname, $flag, $v_h->{CHROM}, $pos, 60, $cigar, '*', 0, 0, $seq, '*';
+
+#  <STDIN>;
 }
 
 sub sam_depth {
@@ -407,11 +472,10 @@ sub sam_depth {
 
 sub flanking_ref {
   my ($self, $v_h) = @_;
-  # use max_rl to extend before and after the range_start/end
   my $ref_left = $self->{fai}->get_sequence_no_length(
     sprintf $LOCI_FMT,
     $v_h->{CHROM},
-    ($v_h->{POS} - $self->{max_rl})+1,
+    ($v_h->{POS} - $self->{target_pad})+1,
     $v_h->{POS},
   );
 #print "$ref_left\n";
@@ -420,7 +484,7 @@ sub flanking_ref {
     sprintf $LOCI_FMT,
     $v_h->{CHROM},
     $v_h->{END},
-    $v_h->{END} + $self->{max_rl},
+    $v_h->{END} + $self->{target_pad},
   );
 #print "$ref_right\n";
   return [$ref_left, $ref_right]

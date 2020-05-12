@@ -160,7 +160,7 @@ pindelCohort.pl [options] sample1.bam
     -reference -r   Path to reference genome file *.fa[.gz]
 
   Optional
-    -all            Generate BLAT counts for all samples regardless of pindel call state.
+    -pad            Multiples (>=1) of max readlength to pad blat target seq with [default 1]
     -seqtype   -st  Sequencing protocol, expect all input to match [WGS]
     -assembly  -as  Name of assembly in use
                      -  when not available in BAM header SQ line.
