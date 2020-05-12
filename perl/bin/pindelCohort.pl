@@ -137,6 +137,7 @@ sub index_check {
 
 sub setup {
   my $opts = Sanger::CGP::Pindel::Implement::shared_setup([],{});
+  $opts->{pad} = 1 unless(exists $opts->{pad} && defined $opts->{pad});
 
   # add hts_files from the remains of @ARGV
   Sanger::CGP::Pindel::Implement::cohort_files($opts);
