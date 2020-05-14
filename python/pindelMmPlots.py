@@ -9,37 +9,81 @@ import argparse
 import vcfpy
 import pandas as pd
 import seaborn as sns
+import matplotlib.pyplot as plt
 
-def parse_vcf(df_list, rl, vcfin):
+def parse_vcf(df_list, vaf_counts, rl, vcfin, type):
     reader = vcfpy.Reader.from_path(vcfin)
     sample = reader.header.samples.names[0]
     for record in reader:
-        #count +=1
-        #if count > 1000:
-        #    break
-        if record.INFO['PC'] != args.type:
+        if record.INFO['PC'] != type:
             continue
         call = record.call_for_sample[sample]
         if call.data.get('MTP') is None and call.data.get('MTN'):
             continue
-        df_list.append({'CHROM': record.CHROM, 'RL': rl, 'DT': 'WT', 'Mismatch': call.data.get('WTM') or 0, 'POS_READS': call.data.get('WTP'), 'NEG_READS': call.data.get('WTN')})
-        df_list.append({'CHROM': record.CHROM, 'RL': rl, 'DT': 'MT', 'Mismatch': call.data.get('MTM') or 0, 'POS_READS': call.data.get('MTP'), 'NEG_READS': call.data.get('MTN')})
 
-        if call.data.get('WTP') > 300:
-            print(f'{record.CHROM}:{record.POS}..{record.POS}\t{record.CHROM}:{record.POS}-{record.POS}')
+        # mismatch data only on Pos
+        # diff data only on MT
+        df_list.append({'RL': rl, 'SAMPLE': 'MT', 'STRAND': 'POS', 'Reads': call.data.get('MTP'), 'Mismatch': call.data.get('WTM') or 0, 'Diff': call.data.get('MTP') - call.data.get('PP')})
+        df_list.append({'RL': rl, 'SAMPLE': 'MT', 'STRAND': 'NEG', 'Reads': call.data.get('MTN'), 'Diff': call.data.get('MTN') - call.data.get('NP')})
+        if(call.data.get('VAF') == 0.000):
+            if rl in vaf_counts:
+                vaf_counts[float(rl)] += 1
+            else:
+                vaf_counts[float(rl)] = 1
+        df_list.append({'RL': rl, 'SAMPLE': 'WT', 'STRAND': 'POS', 'Reads': call.data.get('WTP'), 'Mismatch': call.data.get('MTM') or 0})
+        df_list.append({'RL': rl, 'SAMPLE': 'WT', 'STRAND': 'NEG', 'Reads': call.data.get('WTN')})
 
-def draw_boxplot(df_list: list, x_item: str, y_item: str, hue: str, out_file: str, ylim=None):
-    plot = sns.boxplot(
-        x=x_item, y=y_item,
-        data=pd.DataFrame.from_records(df_list),
-        palette="colorblind",
-        hue=hue,
+def process_vcfs(options):
+    ### split the labels and create map with vcfs
+    r_lengths = options.labels.split(',')
+    if len(r_lengths) != len(options.vcfs):
+        sys.exit('Error: "-labels" needs to have the same number of elements as the number of vcfs supplied.')
+    vcfs = {}
+    for l, v in zip(r_lengths, options.vcfs):
+        vcfs[float(l)] = v
+
+    df_list = []
+    vaf_counts = {}
+    for vcf_set in vcfs.items():
+        print(f'Processing read length multiplier {vcf_set[0]} for type {options.type}')
+        parse_vcf(df_list, vaf_counts, vcf_set[0], vcf_set[1], options.type)
+    df = pd.DataFrame.from_records(df_list)
+
+    facet_boxplot(df, 'SAMPLE', 'STRAND', 'RL', 'Reads', options.type+'_reads.png', title='BLAT read depth', ylim=(0, 50))
+    facet_boxplot(df, 'SAMPLE', None, 'RL', 'Mismatch', options.type+'_mm.png', title='Mismatch fraction for BLAT reads', aspect=1.2, ylim=(0, 0.05))
+    facet_boxplot(df, 'STRAND', None, 'RL', 'Diff', options.type+'_diff.png', title='BLAT reads - Pindel reads', aspect=1.2, ylim=(-20, 10))
+    barchart(vaf_counts, 'RL', '0-VAF', options.type+'_0vaf.png', title='Events with VAF=0')
+
+def facet_boxplot(df, row: str, col: str, x_item: str, y_item: str, out_file: str, title=None, aspect=1, ylim=None):
+    sns.set()
+    grid = sns.FacetGrid(
+        df,
+        row=row, col=col, margin_titles=True,
+        ylim=ylim, aspect=aspect
     )
-    if ylim:
-        plot.set(ylim=ylim)
-    fig = plot.get_figure()
-    fig.savefig(out_file)
-    fig.clf() # this clears the figure
+    grid.map(sns.boxplot, x_item, y_item);
+    if title:
+        grid.fig.subplots_adjust(top=.9)
+        grid.fig.suptitle(title, size=14)
+    grid.set_xticklabels(rotation=80)
+    grid.savefig(out_file)
+    grid.fig.clf() # this clears the figure
+
+def barchart(data_dict, x_label: str, y_label: str, out_file: str, title=None):
+    sns.set()
+    x_items = []
+    y_items = []
+    for k in sorted(data_dict):
+        x_items.append(k)
+        y_items.append(data_dict[k])
+    bp = sns.barplot(x=x_items, y=y_items)
+    if title:
+        bp.set_title(title)
+    bp.set_yscale('log')
+    bp.set_xlabel(x_label)
+    bp.set_ylabel(y_label)
+    bp.set_xticklabels(bp.get_xticklabels(), rotation=80)
+    plt.savefig(out_file)
 
 
 parser = argparse.ArgumentParser(description='Generate wisker plots of mismatch rates for a set of vcfs')
@@ -55,21 +99,4 @@ args = parser.parse_args()
 if os.path.exists(args.outDir) is False:
     os.mkdir(args.outDir, mode=0o700)  # rwx owner only
 
-### split the labels and create map with vcfs
-r_lengths = args.labels.split(',')
-if len(r_lengths) != len(args.vcfs):
-    sys.exit('Error: "-labels" needs to have the same number of elements as the number of vcfs supplied.')
-vcfs = {}
-for l, v in zip(r_lengths, args.vcfs):
-    vcfs[float(l)] = v
-
-df_list = []
-for vcf_set in vcfs.items():
-    print(f'Processing read length multiplier {vcf_set[0]} for type {args.type}')
-    parse_vcf(df_list, vcf_set[0], vcf_set[1])
-
-draw_boxplot(df_list, 'RL', 'Mismatch', 'DT', args.type+'_mm.png') #, ylim=(0, 0.05))
-draw_boxplot(df_list, 'RL', 'POS_READS', 'DT', args.type+'_pos.png') #, ylim=(0, 0.05))
-draw_boxplot(df_list, 'RL', 'NEG_READS', 'DT', args.type+'_neg.png') #, ylim=(0, 0.05))
-
-
+process_vcfs(args)
