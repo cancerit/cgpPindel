@@ -36,11 +36,11 @@ const my @HEADER_ENDS => do {
 const my $HEADER_LINES => 3393;
 
 const my $DATA_ARR_D => [qw(chr10 11201 id CA C 390 . PC=D;RS=11201;RE=11205;LEN=1;S1=11;S2=849.236;REP=3 GT:PP:NP ./.:10:0)];
-const my $RES_ARR_D => [13, 3, 0.016, 9, 3, 0.007, 0.429];
+const my $RES_ARR_D => [12, 3, 0.015, 8, 3, 0.006, 0.423];
 const my $DATA_ARR_DI => [qw(chr10 22777 id AGAAACTGTG ACTGTGAGATAGATATATATAGATAGATATAT 105 . PC=DI;RS=22777;RE=22787;LEN=9;S1=6;REP=0 GT:PP:NP ./.:0:5)];
-const my $RES_ARR_DI => [2, 3, 0.001, 2, 8, 0.017, 0.667];
+const my $RES_ARR_DI => [2, 2, 0.002, 2, 8, 0.017, 0.714];
 const my $DATA_ARR_SI => [qw(chr10 11643 id C CG 150 . PC=I;RS=11643;RE=11649;LEN=1;S1=6;S2=421.908;REP=4 GT:PP:NP ./.:0:5)];
-const my $RES_ARR_SI => [7, 14, 0.014, 7, 10, 0.005, 0.447];
+const my $RES_ARR_SI => [7, 10, 0.014, 7, 10, 0.005, '0.500'];
 
 my ($stdout_fh, $buffer);
 my ($sam_stdout_fh, $sam_buffer);

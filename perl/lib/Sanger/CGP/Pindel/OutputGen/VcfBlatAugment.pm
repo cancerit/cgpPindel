@@ -26,7 +26,7 @@ use warnings FATAL => 'all';
 use autodie qw(:all);
 use Const::Fast qw(const);
 use File::Basename;
-use List::Util qw(max);
+use List::Util qw(min max);
 use File::Temp qw(tempfile);
 use Capture::Tiny qw(capture);
 use Vcf;
@@ -48,6 +48,8 @@ const my $READS_AND_BLAT => q{bash -c 'set -o pipefail ; samtools view -uF 3840 
 const my $SAM_DEPTH_PN => q{bash -c "set -o pipefail ; samtools view -uF 3844 %s %s | pee 'samtools view -c -F 16 -' 'samtools view -c -f 16 -'"};
 const my $LOCI_FMT => '%s:%d-%d';
 const my $TARGET_PAD_MULTIPLIER => 1;
+const my $PAD_EVENT => 3;
+const my $MAPPED_RL_MULT => 0.6;
 
 1;
 
@@ -62,9 +64,14 @@ sub new{
     ofh => $args{ofh}, # vcf
     sfh => $args{sam}, # sam reads
     hts_file => $args{hts_file},
-    target_pad_multiplier => $args{pad_mult} || $TARGET_PAD_MULTIPLIER,
+    target_pad_multiplier => $TARGET_PAD_MULTIPLIER,
   };
   bless $self, $class;
+
+  if(exists $args{pad_mult} && defined $args{pad_mult}) {
+    $self->{target_pad_multiplier} = $args{pad_mult} + 0;
+  }
+
   $self->_init;
 
   return $self;
@@ -108,12 +115,15 @@ sub _buffer_sizes {
   my $b = PCAP::Bam::Bas->new($self->{hts_file}.'.bas');
   my $max_ins = 0;
   my $max_rl = 0;
+  my $min_rl = 1_000_000;
   my $sample;
   for my $rg($b->read_groups) {
-    my $m_sd = $b->get($rg, 'mean_insert_size') + ($b->get($rg, 'insert_size_sd') * $SD_MULT);
+    my $m_sd = int ($b->get($rg, 'mean_insert_size') + ($b->get($rg, 'insert_size_sd') * $SD_MULT));
     $max_ins = $m_sd if($m_sd > $max_ins);
-    my $rl = max ($b->get($rg, 'read_length_r1'), $b->get($rg, 'read_length_r2'));
-    $max_rl = $rl if($rl > $max_rl);
+    my $tmp_max = max ($b->get($rg, 'read_length_r1'), $b->get($rg, 'read_length_r2'));
+    my $tmp_min = min ($b->get($rg, 'read_length_r1'), $b->get($rg, 'read_length_r2'));
+    $min_rl = $tmp_min if($tmp_min < $min_rl);
+    $max_rl = $tmp_max if($tmp_max > $max_rl);
     my $s = $b->get($rg, 'sample');
     if($sample) {
       die "ERROR: Multiple samples found in %s\n", $self->{hts}.'.bas' if($sample ne $s)
@@ -122,8 +132,17 @@ sub _buffer_sizes {
       $sample = $s;
     }
   }
+  $self->{min_rl} = $min_rl;
   $self->{max_insert} = $max_ins;
-  $self->{target_pad} = int($max_rl * $self->{target_pad_multiplier});
+#printf "Defined: %d\n", $max_rl + $max_ins;
+#printf "Pad mult: %d\n", int($max_rl * $self->{target_pad_multiplier});
+  if($self->{target_pad_multiplier} == 0) {
+    $self->{target_pad} = $max_rl + $max_ins;
+  }
+  else {
+    $self->{target_pad} = int($max_rl * $self->{target_pad_multiplier});
+  }
+#printf "target_pad: %d\n", $self->{target_pad};
   return $sample;
 }
 
@@ -236,7 +255,7 @@ my $count=0;
 sub blat_record {
   my ($self, $v_h) = @_;
   # now attempt the blat stuff
-  my ($fh_target, $file_target) = tempfile( DIR => '/dev/shm', SUFFIX => '.fa', UNLINK => 1 );
+  my ($fh_target, $file_target) = tempfile( SUFFIX => '.fa', UNLINK => 1 );
   $self->blat_ref_alt($fh_target, $v_h);
   close $fh_target or die "Failed to close blat ref temp file";
 
@@ -271,9 +290,9 @@ sub read_ranges {
 sub blat_reads {
   my ($self, $v_h, $file_target) = @_;
   # setup ther temp files
-  my ($fh_query, $file_query) = tempfile( DIR => '/dev/shm', SUFFIX => '.fa', UNLINK => 1);
+  my ($fh_query, $file_query) = tempfile( SUFFIX => '.fa', UNLINK => 1);
   close $fh_query or die "Failed to close $file_query (query reads)";
-  my ($fh_psl, $file_psl) = tempfile(DIR => '/dev/shm', SUFFIX => '.psl', UNLINK => 1);
+  my ($fh_psl, $file_psl) = tempfile( SUFFIX => '.psl', UNLINK => 1);
   close $fh_psl or die "Failed to close $file_psl (psl output)";
 
   my $c_blat = sprintf $READS_AND_BLAT, $self->{hts_file}, $self->read_ranges($v_h), $file_query, $file_target, $file_query, $file_psl, $file_psl, $file_target, $file_query;
@@ -289,6 +308,7 @@ sub blat_reads {
 #system("cat $file_query");
 #system("cat $file_target");
 #print "$c_blat\n";
+#print "$c_out\n";
 
   my ($wtp, $wtn, $mtp, $mtn, $wt_bmm, $mt_bmm) = $self->psl_axt_parser(\$c_out, $v_h);
   my ($wtm, $mtm) = (q{.}, q{.});
@@ -318,9 +338,12 @@ sub psl_axt_parser {
   my %reads;
   for(my $i = 0; $i<$line_c; $i+=4) {
     my ($id, $t_name, $t_start, $t_end, $q_name, $q_start, $q_end, $strand, $score) = split q{ }, $lines[$i];
+    next if($score < 0); # it happens
     my $clean_qname = $q_name;
     $clean_qname =~ s{/([12])$}{};
-    push @{$reads{$clean_qname}{$score}}, [$t_name, $t_start, $t_end, $q_name, $q_start, $q_end, $strand, $score, $lines[$i+1], $lines[$i+2]];
+    my $q_seq = $lines[$i+2];
+    next if(length $q_seq < int $self->{min_rl} * $MAPPED_RL_MULT);
+    push @{$reads{$clean_qname}{$score}}, [$t_name, $t_start, $t_end, $q_name, $q_start, $q_end, $strand, $score, $lines[$i+1], $q_seq];
   }
 
 #print Dumper(\%reads);
@@ -335,6 +358,8 @@ my $SKIP_EVENT = q{};
       my @records = @{$reads{$read}{$score}};
       if(@records != 1) { # if best score has more than one alignment it is irrelevant
 #print Dumper(\@records);
+#print "MULTI MAX\n";
+#<STDIN>;
         next READ;
       }
       my $record = $records[0];
@@ -351,6 +376,8 @@ my $SKIP_EVENT = q{};
   my $wtn = $type_strand{'REF-'} || 0;
   my $mtp = $type_strand{'ALT+'} || 0;
   my $mtn = $type_strand{'ALT-'} || 0;
+#print "waiting...\n";
+#<STDIN>;
   return ($wtp, $wtn, $mtp, $mtn, $bmm_sums{REF}, $bmm_sums{ALT});
 }
 
@@ -393,9 +420,9 @@ sub parse_axt_event {
 # }; print "OUT OF BOUNDS\n" if $@;
 
 
-  # all the reads that don't span the range
+  # all the reads that span the range are kept
   my $retval = 0;
-  if($t_start <= $v_h->{change_pos_low} && $t_end > $change_pos_high) {
+  if($t_start <= ($v_h->{change_pos_low} - $PAD_EVENT) && $t_end > ($change_pos_high + $PAD_EVENT)) {
     # look for the change (or absence) where we expect it
     my $exp_pos = $v_h->{change_pos_low} - $t_start;
     if($exp_pos <= length $q_seq) {
@@ -543,7 +570,6 @@ sub blat_ref_alt {
   $v_h->{change_pos} = $change_at;
   $v_h->{change_ref} = $change_ref;
   $v_h->{change_alt} = $change_alt;
-
   return 1;
 }
 
