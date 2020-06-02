@@ -155,11 +155,6 @@ sub gen_header{
     {key => 'FORMAT', ID => 'S2', Number => 1, Type => 'Float', Description => 'Pindel S2 score, not present for all types'},
     {key => 'FORMAT', ID => 'PP', Number => 1, Type => 'Integer', Description => 'Pindel calls on the positive strand'},
     {key => 'FORMAT', ID => 'NP', Number => 1, Type => 'Integer', Description => 'Pindel calls on the negative strand'},
-    #{key => 'FORMAT', ID => 'WTP', Number => 1, Type => 'Integer', Description => '+ve strand reads BLATed (or count for large deletions) to reference at this location'},
-    #{key => 'FORMAT', ID => 'WTN', Number => 1, Type => 'Integer', Description => '-ve strand reads BLATed (or count for large deletions) to reference at this location'},
-    #{key => 'FORMAT', ID => 'MTP', Number => 1, Type => 'Integer', Description => '+ve strand reads BLATed to alternate sequence at this location'},
-    #{key => 'FORMAT', ID => 'MTN', Number => 1, Type => 'Integer', Description => '-ve strand reads BLATed to alternate sequence at this location'},
-    #{key => 'FORMAT', ID => 'VAF', Number => 1, Type => 'Float', Description => 'Variant allele fraction using reads that unabiguously map to ref or alt seq (to 3 d.p.)'},
   );
 
   my @blank_fmt = (q{.}) x (scalar @format -1);
