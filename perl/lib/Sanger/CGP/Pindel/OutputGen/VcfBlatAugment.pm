@@ -272,24 +272,13 @@ sub blat_record {
 sub read_ranges {
   my ($self, $v_h) = @_;
   # return a string of chr:s-e... if approprate.
-  my $ret_val;
-  my ($chr, $q_start, $q_end) = ($v_h->{CHROM}, $v_h->{q_start}, $v_h->{q_end});
   my $read_buffer = $self->{max_insert};
-  if($q_start + ($read_buffer * 2) > $q_end) {
-    $ret_val = sprintf $LOCI_FMT, $chr, $q_start - $read_buffer, $q_end + $read_buffer;
-  }
-  else {
-    $ret_val = sprintf $LOCI_FMT, $chr, $q_start - $read_buffer, $q_start + $read_buffer;
-    $ret_val .= q{ };
-    $ret_val .= sprintf $LOCI_FMT, $chr, $q_end - $read_buffer, $q_end + $read_buffer
-  }
-#print "$ret_val\n";
-  return $ret_val;
+  return sprintf $LOCI_FMT, $v_h->{CHROM}, $v_h->{q_start} - $read_buffer, $v_h->{q_end} + $read_buffer;
 }
 
 sub blat_reads {
   my ($self, $v_h, $file_target) = @_;
-  # setup ther temp files
+  # setup the temp files
   my ($fh_query, $file_query) = tempfile( SUFFIX => '.fa', UNLINK => 1);
   close $fh_query or die "Failed to close $file_query (query reads)";
   my ($fh_psl, $file_psl) = tempfile( SUFFIX => '.psl', UNLINK => 1);
