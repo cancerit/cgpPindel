@@ -42,12 +42,11 @@ use Data::Dumper;
 
 const my $SD_MULT => 2;
 const my $V_FMT => 8;
-const my $V_GT => 9;
+const my $V_GT_START => 9;
 const my $READS_AND_BLAT => q{bash -c 'set -o pipefail ; samtools view -uF 3840 %s %s | samtools fasta - > %s && blat -t=dna -q=dna -noTrimA -minIdentity=95 -noHead -out=psl %s %s %s && pslPretty -long -axt %s %s %s /dev/stdout'};
 # returns +ve and then -ve results
 const my $SAM_DEPTH_PN => q{bash -c "set -o pipefail ; samtools view -uF 3844 %s %s | pee 'samtools view -c -F 16 -' 'samtools view -c -f 16 -'"};
 const my $LOCI_FMT => '%s:%d-%d';
-const my $TARGET_PAD_MULTIPLIER => 1;
 const my $PAD_EVENT => 3;
 const my $MAPPED_RL_MULT => 0.6;
 
@@ -62,93 +61,134 @@ sub new{
     input => $args{input},
     ref => $args{ref},
     ofh => $args{ofh}, # vcf
-    sfh => $args{sam}, # sam reads
     hts_file => $args{hts_file},
-    target_pad_multiplier => $TARGET_PAD_MULTIPLIER,
+    fill_in => $args{fill_in},
   };
   bless $self, $class;
 
-  if(exists $args{pad_mult} && defined $args{pad_mult}) {
-    $self->{target_pad_multiplier} = $args{pad_mult} + 0;
-  }
-
-  $self->_init;
+  $self->_init($args{outpath});
 
   return $self;
 }
 
 sub _init {
-  my $self = shift;
+  my ($self, $outpath) = @_;
   my $vcf = Vcf->new(file => $self->{input});
-  $vcf->parse_header();
+  $vcf->parse_header;
   $self->{vcf} = $vcf;
-  $self->_add_headers;
-  $self->_hts;
-  my $bas_sample = $self->_buffer_sizes; # has to go before validate sample
-  $self->_validate_sample($bas_sample);
+  $self->_sample_order; # needs vcf
+  $self->_align_output($outpath);
+  $self->_add_headers unless($self->{fill_in});
+  $self->_hts; # has to go before _buffer_sizes
+  $self->_buffer_sizes; # has to go before _validate_sample
+  $self->_validate_samples;
   # load the fai
   $self->{fai} = Bio::DB::HTS::Faidx->new($self->{ref});
   return 1;
 }
 
-sub _validate_sample {
-  my ($self, $bas_sample) = @_;
-  # check BAM/CRAM and VCF have same sample
+sub _close_sams {
+  my $self = shift;
+  for my $sample(@{$self->{vcf_sample_order}}) {
+    close $self->{sfh}->{$sample};
+  }
+  return 1;
+}
 
+sub _align_output {
+  my ($self, $outpath) = @_;
+  $outpath =~ s/\.vcf$//;
+  for my $sample(@{$self->{vcf_sample_order}}) {
+    my $sam_file = sprintf '%s.%s.sam', $outpath, $sample;
+    unlink $sam_file if(-e $sam_file);
+    open my $SAM, '>', $sam_file;
+    $self->{sfh}->{$sample} = $SAM;
+  }
+  return 1;
+}
+
+sub _sample_order {
+  my $self = shift;
+  my $i = 9; # genotype sample col from 9
+  my %samp_pos;
+  my @ordered_samples = $self->{vcf}->get_samples;
+  for my $s(@ordered_samples) {
+    $samp_pos{$s} = $i++;
+  }
+  $self->{vcf_sample_pos} = \%samp_pos;
+  $self->{vcf_sample_order} = \@ordered_samples;
+  return 1;
+}
+
+sub _sample_from_hts {
+  my ($self, $hts) = @_;
   my $hts_sample;
-  foreach my $line (split(/\n/,$self->{hts}->header->text)) {
+  foreach my $line (split(/\n/,$hts->header->text)) {
     next unless($line =~ m/^\@RG/);
     chomp $line;
     ($hts_sample) = $line =~ m/SM:([^\t]+)/;
     last if(defined $hts_sample);
   }
+  die sprintf "ERROR: Failed to find a SM tag in a readgroup header of %s\n", $hts->hts_path unless(defined $hts_sample);
+  return $hts_sample;
+}
+
+sub _validate_samples {
+  my $self = shift;
+  # check BAM/CRAM and VCF have same sample
   my @samples = $self->{vcf}->get_samples();
-  die sprintf "ERROR: Only expecting 1 sample in VCF '%s', got %d\n", $self->{vcf}, scalar @samples if(@samples > 1);
-  die sprintf "ERROR: Sample mismatch between BAM/CRAM (%s) and VCF (%s)\n", $hts_sample, $samples[0] if($hts_sample ne $samples[0]);
-  die sprintf "ERROR: Sample mismatch between BAM/CRAM (%s) and BAS (%s)\n", $hts_sample, $bas_sample if($hts_sample ne $bas_sample);
-  $self->{sample} = $hts_sample;
+  for my $vcf_s(sort @samples) {
+    next if(exists $self->{hts}->{$vcf_s});
+    die sprintf "ERROR: Sample '%s' is not represented in the BAM/CRAM files provided.\n", $vcf_s;
+  }
+  return 1;
 }
 
 sub _buffer_sizes {
   my $self = shift;
-  ## Set the max read length and insert size + SD*$SD_MULTI using the bas file data
-  my $b = PCAP::Bam::Bas->new($self->{hts_file}.'.bas');
   my $max_ins = 0;
   my $max_rl = 0;
   my $min_rl = 1_000_000;
-  my $sample;
-  for my $rg($b->read_groups) {
-    my $m_sd = int ($b->get($rg, 'mean_insert_size') + ($b->get($rg, 'insert_size_sd') * $SD_MULT));
-    $max_ins = $m_sd if($m_sd > $max_ins);
-    my $tmp_max = max ($b->get($rg, 'read_length_r1'), $b->get($rg, 'read_length_r2'));
-    my $tmp_min = min ($b->get($rg, 'read_length_r1'), $b->get($rg, 'read_length_r2'));
-    $min_rl = $tmp_min if($tmp_min < $min_rl);
-    $max_rl = $tmp_max if($tmp_max > $max_rl);
-    my $s = $b->get($rg, 'sample');
-    if($sample) {
-      die "ERROR: Multiple samples found in %s\n", $self->{hts}.'.bas' if($sample ne $s)
-    }
-    else {
-      $sample = $s;
+  for my $hts_sample(keys %{$self->{hts}}) {
+    my $b = PCAP::Bam::Bas->new($self->{hts}->{$hts_sample}->hts_path.'.bas');
+    my $sample;
+    for my $rg($b->read_groups) {
+      my $m_sd = int ($b->get($rg, 'mean_insert_size') + ($b->get($rg, 'insert_size_sd') * $SD_MULT));
+      $max_ins = $m_sd if($m_sd > $max_ins);
+      my $tmp_max = max ($b->get($rg, 'read_length_r1'), $b->get($rg, 'read_length_r2'));
+      my $tmp_min = min ($b->get($rg, 'read_length_r1'), $b->get($rg, 'read_length_r2'));
+      $min_rl = $tmp_min if($tmp_min < $min_rl);
+      $max_rl = $tmp_max if($tmp_max > $max_rl);
+      my $s = $b->get($rg, 'sample');
+      if($sample) {
+        die "ERROR: Multiple samples found in %s.bas\n", $self->{hts}->{$hts_sample}->hts_path if($sample ne $s);
+        if($sample ne $hts_sample) {
+          die "ERROR: Sample in bas file (%s) doesn't match bam/cram file (%s),
+              %s vs %s.bas\n", $sample, $hts_sample,
+              $self->{hts}->{$hts_sample}->hts_path, $self->{hts}->{$hts_sample}->hts_path;
+        }
+      }
+      else {
+        $sample = $s;
+      }
     }
   }
   $self->{min_rl} = $min_rl;
   $self->{max_insert} = $max_ins;
-#printf "Defined: %d\n", $max_rl + $max_ins;
-#printf "Pad mult: %d\n", int($max_rl * $self->{target_pad_multiplier});
-  if($self->{target_pad_multiplier} == 0) {
-    $self->{target_pad} = $max_rl + $max_ins;
-  }
-  else {
-    $self->{target_pad} = int($max_rl * $self->{target_pad_multiplier});
-  }
-#printf "target_pad: %d\n", $self->{target_pad};
-  return $sample;
+  $self->{target_pad} = $max_rl;
+  return 1;
 }
 
 sub _hts {
   my $self = shift;
-  $self->{hts} = Bio::DB::HTS->new(-bam => $self->{hts_file}, -fasta => $self->{ref});
+  for my $hts(@{$self->{'hts_file'}}) {
+    my $tmp = Bio::DB::HTS->new(-bam => $hts, -fasta => $self->{ref});
+    my $sample = $self->_sample_from_hts($tmp);
+    if(exists $self->{hts}->{$sample}) {
+      die sprintf "ERROR: More than one BAM/CRAM file for sample %s, %s vs %s\n", $sample, $self->{hts}->{$sample}->hts_path, $hts->hts_path;
+    }
+    $self->{hts}->{$sample} = $tmp;
+  }
   return 1;
 }
 
@@ -244,12 +284,17 @@ my $count=0;
 #$count++;
 #next if($count != 1);
     my $v_h = $self->to_data_hash($v_d);
-    my @extra_gt = $self->blat_record($v_h);
-    $v_d->[$V_FMT] .= $self->{fmt_ext};
-    $v_d->[$V_GT] = join q{:}, $v_d->[$V_GT], @extra_gt;
+    my $extra_gt = $self->blat_record($v_h);
+    $v_d->[$V_FMT] .= $self->{fmt_ext} unless($self->{fill_in});
+    my $gt_pos = $V_GT_START;
+    for my $gt_set (@{$extra_gt}) {
+      $v_d->[$gt_pos] = join q{:}, $v_d->[$gt_pos], @{$gt_set};
+      $gt_pos++;
+    }
     printf $fh "%s\n", join "\t", @{$v_d};
 #last;
   }
+  $self->_close_sams;
 }
 
 sub blat_record {
@@ -266,25 +311,29 @@ sub blat_record {
   $v_h->{change_pos_low} = $change_pos_low;
   $v_h->{change_pos_high} = $change_pos_high;
 
-  return $self->blat_reads($v_h, $file_target);
+  my @blat_sets;
+  for my $sample(@{$self->{vcf_sample_order}}) {
+    push @blat_sets, $self->blat_reads($v_h, $file_target, $sample);
+  }
+  return \@blat_sets;
 }
 
 sub read_ranges {
-  my ($self, $v_h) = @_;
+  my ($self, $v_h, $sample) = @_;
   # return a string of chr:s-e... if approprate.
   my $read_buffer = $self->{max_insert};
   return sprintf $LOCI_FMT, $v_h->{CHROM}, $v_h->{q_start} - $read_buffer, $v_h->{q_end} + $read_buffer;
 }
 
 sub blat_reads {
-  my ($self, $v_h, $file_target) = @_;
+  my ($self, $v_h, $file_target, $sample) = @_;
   # setup the temp files
   my ($fh_query, $file_query) = tempfile( SUFFIX => '.fa', UNLINK => 1);
   close $fh_query or die "Failed to close $file_query (query reads)";
   my ($fh_psl, $file_psl) = tempfile( SUFFIX => '.psl', UNLINK => 1);
   close $fh_psl or die "Failed to close $file_psl (psl output)";
 
-  my $c_blat = sprintf $READS_AND_BLAT, $self->{hts_file}, $self->read_ranges($v_h), $file_query, $file_target, $file_query, $file_psl, $file_psl, $file_target, $file_query;
+  my $c_blat = sprintf $READS_AND_BLAT, $self->{hts}->{$sample}->hts_path, $self->read_ranges($v_h, $sample), $file_query, $file_target, $file_query, $file_psl, $file_psl, $file_target, $file_query;
   my ($c_out, $c_err, $c_exit) = capture { system($c_blat); };
   if($c_exit) {
     warn "An error occurred while executing $c_blat\n";
@@ -299,11 +348,11 @@ sub blat_reads {
 #print "$c_blat\n";
 #print "$c_out\n";
 
-  my ($wtp, $wtn, $mtp, $mtn, $wt_bmm, $mt_bmm) = $self->psl_axt_parser(\$c_out, $v_h);
+  my ($wtp, $wtn, $mtp, $mtn, $wt_bmm, $mt_bmm) = $self->psl_axt_parser(\$c_out, $v_h, $sample);
   my ($wtm, $mtm) = (q{.}, q{.});
   my $wtr = $wtp + $wtn;
   if($wtp + $wtn == 0) {
-    ($wtp, $wtn) = $self->sam_depth($v_h);
+    ($wtp, $wtn) = $self->sam_depth($v_h, $sample);
     $wtr = $wtp + $wtn;
   }
   else {
@@ -315,11 +364,11 @@ sub blat_reads {
   }
   my $depth = $wtr+$mtr;
   my $vaf = $depth ? sprintf("%.3f", $mtr/$depth) : 0;
-  return ($wtp, $wtn, $wtm, $mtp, $mtn, $mtm, $vaf);
+  return [$wtp, $wtn, $wtm, $mtp, $mtn, $mtm, $vaf];
 }
 
 sub psl_axt_parser {
-  my ($self, $blat_axt, $v_h) = @_;
+  my ($self, $blat_axt, $v_h, $sample) = @_;
   # collate the data by readname and order by score
   my @lines = split /\n/, ${$blat_axt};
   my $line_c = @lines;
@@ -352,7 +401,7 @@ my $SKIP_EVENT = q{};
         next READ;
       }
       my $record = $records[0];
-      if($self->parse_axt_event($v_h, $record) == 1) {
+      if($self->parse_axt_event($v_h, $record, $sample) == 1) {
         $type_strand{$record->[0].$record->[6]} += 1;
         $bmm_sums{$record->[0]} += bmm($record->[8], $record->[9]);
       }
@@ -381,7 +430,7 @@ sub bmm {
 }
 
 sub parse_axt_event {
-  my ($self, $v_h, $rec) = @_;
+  my ($self, $v_h, $rec, $sample) = @_;
   my ($t_name, $t_start, $t_end, $q_name, $q_start, $q_end, $strand, $score, $t_seq, $q_seq) = @{$rec};
 
   # specific to deletion class
@@ -423,7 +472,7 @@ sub parse_axt_event {
         && substr($change_seq,-1,1) eq substr($sub_q_seq,-1,1) # matching last base
       ) {
         $retval = 1;
-        $self->sam_record($v_h, $rec);
+        $self->sam_record($v_h, $rec, $sample);
       }
     }
   }
@@ -432,7 +481,7 @@ sub parse_axt_event {
 }
 
 sub sam_record {
-  my($self, $v_h, $rec) = @_;
+  my($self, $v_h, $rec, $sample) = @_;
 #  warn Dumper($v_h);
 #  warn Dumper($rec);
 
@@ -467,16 +516,16 @@ sub sam_record {
 #print $cigar."\n";
   }
 #printf "%s:%d-%d\n", $v_h->{CHROM}, $pos, $pos + 100;
-  printf {$self->{sfh}} "%s\n", join "\t", $qname, $flag, $v_h->{CHROM}, $pos, 60, $cigar, '*', 0, 0, $seq, '*';
+  printf {$self->{sfh}->{$sample}} "%s\n", join "\t", $qname, $flag, $v_h->{CHROM}, $pos, 60, $cigar, '*', 0, 0, $seq, '*';
 
 #  <STDIN>;
 }
 
 sub sam_depth {
-  my ($self, $v_h) = @_;
+  my ($self, $v_h, $sample) = @_;
   my $mid_point = int ($v_h->{RS} + (($v_h->{RE} - $v_h->{RS})*0.5));
   my $read_search = sprintf $LOCI_FMT, $v_h->{CHROM}, $mid_point, $mid_point;
-  my $c_samcount = sprintf $SAM_DEPTH_PN, $self->{hts_file}, $read_search;
+  my $c_samcount = sprintf $SAM_DEPTH_PN, $self->{hts}->{$sample}->hts_path, $read_search;
   my ($c_out, $c_err, $c_exit) = capture { system($c_samcount); };
   if($c_exit) {
     warn "An error occurred while executing $c_samcount\n";

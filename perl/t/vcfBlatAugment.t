@@ -61,22 +61,22 @@ subtest 'Header checks' => sub {
 subtest 'Simple Deletion checks' => sub {
   my $vba = new_vba(catfile($DATA, 'D.vcf'));
   my $v_h = $vba->to_data_hash($DATA_ARR_D);
-  my @gt_out = $vba->blat_record($v_h);
-  is_deeply(\@gt_out, $RES_ARR_D);
+  my $gt_out = $vba->blat_record($v_h);
+  is_deeply($gt_out->[0], $RES_ARR_D);
 };
 
 subtest 'Simple Insertion checks' => sub {
   my $vba = new_vba(catfile($DATA, 'SI.vcf'));
   my $v_h = $vba->to_data_hash($DATA_ARR_SI);
-  my @gt_out = $vba->blat_record($v_h);
-  is_deeply(\@gt_out, $RES_ARR_SI);
+  my $gt_out = $vba->blat_record($v_h);
+  is_deeply($gt_out->[0], $RES_ARR_SI);
 };
 
 subtest 'Complex event checks' => sub {
   my $vba = new_vba(catfile($DATA, 'DI.vcf'));
   my $v_h = $vba->to_data_hash($DATA_ARR_DI);
-  my @gt_out = $vba->blat_record($v_h);
-  is_deeply(\@gt_out, $RES_ARR_DI);
+  my $gt_out = $vba->blat_record($v_h);
+  is_deeply($gt_out->[0], $RES_ARR_DI);
 };
 
 done_testing();
@@ -84,13 +84,18 @@ done_testing();
 
 sub new_vba {
   my $vcf = shift;
-  return new_ok($MODULE, [
+  my $tmp = '/tmp/pindel_test_stuff';
+  my $obj = new_ok($MODULE, [
     input => $vcf,
     ref => catfile($DATA, 'chr10_1-23700.fa'),
     ofh => buffer_fh(),
-    sam => sam_buffer_fh(),
-    hts_file => catfile($DATA, 'test.bam'),
+    outpath => $tmp,
+    hts_file => [catfile($DATA, 'test.bam')],
   ]);
+  my $sample = $obj->{vcf_sample_order}->[0];
+  $obj->{sfh}->{$sample} = sam_buffer_fh();
+  unlink $tmp;
+  return $obj;
 }
 
 sub buffer_fh {

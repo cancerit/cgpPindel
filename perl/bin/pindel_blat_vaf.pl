@@ -20,8 +20,9 @@ use Sanger::CGP::Pindel::OutputGen::VcfBlatAugment;
     ofh => $options->{output},
     sam => $options->{align},
     hts_file => $options->{hts},
-    pad_mult => $options->{pad},
+    outpath => $options->{outpath},
   );
+
   $augment->output_header;
   $augment->process_records;
 }
@@ -30,18 +31,21 @@ use Sanger::CGP::Pindel::OutputGen::VcfBlatAugment;
 sub setup{
   my %opts = (
     'cmd' => join(" ", $0, @ARGV),
+    'hts' => [],
   );
+  my @hts_files;
   GetOptions( 'h|help' => \$opts{h},
               'm|man' => \$opts{m},
               'v|version' => \$opts{v},
               'o|output=s' => \$opts{output},
-              'a|align=s' => \$opts{align},
               'r|ref=s' => \$opts{ref},
               'i|input=s' => \$opts{input},
-              'p|pad:f' => \$opts{pad},
               'd|debug' => \$opts{debug},
-              'hts=s' => \$opts{hts},
+              'hts=s@' => \@hts_files,
   );
+
+  $opts{hts} = [split(/,/,join(',',@hts_files))];
+
 
   if(defined $opts{'v'}) {
     printf "Version: %s\n", Sanger::CGP::Pindel::Implement->VERSION;
@@ -53,20 +57,21 @@ sub setup{
 
   PCAP::Cli::file_for_reading('ref', $opts{ref});
   PCAP::Cli::file_for_reading('input', $opts{input});
-  PCAP::Cli::file_for_reading('hts', $opts{hts});
-  unless(-e $opts{hts}.'.bai' || -e $opts{hts}.'.csi' || -e $opts{hts}.'.cram') {
-    die "ERROR: Unable to find appropriate index file for $opts{hts}\n";
-  }
-  unless(-e $opts{hts}.'.bas') {
-    die "ERROR: Unable to find *.bas file for $opts{hts}\n";
+  for my $t(@{$opts{hts}}) {
+    PCAP::Cli::file_for_reading('hts', $t);
+    unless(-e $t.'.bai' || -e $t.'.csi' || -e $t.'.crai') {
+      die "ERROR: Unable to find appropriate index file for $t\n";
+    }
+    unless(-e $t.'.bas') {
+      die "ERROR: Unable to find *.bas file for $t\n";
+    }
   }
 
   $opts{align} = $opts{output}.'.sam' unless(defined $opts{align});
 
+  $opts{outpath} = $opts{output};
   open my $ofh, '>', $opts{output};
   $opts{output} = $ofh;
-  open my $sfh, '>', $opts{align};
-  $opts{align} = $sfh;
 
   return \%opts;
 }
@@ -79,19 +84,13 @@ pindel_blat_vaf.pl - Takes a raw Pindel VCF and bam file to add accurate counts.
 
 =head1 SYNOPSIS
 
-pindel_blat_vaf.pl [options] SAMPLE.bam
-
-  SAMPLE.bam should have co-located *.bai and *.bas files.
+pindel_blat_vaf.pl [options]
 
   Required parameters:
     -ref       -r   File path to the reference file used to provide the coordinate system.
     -input     -i   VCF file to read in.
     -hts            BAM/CRAM file for associated sample.
     -output    -o   File path for VCF output (not compressed)
-
-  Optional parameters:
-    -align     -a   File path for accepted alignments (SAM records, no header) [defaults to -o .sam]
-    -pad       -p   Multiples (>=1) of max readlength to pad blat target seq with [default 1]
 
   Other:
     -help      -h   Brief help message.
@@ -100,7 +99,7 @@ pindel_blat_vaf.pl [options] SAMPLE.bam
 
 =head1 DESCRIPTION
 
-B<pindel_blat_vaf.pl> will attempt to generate a vcf with expanded counts and VAR.
+B<pindel_blat_vaf.pl> will attempt to generate a vcf with expanded counts and VAF.
 
 For every variant called by Pindel a blat will be performed and the results merged into a single vcf record.
 
