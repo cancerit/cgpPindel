@@ -21,18 +21,10 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ########## LICENCE ##########
 
-done_message () {
-    if [ $? -eq 0 ]; then
-        echo " done."
-        if [ "x$1" != "x" ]; then
-            echo $1
-        fi
-    else
-        echo " failed.  See output for error messages." $2
-        echo "    Please check INSTALL file for items that should be installed by a package manager"
-        exit 1
-    fi
-}
+# ALL tool versions used by opt-build.sh
+# need to keep in sync with Dockerfile
+export VER_CGPVCF="v2.2.1"
+export VER_VCFTOOLS="0.1.16"
 
 get_file () {
 # output, source
@@ -43,11 +35,12 @@ get_file () {
   fi
 }
 
+
 if [[ ($# -ne 1 && $# -ne 2) ]] ; then
   echo "Please provide an installation path and optionally perl lib paths to allow, e.g."
   echo "  ./setup.sh /opt/myBundle"
   echo "OR all elements versioned:"
-  echo "  ./setup.sh /opt/cgpPinel-X.X.X /opt/cgpVcf-X.X.X/lib/perl:/opt/PCAP-core-X.X.X/lib/perl"
+  echo "  ./setup.sh /opt/cgpVcf-X.X.X /opt/PCAP-X.X.X/lib/perl:/some/other/lib/perl..."
   exit 1
 fi
 
@@ -59,18 +52,6 @@ fi
 
 # get current directory
 INIT_DIR=`pwd`
-
-# information about this system
-echo '============== System information ===='
-set -x
-lsb_release -a
-uname -a
-sw_vers
-system_profiler
-grep MemTotal /proc/meminfo
-set +x
-echo
-
 
 set -e
 
@@ -85,10 +66,12 @@ PERLROOT=$INST_PATH/lib/perl5
 
 # allows user to knowingly specify other PERL5LIB areas.
 if [ -z ${CGP_PERLLIBS+x} ]; then
-  export PERL5LIB="$PERLROOT"
+  PERL5LIB="$PERLROOT"
 else
-  export PERL5LIB="$PERLROOT:$CGP_PERLLIBS"
+  PERL5LIB="$PERLROOT:$CGP_PERLLIBS"
 fi
+
+export PERL5LIB=$PERL5LIB
 
 #add bin path for install tests
 export PATH=$INST_PATH/bin:$PATH
@@ -97,61 +80,12 @@ export PATH=$INST_PATH/bin:$PATH
 SETUP_DIR=$INIT_DIR/install_tmp
 mkdir -p $SETUP_DIR
 
-cd $SETUP_DIR
-
-## grab cpanm and stick in workspace, then do a self upgrade into bin:
+#install cpanm
 get_file $SETUP_DIR/cpanm https://cpanmin.us/
 perl $SETUP_DIR/cpanm -l $INST_PATH App::cpanminus
-CPANM=`which cpanm`
-echo $CPANM
 
-PCAP=`perl -le 'eval "require $ARGV[0]" and print $ARGV[0]->VERSION' PCAP`
-if [[ "x$PCAP" == "x" ]] ; then
-  echo "PREREQUISITE: Please install PCAP-core before proceeding:"
-  echo "  https://github.com/cancerit/PCAP-core/releases"
-  exit 1;
-fi
-
-
-CGPVCF=`perl -le 'eval "require $ARGV[0]" and print $ARGV[0]->VERSION' Sanger::CGP::Vcf`
-if [[ "x$CGPVCF" == "x" ]] ; then
-  echo "PREREQUISITE: Please install cgpVcf before proceeding:"
-  echo "  https://github.com/cancerit/cgpVcf/releases"
-  exit 1;
-fi
-
-echo -n "Compiling pindel binaries ..."
-cd $INIT_DIR
-g++ -O3 -o $SETUP_DIR/pindel c++/pindel.cpp &&
-g++ -O3 -o $SETUP_DIR/filter_pindel_reads c++/filter_pindel_reads.cpp &&
-cp $SETUP_DIR/pindel $INST_PATH/bin/. &&
-cp $SETUP_DIR/filter_pindel_reads $INST_PATH/bin/. &&
-# convenience for testing
-mkdir -p $INIT_DIR/bin &&
-cp $SETUP_DIR/pindel $INIT_DIR/bin/. &&
-cp $SETUP_DIR/filter_pindel_reads $INIT_DIR/bin/.
-done_message "" "Failed during compilation of pindel."
-
-cd $INIT_DIR/perl
-
-echo -n "Installing Perl prerequisites ..."
-if ! ( perl -MExtUtils::MakeMaker -e 1 >/dev/null 2>&1); then
-    echo
-    echo "WARNING: Your Perl installation does not seem to include a complete set of core modules.  Attempting to cope with this, but if installation fails please make sure that at least ExtUtils::MakeMaker is installed.  For most users, the best way to do this is to use your system's package manager: apt, yum, fink, homebrew, or similar."
-fi
-
-$CPANM -v --mirror http://cpan.metacpan.org -notest -l $INST_PATH/ --installdeps . < /dev/null
-done_message "" "Failed during installation of core dependencies."
-
-echo -n "Installing cgpPindel ..."
-perl Makefile.PL INSTALL_BASE=$INST_PATH &&
-make &&
-make test &&
-make install
-done_message "" "cgpPindel install failed."
-
-# cleanup all junk
-rm -rf $SETUP_DIR
+bash build/opt-build.sh $INST_PATH
+bash build/opt-build-local.sh $INST_PATH
 
 echo
 echo
