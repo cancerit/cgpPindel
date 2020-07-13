@@ -91,6 +91,8 @@ echo
 echo
 echo "Please add the following to beginning of path:"
 echo "  $INST_PATH/bin"
+echo "Please add the following to beginning of PERL5LIB:"
+echo "  $PERLROOT"
 echo
 
 exit 0
