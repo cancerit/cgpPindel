@@ -1,5 +1,10 @@
 # CHANGES
 
+## 3.3.1
+
+* Updated Dockerfile to use pcap-core 5.2.2
+* Modified setup script to use build/*.sh
+
 ## 3.3.0
 
 * I/O hardening, see [milestone 3](https://github.com/cancerit/cgpPindel/milestone/3)
