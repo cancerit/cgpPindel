@@ -1,6 +1,6 @@
 # CHANGES
 
-## 3.3.1
+## 3.4.0
 
 * Updated Dockerfile to use pcap-core 5.2.2
 * Modified setup script to use build/*.sh
