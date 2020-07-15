@@ -36,7 +36,7 @@ FROM ubuntu:20.04
 
 LABEL maintainer="cgphelp@sanger.ac.uk" \
       uk.ac.sanger.cgp="Cancer, Ageing and Somatic Mutation, Wellcome Trust Sanger Institute" \
-      version="v3.0.0" \
+      version="v3.4.0" \
       description="cgpPindel docker"
 
 RUN apt-get -yq update
