@@ -1,4 +1,4 @@
-FROM  quay.io/wtsicgp/pcap-core:5.0.4 as builder
+FROM quay.io/wtsicgp/pcap-core:5.2.2 as builder
 
 USER  root
 
@@ -9,13 +9,12 @@ ENV VER_CGPVCF="v2.2.1"\
     VER_BLAT="v385"
 
 RUN apt-get -yq update
-RUN apt-get install -yq --no-install-recommends \
-locales \
-g++ \
-make \
-gcc \
-pkg-config \
-zlib1g-dev
+RUN apt-get install -yq --no-install-recommends locales
+RUN apt-get install -yq --no-install-recommends g++
+RUN apt-get install -yq --no-install-recommends make
+RUN apt-get install -yq --no-install-recommends gcc
+RUN apt-get install -yq --no-install-recommends pkg-config
+RUN apt-get install -yq --no-install-recommends zlib1g-dev
 
 RUN locale-gen en_US.UTF-8
 RUN update-locale LANG=en_US.UTF-8
@@ -38,11 +37,11 @@ COPY perl perl
 # build the tools in this repo, separate to reduce build time on errors
 RUN bash build/opt-build-local.sh $OPT
 
-FROM ubuntu:16.04
+FROM ubuntu:20.04
 
 LABEL maintainer="cgphelp@sanger.ac.uk" \
       uk.ac.sanger.cgp="Cancer, Ageing and Somatic Mutation, Wellcome Trust Sanger Institute" \
-      version="v3.0.0" \
+      version="v3.4.0" \
       description="cgpPindel docker"
 
 RUN apt-get -yq update
@@ -59,7 +58,10 @@ zlib1g \
 liblzma5 \
 libncurses5 \
 p11-kit \
+libcurl3-gnutls \
+libcurl4 \
 moreutils \
+google-perftools \
 unattended-upgrades && \
 unattended-upgrade -d -v && \
 apt-get remove -yq unattended-upgrades && \

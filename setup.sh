@@ -21,11 +21,26 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ########## LICENCE ##########
 
+# ALL tool versions used by opt-build.sh
+# need to keep in sync with Dockerfile
+export VER_CGPVCF="v2.2.1"
+export VER_VCFTOOLS="0.1.16"
+
+get_file () {
+# output, source
+  if hash curl 2>/dev/null; then
+    curl -sS -o $1 -L $2
+  else
+    wget -nv -O $1 $2
+  fi
+}
+
+
 if [[ ($# -ne 1 && $# -ne 2) ]] ; then
   echo "Please provide an installation path and optionally perl lib paths to allow, e.g."
   echo "  ./setup.sh /opt/myBundle"
   echo "OR all elements versioned:"
-  echo "  ./setup.sh /opt/cgpPinel-X.X.X /opt/cgpVcf-X.X.X/lib/perl:/opt/PCAP-core-X.X.X/lib/perl"
+  echo "  ./setup.sh /opt/cgpVcf-X.X.X /opt/PCAP-X.X.X/lib/perl:/some/other/lib/perl..."
   exit 1
 fi
 
@@ -57,13 +72,23 @@ PERLROOT=$INST_PATH/lib/perl5
 
 # allows user to knowingly specify other PERL5LIB areas.
 if [ -z ${CGP_PERLLIBS+x} ]; then
-  export PERL5LIB="$PERLROOT"
+  PERL5LIB="$PERLROOT"
 else
-  export PERL5LIB="$PERLROOT:$CGP_PERLLIBS"
+  PERL5LIB="$PERLROOT:$CGP_PERLLIBS"
 fi
+
+export PERL5LIB=$PERL5LIB
 
 #add bin path for install tests
 export PATH=$INST_PATH/bin:$PATH
+
+#create a location to build dependencies
+SETUP_DIR=$INIT_DIR/install_tmp
+mkdir -p $SETUP_DIR
+
+#install cpanm
+get_file $SETUP_DIR/cpanm https://cpanmin.us/
+perl $SETUP_DIR/cpanm -l $INST_PATH App::cpanminus
 
 bash build/opt-build.sh $INST_PATH
 bash build/opt-build-local.sh $INST_PATH

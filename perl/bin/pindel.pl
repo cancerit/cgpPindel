@@ -52,7 +52,6 @@ my %index_max = ( 'input'   => 2,
   my $options = setup();
   Sanger::CGP::Pindel::Implement::prepare($options);
   my $threads = PCAP::Threaded->new($options->{'threads'});
-  &PCAP::Threaded::disable_out_err if(exists $options->{'index'});
 
   # register any process that can run in parallel here
   $threads->add_function('input', \&Sanger::CGP::Pindel::Implement::input, exists $options->{'index'} ? 1 : 2);
