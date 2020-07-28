@@ -288,7 +288,12 @@ my $count=0;
     $v_d->[$V_FMT] .= $self->{fmt_ext} unless($self->{fill_in});
     my $gt_pos = $V_GT_START;
     for my $gt_set (@{$extra_gt}) {
-      $v_d->[$gt_pos] = join q{:}, $v_d->[$gt_pos], @{$gt_set};
+      if($v_d->[$gt_pos] eq q{.}) {
+        $v_d->[$gt_pos] = join q{:}, './.:.:.', @{$gt_set};
+      }
+      else {
+        $v_d->[$gt_pos] = join q{:}, $v_d->[$gt_pos], @{$gt_set};
+      }
       $gt_pos++;
     }
     printf $fh "%s\n", join "\t", @{$v_d};
