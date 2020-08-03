@@ -61,7 +61,7 @@ sub new{
     input => $args{input},
     ref => $args{ref},
     ofh => $args{ofh}, # vcf
-    hts_file => $args{hts_file},
+    hts_files => $args{hts_files},
     fill_in => $args{fill_in},
   };
   bless $self, $class;
@@ -100,6 +100,8 @@ sub _align_output {
   $outpath =~ s/\.vcf$//;
   for my $sample(@{$self->{vcf_sample_order}}) {
     my $sam_file = sprintf '%s.%s.sam', $outpath, $sample;
+    $self->{samfile}->{$sample} = $sam_file;
+    $self->{bamfile}->{$sample} = sprintf '%s.%s.bam', $outpath, $sample;
     unlink $sam_file if(-e $sam_file);
     open my $SAM, '>', $sam_file;
     $self->{sfh}->{$sample} = $SAM;
@@ -117,6 +119,7 @@ sub _sample_order {
   }
   $self->{vcf_sample_pos} = \%samp_pos;
   $self->{vcf_sample_order} = \@ordered_samples;
+  $self->{vcf_sample_count} = scalar @ordered_samples;
   return 1;
 }
 
@@ -181,7 +184,7 @@ sub _buffer_sizes {
 
 sub _hts {
   my $self = shift;
-  for my $hts(@{$self->{'hts_file'}}) {
+  for my $hts(@{$self->{hts_files}}) {
     my $tmp = Bio::DB::HTS->new(-bam => $hts, -fasta => $self->{ref});
     my $sample = $self->_sample_from_hts($tmp);
     if(exists $self->{hts}->{$sample}) {
@@ -219,13 +222,13 @@ sub _add_headers {
   $vcf->add_header_line({'key'=>'source', 'value' => basename($0)}, 'append' => 1);
 
     my @format = (
-    {key => 'FORMAT', ID => 'WTP', Number => 1, Type => 'Integer', Description => '+ve strand reads BLATed (or count for large deletions) to reference sequence at this location'},
-    {key => 'FORMAT', ID => 'WTN', Number => 1, Type => 'Integer', Description => '-ve strand reads BLATed (or count for large deletions) to reference sequence at this location'},
-    {key => 'FORMAT', ID => 'WTM', Number => 1, Type => 'Float', Description => 'Mismatch fraction of reads BLATed to reference sequence at this location (to 3 d.p.)'},
-    {key => 'FORMAT', ID => 'MTP', Number => 1, Type => 'Integer', Description => '+ve strand reads BLATed to alternate sequence at this location'},
-    {key => 'FORMAT', ID => 'MTN', Number => 1, Type => 'Integer', Description => '-ve strand reads BLATed to alternate sequence at this location'},
-    {key => 'FORMAT', ID => 'MTM', Number => 1, Type => 'Float', Description => 'Mismatch fraction of reads BLATed to alternate sequence at this location (to 3 d.p.)'},
-    {key => 'FORMAT', ID => 'VAF', Number => 1, Type => 'Float', Description => 'Variant allele fraction using reads that unambiguously map to ref or alt seq (to 3 d.p.)'},
+    {key => 'FORMAT', ID => 'WTP', Number => 1, Type => 'Integer', Description => q{+ve strand reads BLATed to reference sequence at this location, input alignment depth when WTM='.'}},
+    {key => 'FORMAT', ID => 'WTN', Number => 1, Type => 'Integer', Description => q{-ve strand reads BLATed to reference sequence at this location, input alignment depth when WTM='.'}},
+    {key => 'FORMAT', ID => 'WTM', Number => 1, Type => 'Float', Description => q{Mismatch fraction of reads BLATed to reference sequence at this location (3 d.p.), '.' when no reads found via BLAT}},
+    {key => 'FORMAT', ID => 'MTP', Number => 1, Type => 'Integer', Description => q{+ve strand reads BLATed to alternate sequence at this location}},
+    {key => 'FORMAT', ID => 'MTN', Number => 1, Type => 'Integer', Description => q{-ve strand reads BLATed to alternate sequence at this location}},
+    {key => 'FORMAT', ID => 'MTM', Number => 1, Type => 'Float', Description => q{Mismatch fraction of reads BLATed to alternate sequence at this location (3 d.p.), '.' when no reads found via BLAT}},
+    {key => 'FORMAT', ID => 'VAF', Number => 1, Type => 'Float', Description => q{Variant allele fraction using reads that unambiguously map to ref or alt seq (3 d.p.)'}},
   );
   $self->{fmt_ext} = q{};
   for my $f(@format) {
@@ -252,7 +255,7 @@ sub to_data_hash {
     my ($key,$val) = split(/=/,$info);
     # all the values we need are key/val
     next unless(defined $val);
-    die "Clash between INFO and columns" if(exists $out{$key});
+    die "Clash between INFO and columns '$key'" if(exists $out{$key});
     $out{$key} = $val;
   }
 
@@ -281,29 +284,22 @@ sub process_records {
   my $fh = $self->{ofh};
 my $count=0;
   while(my $v_d = $self->{vcf}->next_data_array) {
+    $v_d->[$V_FMT] .= $self->{fmt_ext} unless($self->{fill_in});
+
 #$count++;
 #next if($count != 1);
-    my $v_h = $self->to_data_hash($v_d);
-    my $extra_gt = $self->blat_record($v_h);
-    $v_d->[$V_FMT] .= $self->{fmt_ext} unless($self->{fill_in});
-    my $gt_pos = $V_GT_START;
-    for my $gt_set (@{$extra_gt}) {
-      if($v_d->[$gt_pos] eq q{.}) {
-        $v_d->[$gt_pos] = join q{:}, './.:.:.', @{$gt_set};
-      }
-      else {
-        $v_d->[$gt_pos] = join q{:}, $v_d->[$gt_pos], @{$gt_set};
-      }
-      $gt_pos++;
-    }
+    $self->blat_record($v_d);
     printf $fh "%s\n", join "\t", @{$v_d};
 #last;
   }
   $self->_close_sams;
+  $self->sam_to_bam;
 }
 
 sub blat_record {
-  my ($self, $v_h) = @_;
+  my ($self, $v_d) = @_;
+  my $v_h = $self->to_data_hash($v_d);
+
   # now attempt the blat stuff
   my ($fh_target, $file_target) = tempfile( SUFFIX => '.fa', UNLINK => 1 );
   $self->blat_ref_alt($fh_target, $v_h);
@@ -316,11 +312,23 @@ sub blat_record {
   $v_h->{change_pos_low} = $change_pos_low;
   $v_h->{change_pos_high} = $change_pos_high;
 
-  my @blat_sets;
+  my $gt_pos = $V_GT_START-1;
   for my $sample(@{$self->{vcf_sample_order}}) {
-    push @blat_sets, $self->blat_reads($v_h, $file_target, $sample);
+    $gt_pos++;
+    if($self->{fill_in} && $v_d->[$gt_pos] ne q{.}) {
+      next;
+    }
+    my $gt_set = $self->blat_reads($v_h, $file_target, $sample);
+    if($v_d->[$gt_pos] eq q{.}) {
+      $v_d->[$gt_pos] = join q{:}, './.:.:.', @{$gt_set};
+    }
+    else {
+      $v_d->[$gt_pos] = join q{:}, $v_d->[$gt_pos], @{$gt_set};
+    }
   }
-  return \@blat_sets;
+  # tempfile unlink only does it on shutdown when used in this way
+  unlink $file_target;
+  return 1;
 }
 
 sub read_ranges {
@@ -338,8 +346,14 @@ sub blat_reads {
   my ($fh_psl, $file_psl) = tempfile( SUFFIX => '.psl', UNLINK => 1);
   close $fh_psl or die "Failed to close $file_psl (psl output)";
 
+  warn $sample.' -> '.$self->read_ranges($v_h, $sample)."\n";
+
   my $c_blat = sprintf $READS_AND_BLAT, $self->{hts}->{$sample}->hts_path, $self->read_ranges($v_h, $sample), $file_query, $file_target, $file_query, $file_psl, $file_psl, $file_target, $file_query;
-  my ($c_out, $c_err, $c_exit) = capture { system($c_blat); };
+  my ($c_out, $c_err, $c_exit) = capture { system([0,255], $c_blat); };
+  if($c_exit == 255 && $c_err =~ m/processed 0 reads/ms) {
+    # No reads found
+    $c_exit = 0;
+  }
   if($c_exit) {
     warn "An error occurred while executing $c_blat\n";
     warn "\tERROR$c_err\n";
@@ -353,10 +367,14 @@ sub blat_reads {
 #print "$c_blat\n";
 #print "$c_out\n";
 
+  # tempfile unlink only does it on shutdown when used in this way
+  unlink $file_query;
+  unlink $file_psl;
+
   my ($wtp, $wtn, $mtp, $mtn, $wt_bmm, $mt_bmm) = $self->psl_axt_parser(\$c_out, $v_h, $sample);
   my ($wtm, $mtm) = (q{.}, q{.});
   my $wtr = $wtp + $wtn;
-  if($wtp + $wtn == 0) {
+  if($wtr == 0) {
     ($wtp, $wtn) = $self->sam_depth($v_h, $sample);
     $wtr = $wtp + $wtn;
   }
@@ -368,7 +386,7 @@ sub blat_reads {
     $mtm = sprintf("%.3f", $mt_bmm / $mtr);
   }
   my $depth = $wtr+$mtr;
-  my $vaf = $depth ? sprintf("%.3f", $mtr/$depth) : 0;
+  my $vaf = sprintf("%.3f", $depth ? $mtr/$depth : 0);
   return [$wtp, $wtn, $wtm, $mtp, $mtn, $mtm, $vaf];
 }
 
@@ -538,6 +556,27 @@ sub sam_depth {
     exit $c_exit;
   }
   return (split /\n/, $c_out);
+}
+
+sub sam_to_bam {
+  my ($self) = @_;
+  for my $sample(@{$self->{vcf_sample_order}}) {
+    my $sam = $self->{samfile}->{$sample};
+    my $bam = $self->{bamfile}->{$sample};
+    my $tmp = $bam;
+    $tmp =~ s/bam$/tmp/;
+    my $command = sprintf q{bash -c 'set -o pipefail ; samtools view -uT %s %s | samtools sort -T %s -o %s -'},
+                  $self->{ref}, $sam,
+                  $tmp, $bam;
+    my ($c_out, $c_err, $c_exit) = capture { system($command); };
+    if($c_exit) {
+      warn "An error occurred while executing $command\n";
+      warn "\tERROR$c_err\n";
+      exit $c_exit;
+    }
+    unlink(glob(sprintf '%s.*.bam', $tmp));
+    unlink $sam;
+  }
 }
 
 sub flanking_ref {

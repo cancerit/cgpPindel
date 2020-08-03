@@ -230,7 +230,9 @@ sub setup{
   my @full_inputs;
   for my $if(@{$opts{'input'}}) {
     if($if =~ s/%/*/g) {
-      push @full_inputs, glob $if;
+      for my $gf(glob $if) {
+        push @full_inputs, $gf if(-s $gf);
+      }
     }
     else {
       push @full_inputs, $if;

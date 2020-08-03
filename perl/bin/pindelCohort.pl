@@ -40,7 +40,7 @@ use Sanger::CGP::Pindel::Implement;
 use Data::Dumper;
 
 const my %INDEX_MAX => (
-                  'input'   => -1,
+                  'input'   => 1,
                   'pindel'  => -1,
                   'parse' => 1, # reads all pout, makes raw-vcf and splits to even sized for blat
                   'blat' => -1,
@@ -61,9 +61,7 @@ const my @VALID_PROCESS => keys %INDEX_MAX;
 
   # start processes here (in correct order obviously), add conditions for skipping based on 'process' option
   if(!exists $options->{'process'} || $options->{'process'} eq 'input') {
-    my $jobs = scalar @{$options->{'hts_files'}};
-    $jobs = $options->{'limit'} if(exists $options->{'limit'} && defined $options->{'limit'});
-    $threads->run($jobs, 'input', $options);
+    Sanger::CGP::Pindel::Implement::input_cohort($options)
   }
   if(!exists $options->{'process'} || $options->{'process'} eq 'pindel') {
     my $jobs = Sanger::CGP::Pindel::Implement::determine_jobs($options); # method still needed to populate info
@@ -206,7 +204,11 @@ pindelCohort.pl [options] sample1.bam
 
 Available processes for this tool are:
 
-  ???
+  input
+  pindel - index available
+  parse
+  blat - index available
+  concat
 
 =item B<-index>
 

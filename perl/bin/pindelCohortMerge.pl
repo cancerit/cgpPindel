@@ -97,12 +97,9 @@ sub collate_data {
   return (\%ds, \@samples);
 }
 
-
-
-
 sub header {
   my ($output, $vcfs, $sample_head) = @_;
-  my $metadata_header = _command_output(sprintf q{zgrep -B 1000000 -m 1 '^#CHROM' %s | head -n -1}, $vcfs->[0]);
+  my $metadata_header = _command_output(sprintf q{zgrep -B 1000000 -m 1 '^#CHROM' %s | grep -v '^##SAMPLE=' | head -n -1}, $vcfs->[0]);
   my $col_header = _command_output(sprintf q{zgrep -m 1 '^#CHROM' %s}, $vcfs->[0]);
   # remove last col as has sample will be added back
   ${$col_header} =~ s/\t[^\t]+$//;

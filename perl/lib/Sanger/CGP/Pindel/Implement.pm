@@ -59,42 +59,26 @@ const my $COHORT_2_VCF => q{ -r %s -i %s -o %s %s%s};
 const my $VCF_SPLIT_SIZE => 5_000;
 
 sub input_cohort{
-  my ($index, $options) = @_;
-  return 1 if(exists $options->{'index'} && $index != $options->{'index'});
+  my ($options) = @_;
 
   my $tmp = $options->{'tmp'};
-  return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
+  return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
 
-  my @inputs = @{$options->{'hts_files'}};
-  my $iter = 1;
-  for my $input(@inputs) {
-    next if($iter++ != $index); # skip to the relevant input in the list
+  my $input = $options->{'hts_files'}->[0];
+  my $max_threads = $options->{'threads'};
 
-    ## build command for this index
-    #
+  my $sample = sanitised_sample_from_bam($input);
+  my $gen_out = File::Spec->catdir($tmp, $sample);
+  make_path($gen_out) unless(-e $gen_out);
 
-    my $max_threads = $options->{'threads'};
-    unless (exists $options->{'index'}) {
-      $max_threads = int ($max_threads / scalar @inputs);
-    }
-    $max_threads = 1 if($max_threads == 0);
+  my $command = "$^X ";
+  $command .= _which('pindel_input_gen.pl');
+  $command .= sprintf $PINDEL_GEN_COMM, $input, $gen_out, $max_threads;
+  $command .= " -r $options->{reference}";
+  $command .= " -e $options->{badloci}" if(exists $options->{'badloci'});
 
-    my $sample = sanitised_sample_from_bam($input);
-    my $gen_out = File::Spec->catdir($tmp, $sample);
-    make_path($gen_out) unless(-e $gen_out);
-
-    my $command = "$^X ";
-    $command .= _which('pindel_input_gen.pl');
-    $command .= sprintf $PINDEL_GEN_COMM, $input, $gen_out, $max_threads;
-    $command .= " -r $options->{reference}";
-    $command .= " -e $options->{badloci}" if(exists $options->{'badloci'});
-
-    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
-
-    #
-    ## The rest is auto-magical
-    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
-  }
+  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
+  PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
   return 1;
 }
 
@@ -282,7 +266,7 @@ sub concat {
     my $samtools = _which('samtools');
     my $command =  sprintf q{(%s view -H %s | grep -P '^@(HD|SQ)' && sort %s | uniq) | %s sort -l 0 -T %s - | %s calmd -b - %s > %s},
                     $samtools, $hts_input,
-                    File::Spec->catfile($vcf, 'blat_*.vcf.sam'),
+                    File::Spec->catfile($vcf, sprintf 'blat_*.%s.sam', $sample_name),
                     $samtools, File::Spec->catfile($vcf, 'srt'),
                     $samtools, $options->{'reference'}, $bam;
     PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), ['set -o pipefail', $command], 'calmd');
@@ -322,12 +306,11 @@ sub blat {
     my $blat_file = $split_file;
     $blat_file =~ s/split_([a-z]+)/blat_$1/;
     my $command = $^X.' '._which('pindel_blat_vaf.pl');
-    $command .= sprintf q{ -r %s -hts %s -i %s -o %s -p %s},
+    $command .= sprintf q{ -r %s -hts %s -i %s -o %s},
                         $options->{'reference'},
                         $options->{hts_files}->[0],
                         $split_file,
-                        $blat_file,
-                        $options->{pad};
+                        $blat_file;
 
     PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
     PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);

@@ -259,3 +259,21 @@ sub repeats{
 	$self->{_repeats} = $value if defined $value;
 	return $self->{_repeats};
 }
+
+sub gc_5p{
+	my($self,$value) = @_;
+	$self->{_gc_5p} = $value if defined $value;
+	return $self->{_gc_5p};
+}
+
+sub gc_3p{
+	my($self,$value) = @_;
+	$self->{_gc_3p} = $value if defined $value;
+	return $self->{_gc_3p};
+}
+
+sub gc_rng{
+	my($self,$value) = @_;
+	$self->{_gc_rng} = $value if defined $value;
+	return $self->{_gc_rng};
+}

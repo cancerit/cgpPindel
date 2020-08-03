@@ -145,8 +145,9 @@ sub gen_header{
     {key => 'INFO', ID => 'RE', Number => 1, Type => 'Integer', Description => 'Range end'},
     {key => 'INFO', ID => 'LEN', Number => 1, Type => 'Integer', Description => 'Length'},
     {key => 'INFO', ID => 'REP', Number => 1, Type => 'Integer', Description => 'Change repeat count within range'},
-    {key => 'INFO', ID => 'S1', Number => 1, Type => 'Integer', Description => 'S1'},
-    {key => 'INFO', ID => 'S2', Number => 1, Type => 'Float', Description => 'S2'}
+    {key => 'INFO', ID => 'GC5P', Number => 1, Type => 'Float', Description => 'GC content of 200 bp. 5 prime'},
+    {key => 'INFO', ID => 'GCRNG', Number => 1, Type => 'Float', Description => 'GC content of deleted/inserted seq, including range'},
+    {key => 'INFO', ID => 'GC3P', Number => 1, Type => 'Float', Description => 'GC content of 200 bp. 3 prime'}
   );
 
   my @format = (
@@ -222,43 +223,20 @@ sub gen_record{
   $ret .= '.'.$SEP;
 
   # INFO
-  #PC=D;RS=19432;RE=19439;LEN=3;S1=4;S2=161.407;REP=2;PRV=1
   $ret .= 'PC='.$record->type().';';
   $ret .= 'RS='.$record->range_start().';';
   $ret .= 'RE='.$record->range_end().';';
   $ret .= 'LEN='.$record->length().';';
-  $ret .= 'REP='.$record->repeats().$SEP;
-
-  # # now attempt the blat stuff
-  # my ($fh_target, $file_target) = tempfile(
-  #   DIR => '/dev/shm',
-  #   SUFFIX => '.fa',
-  #   UNLINK => 1
-  # );
-
-  # my ($q_start, $q_end, $change_pos, $change_ref, $change_alt) = $self->blat_ref_alt($fh_target, $record);
-
-  # my $change_pos_low = $change_pos;
-  # $change_pos_low++ if($record->type eq 'I');
-  # my $range_l = ($record->range_end - $record->range_start) + 1;
-  # my $change_pos_high = $change_pos_low + $range_l; # REF based range, adjusted in func
-  # my $change_l = $record->end - $record->start + 1;
-  # $self->{change_pos_low} = $change_pos_low;
-  # $self->{change_pos_high} = $change_pos_high;
-  # $self->{change_l} = $change_l;
-  # $self->{change_ref} = $change_ref;
-  # $self->{change_alt} = $change_alt;
-  # $self->{q_start} = $q_start;
-  # $self->{q_end} = $q_end;
-  # $self->{file_target} = $file_target;
-  # $self->{type} = $record->type;
-  # $self->{chr} = $record->chro;
+  $ret .= 'REP='.$record->repeats().';';
+  $ret .= sprintf 'GC5P=%.3f;', $record->gc_5p;
+  $ret .= sprintf 'GCRNG=%.3f;', $record->gc_rng;
+  $ret .= sprintf 'GC3P=%.3f', $record->gc_3p;
+  $ret .= $SEP;
 
   # FORMAT
   $ret .= $self->{_format};
 
   for my $samp(@{$self->{_srt_samples}}) {
-    #my ($wtp, $wtn, $mtp, $mtn) = $self->blat_reads($samp, $record);
     $ret .= $SEP;
     if($self->gen_all || exists $record->reads->{$samp}) {
       $ret .= './.:';
@@ -267,14 +245,6 @@ sub gen_record{
       $ret .= q{:};
       $ret .= $record->get_read_counts($samp, '+').q{:};
       $ret .= $record->get_read_counts($samp, '-');
-      #.q{:};
-      #$ret .= $wtp.q{:};
-      #$ret .= $wtn.q{:};
-      #$ret .= $mtp.q{:};
-      #$ret .= $mtn.q{:};
-      #my $mtr = $mtp+$mtn;
-      #my $depth = $wtp+$wtn+$mtr;
-      #$ret .= $depth ? sprintf("%.3f", $mtr/$depth) : 0;
     }
     else {
       $ret .= $self->{_noread_gt};
@@ -303,126 +273,6 @@ sub ins_by_sample {
   return $self->{_ins_set}->{$sample};
 }
 
-sub TO_REMOVE_blat_reads {
-  my ($self, $sample, $record) = @_;
-  my ($fh_query, $file_query) = tempfile(
-    DIR => '/dev/shm',
-    SUFFIX => '.fa',
-    UNLINK => 1
-  );
-  close $fh_query or die "Failed to close $file_query (query reads)";
-  my ($fh_psl, $file_psl) = tempfile(
-    DIR => '/dev/shm',
-    SUFFIX => '.psl',
-    UNLINK => 1
-  );
-  close $fh_psl or die "Failed to close $file_psl (psl output)";
-
-
-  my $read_buffer = $self->ins_by_sample($sample);
-  my $c_blat = sprintf $READS_AND_BLAT, $self->hts_file_by_sample($sample), $self->{chr}, $self->{q_start}-$read_buffer, $self->{q_end}+$read_buffer, $file_query, $self->{file_target}, $file_query, $file_psl, $file_psl, $self->{file_target}, $file_query;
-  my ($c_out, $c_err, $c_exit) = capture { system($c_blat); };
-  if($c_exit) {
-    warn "An error occurred while executing $c_blat\n";
-    warn "\tERROR$c_err\n";
-    exit $c_exit;
-  }
-
-# print "target.fa\n";
-# system("cat $self->{file_target}");
-# <STDIN>;
-# print "query.fa\n";
-# system("cat $file_query");
-# <STDIN>;
-# print "\n$c_out\n";
-# exit 1;
-
-  #my ($wtp, $wtn, $mtp, $mtn) = $self->blat_counts(\$c_out, $sample);
-  my ($wtp, $wtn, $mtp, $mtn) = $self->psl_axt_parser(\$c_out, $sample);
-  if($wtp + $wtn == 0) {
-    ($wtp, $wtn) = $self->sam_depth($sample, $record);
-  }
-  return ($wtp, $wtn, $mtp, $mtn);
-}
-
-sub TO_REMOVE_psl_axt_parser {
-  my ($self, $blat_axt) = @_;
-  # collate the data by readname and order by score
-  my @lines = split /\n/, ${$blat_axt};
-  my $line_c = @lines;
-  # group all reads and order by score
-  my %reads;
-  for(my $i = 0; $i<$line_c; $i+=4) {
-    my ($id, $t_name, $t_start, $t_end, $q_name, $q_start, $q_end, $strand, $score) = split q{ }, $lines[$i];
-    push @{$reads{$q_name}{$score}}, [$t_name, $t_start, $t_end, $q_name, $q_start, $q_end, $strand, $score, $lines[$i+1], $lines[$i+2]];
-  }
-  my %TYPE_STRAND;
-  # sort keys for consistency
-  READ: for my $read(sort keys %reads) {
-    # get the alignment with the highest score
-    for my $score(sort {$b<=>$a} keys %{$reads{$read}}) {
-      my @records = @{$reads{$read}{$score}};
-      next READ if(@records != 1); # if best score has more than one alignment it is irrelevant
-      my $record = $records[0];
-      if($self->parse_axt_event($record) == 1) {
-        $TYPE_STRAND{$record->[0].$record->[6]} += 1;
-      }
-      next READ; # remaining items are worse alignments
-    }
-  }
-  my $wtp = $TYPE_STRAND{'REF+'} || 0;
-  my $wtn = $TYPE_STRAND{'REF-'} || 0;
-  my $mtp = $TYPE_STRAND{'ALT+'} || 0;
-  my $mtn = $TYPE_STRAND{'ALT-'} || 0;
-  return ($wtp, $wtn, $mtp, $mtn);
-}
-
-sub TO_REMOVE_parse_axt_event {
-  my ($self, $rec) = @_;
-  my ($t_name, $t_start, $t_end, $q_name, $q_start, $q_end, $strand, $score, $t_seq, $q_seq) = @{$rec};
-
-  # specific to deletion class
-  my $change_seq = $self->{change_ref};
-  my $change_pos_high = $self->{change_pos_high};
-  if($t_name eq 'ALT') {
-    $change_pos_high -= $self->{change_l};
-    $change_seq = $self->{change_alt};
-  }
-  $self->{change_seq} = $change_seq;
-
-  # all the reads that don't span the range
-  return 0 unless($t_start <= $self->{change_pos_low} && $t_end > $change_pos_high);
-  # look for the change (or absence) where we expect it
-  my $exp_pos = $self->{change_pos_low} - $t_start;
-  if(index($t_seq, $change_seq, $exp_pos) == $exp_pos) {
-# print join "\t", $t_name, $t_start, $t_end, $q_name, $q_start, $q_end, $strand, $score;
-# printf "\n%s\n%s\n", $t_seq, $q_seq;
-# print substr($t_seq, ($self->{change_pos_low} - $t_start), $change_pos_high)."\n";
-# print "$change_seq\n";
-# print "EXP: $exp_pos\n";
-# print "INDEX: ".index($t_seq, $change_seq, $exp_pos)."\n";
-    return 1;
-  }
-
-#<STDIN>;
-#  return 2;
-  return 0;
-}
-
-
-sub TO_REMOVE_sam_depth {
-  my ($self, $sample, $record) = @_;
-  my $mid_point = int ($record->range_start + (($record->range_end - $record->range_start)*0.5));
-  my $c_samcount = sprintf $SAM_DEPTH_PN, $self->hts_file_by_sample($sample), $record->chro, $mid_point, $mid_point;
-  my ($c_out, $c_err, $c_exit) = capture { system($c_samcount); };
-  if($c_exit) {
-    warn "An error occurred while executing $c_samcount\n";
-    warn "\tERROR$c_err\n";
-    exit $c_exit;
-  }
-  return (split /\n/, $c_out);
-}
-
 sub _dump_rec_detail {
   my $self = shift;
   for my $k(sort qw(change_pos_low change_pos_high change_l change_ref change_alt q_start q_end type chr)) {
@@ -430,59 +280,4 @@ sub _dump_rec_detail {
   }
   print "\n";
   return 0;
-}
-
-sub TO_REMOVE_blat_ref_alt {
-  my ($self, $fh, $record) = @_;
-  my $ref_left = $record->ref_left;
-  my $ref_right = $record->ref_right;
-  my $ref = q{};
-  my $alt = q{}; # save an object lookup
-  my $change_at = length $ref_left;
-
-  if($record->type eq 'D') {
-    $ref = uc $record->ref_seq;
-    #nothing to add for alt
-  } elsif($record->type eq 'I') {
-    #nothing to add for ref
-    $alt = $record->alt_seq;
-    $change_at -= 1; # force base before
-  }
-  else { # must be DI
-    $ref = $record->ref_seq;
-    $alt = $record->alt_seq;
-  }
-
-  my $q_start = $record->start - $change_at; # correcting for position handled in change_at
-  my $q_end = $record->end + length $ref_right;
-
-  print $fh sprintf ">REF\n%s%s%s\n", $ref_left, $ref, $ref_right or die "Failed to write REF to blat ref temp file";
-  print $fh sprintf ">ALT\n%s%s%s\n", $ref_left, $alt, $ref_right or die "Failed to write ALT to blat ref temp file";
-  close $fh or die "Failed to close blat ref temp file";
-
-  my $seq_left = substr($ref_left, -1);
-  # -1 as includes the base before and after which would be -2 but need to correct for coord maths
-  # (for Del and Ins, unsure about DI at the moment)
-  my $seq_right;
-  if($record->type eq 'D') {
-    $seq_right = substr($ref_right, 0, ($record->range_end - $record->range_start) - 1);
-  }
-  elsif($record->type eq 'I') {
-    $seq_right = substr($ref_right, 0, ($record->range_end - $record->range_start));
-  }
-
-
-  my $change_ref = uc ($seq_left.$ref.$seq_right);
-  my $change_alt = uc ($seq_left.$alt.$seq_right);
-
-# printf "%s\n", $record->ref_left;
-# printf "%s\n", $record->ref_seq;
-# printf "%s\n", $record->alt_seq;
-# printf "%s\n", $record->ref_right;
-# printf "%s\n", $record->type;
-# printf "%s\n", $change_ref;
-# printf "%s\n", $change_alt;
-# #exit;
-
-  return $q_start, $q_end, $change_at, $change_ref, $change_alt;
 }

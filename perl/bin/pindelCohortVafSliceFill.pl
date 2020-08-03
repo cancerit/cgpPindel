@@ -19,78 +19,69 @@ use Sanger::CGP::Pindel::OutputGen::VcfBlatAugment;
     ref => $options->{ref},
     ofh => $options->{output},
     sam => $options->{align},
-    hts_files => $options->{hts},
+    hts_files => $options->{hts_files},
     outpath => $options->{outpath},
+    fill_in => 1,
   );
 
   $augment->output_header;
   $augment->process_records;
+
 }
 
-
-sub setup{
+sub setup {
   my %opts = (
-    'cmd' => join(" ", $0, @ARGV),
-    'hts' => [],
   );
-  my @hts_files;
   GetOptions( 'h|help' => \$opts{h},
-              'm|man' => \$opts{m},
+              'm|man' => \$opts{'m'},
               'v|version' => \$opts{v},
-              'o|output=s' => \$opts{output},
-              'r|ref=s' => \$opts{ref},
               'i|input=s' => \$opts{input},
-              'd|debug' => \$opts{debug},
-              'hts=s@' => \@hts_files,
+              'r|ref=s' => \$opts{ref},
+              'o|output=s' => \$opts{output},
   );
 
-  $opts{hts} = [split(/,/,join(',',@hts_files))];
-
-
-  if(defined $opts{'v'}) {
+  if(defined $opts{v}) {
     printf "Version: %s\n", Sanger::CGP::Pindel::Implement->VERSION;
     exit;
   }
-
   pod2usage(-verbose => 1) if(defined $opts{h});
-  pod2usage(-verbose => 2) if(defined $opts{m});
+  pod2usage(-verbose => 2) if(defined $opts{'m'});
 
-  PCAP::Cli::file_for_reading('ref', $opts{ref});
   PCAP::Cli::file_for_reading('input', $opts{input});
-  for my $t(@{$opts{hts}}) {
-    PCAP::Cli::file_for_reading('hts', $t);
-    unless(-e $t.'.bai' || -e $t.'.csi' || -e $t.'.crai') {
-      die "ERROR: Unable to find appropriate index file for $t\n";
-    }
-    unless(-e $t.'.bas') {
-      die "ERROR: Unable to find *.bas file for $t\n";
-    }
-  }
+  PCAP::Cli::file_for_reading('ref', $opts{ref});
 
-  $opts{align} = $opts{output}.'.sam' unless(defined $opts{align});
+  $opts{align} = $opts{output}.'.fill.sam' unless(defined $opts{align});
+
+  my @htsfiles = @ARGV;
+  for my $hts(@htsfiles) {
+    PCAP::Cli::file_for_reading('bam/cram files', $hts);
+  }
+  $opts{'hts_files'} = \@htsfiles;
 
   $opts{outpath} = $opts{output};
   open my $ofh, '>', $opts{output};
   $opts{output} = $ofh;
 
   return \%opts;
+
 }
 
 __END__
 
 =head1 NAME
 
-pindel_blat_vaf.pl - Takes a raw Pindel VCF and bam file to add accurate counts.
+pindelCohortVafSliceFill.pl - Takes a VCF and adds VAF for sample/event with no call.
 
 =head1 SYNOPSIS
 
-pindel_blat_vaf.pl [options]
+pindelCohortVafSliceFill.pl [options] SAMPLE_1.bam SAMPLE_2.bam [...]
+
+  SAMPLE*.bam should have co-located *.bai and *.bas files.
 
   Required parameters:
     -ref       -r   File path to the reference file used to provide the coordinate system.
     -input     -i   VCF file to read in.
-    -hts            BAM/CRAM file for associated sample.
-    -output    -o   File path for VCF output (not compressed)
+    -output    -o   File path for VCF output (not compressed), colcated sample bams
 
   Other:
     -help      -h   Brief help message.
@@ -99,8 +90,8 @@ pindel_blat_vaf.pl [options]
 
 =head1 DESCRIPTION
 
-B<pindel_blat_vaf.pl> will attempt to generate a vcf with expanded counts and VAF.
+B<pindelCohortVafSliceFill.pl> Fills in VAF for sample/event combinations where no call was made.
 
-For every variant called by Pindel a blat will be performed and the results merged into a single vcf record.
+There must be a BAM/CRAM for every sample indicated by the VCF header.
 
 =cut

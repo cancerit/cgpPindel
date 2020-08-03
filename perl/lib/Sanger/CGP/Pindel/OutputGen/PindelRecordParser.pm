@@ -127,6 +127,8 @@ sub _process_record{
 		_parse_header_v02($record,$record_header);
 	}
 
+
+
 	my $alignments = [];
 
 	# Collect all the reads...
@@ -138,6 +140,30 @@ sub _process_record{
 	}
 
 	$self->_parse_alignment($record, $alignments, \$ref_line);
+
+	# this is where we can add additional information about GC content
+	my $chr = $record->chro;
+	my $lhs_end = $record->range_start;
+	my $rhs_start = $record->range_end;
+	my $fai = $self->{_fai};
+	my $r_type = $record->type;
+
+	my $seq = $fai->fetch(sprintf '%s:%d-%d', $chr, $lhs_end - 199, $lhs_end);
+	my $lhs_gc = ($seq =~ tr/GCgc//)/200;
+
+	$seq = $fai->fetch(sprintf '%s:%d-%d', $chr, $rhs_start, $rhs_start + 199);
+	my $rhs_gc = ($seq =~ tr/GCgc//)/200;
+	my $ref_tmp;
+	if($record->type eq 'D'){
+		$ref_tmp = $record->ref_seq;
+	}
+	else {
+		$ref_tmp = $record->alt_seq;
+	}
+	my $rng_gc = ($ref_tmp =~ tr/GCgc//) / length $ref_tmp;
+	$record->gc_5p($lhs_gc);
+	$record->gc_3p($rhs_gc);
+	$record->gc_rng($rng_gc);
 
 	return $record;
 }
