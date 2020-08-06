@@ -95,8 +95,17 @@ sub _close_sams {
   return 1;
 }
 
+sub _fa_dict {
+  my $self = shift;
+  open my $D, '<', $self->{ref}.'.dict' or die "Failed to find $self->{ref}.dict, please generate with 'samtools dict'";
+  chomp(my @dict = <$D>);
+  close $D;
+  $self->{fa_dict} = \@dict;
+}
+
 sub _align_output {
   my ($self, $outpath) = @_;
+  $self->_fa_dict();
   $outpath =~ s/\.vcf$//;
   for my $sample(@{$self->{vcf_sample_order}}) {
     my $sam_file = sprintf '%s.%s.sam', $outpath, $sample;
@@ -104,6 +113,8 @@ sub _align_output {
     $self->{bamfile}->{$sample} = sprintf '%s.%s.bam', $outpath, $sample;
     unlink $sam_file if(-e $sam_file);
     open my $SAM, '>', $sam_file;
+    print $SAM join "\n", @{$self->{fa_dict}};
+    print $SAM "\n";
     $self->{sfh}->{$sample} = $SAM;
   }
   return 1;
@@ -205,7 +216,6 @@ sub _add_headers {
   my $self = shift;
   my $vcf = $self->{'vcf'};
 
-
   my %options = (
     input => basename($self->{input}),
     ref => basename($self->{ref}),
@@ -221,7 +231,7 @@ sub _add_headers {
 
   $vcf->add_header_line({'key'=>'source', 'value' => basename($0)}, 'append' => 1);
 
-    my @format = (
+  my @format = (
     {key => 'FORMAT', ID => 'WTP', Number => 1, Type => 'Integer', Description => q{+ve strand reads BLATed to reference sequence at this location, input alignment depth when WTM='.'}},
     {key => 'FORMAT', ID => 'WTN', Number => 1, Type => 'Integer', Description => q{-ve strand reads BLATed to reference sequence at this location, input alignment depth when WTM='.'}},
     {key => 'FORMAT', ID => 'WTM', Number => 1, Type => 'Float', Description => q{Mismatch fraction of reads BLATed to reference sequence at this location (3 d.p.), '.' when no reads found via BLAT}},
@@ -249,7 +259,6 @@ sub to_data_hash {
   $out{REF}    = substr $items[3], 1;
   $out{ALT}    = substr $items[4], 1;
 
-
   # parse the info block
   for my $info (split(/;/,$items[7])) {
     my ($key,$val) = split(/=/,$info);
@@ -267,8 +276,6 @@ sub to_data_hash {
   else {
     $out{END} += 1;
   }
-#print "$out{POS} - $out{END}\n";
-#exit;
 
   # skip FORMAT
   # parse GT
@@ -282,18 +289,12 @@ sub to_data_hash {
 sub process_records {
   my $self = shift;
   my $fh = $self->{ofh};
-my $count=0;
   while(my $v_d = $self->{vcf}->next_data_array) {
     $v_d->[$V_FMT] .= $self->{fmt_ext} unless($self->{fill_in});
-
-#$count++;
-#next if($count != 1);
     $self->blat_record($v_d);
     printf $fh "%s\n", join "\t", @{$v_d};
-#last;
   }
-  $self->_close_sams;
-  $self->sam_to_bam;
+  $self->_close_sams
 }
 
 sub blat_record {
@@ -346,8 +347,6 @@ sub blat_reads {
   my ($fh_psl, $file_psl) = tempfile( SUFFIX => '.psl', UNLINK => 1);
   close $fh_psl or die "Failed to close $file_psl (psl output)";
 
-  warn $sample.' -> '.$self->read_ranges($v_h, $sample)."\n";
-
   my $c_blat = sprintf $READS_AND_BLAT, $self->{hts}->{$sample}->hts_path, $self->read_ranges($v_h, $sample), $file_query, $file_target, $file_query, $file_psl, $file_psl, $file_target, $file_query;
   my ($c_out, $c_err, $c_exit) = capture { system([0,255], $c_blat); };
   if($c_exit == 255 && $c_err =~ m/processed 0 reads/ms) {
@@ -359,13 +358,6 @@ sub blat_reads {
     warn "\tERROR$c_err\n";
     exit $c_exit;
   }
-
-## redirect output and the following will give you relevant files and the command
-## $ tail -n 5 output  | head -n 4 > target.fa && head -n -5 output > query.fa && tail -n 1 output
-#system("cat $file_query");
-#system("cat $file_target");
-#print "$c_blat\n";
-#print "$c_out\n";
 
   # tempfile unlink only does it on shutdown when used in this way
   unlink $file_query;
@@ -407,9 +399,6 @@ sub psl_axt_parser {
     push @{$reads{$clean_qname}{$score}}, [$t_name, $t_start, $t_end, $q_name, $q_start, $q_end, $strand, $score, $lines[$i+1], $q_seq];
   }
 
-#print Dumper(\%reads);
-my $SKIP_EVENT = q{};
-
   my %type_strand;
   my %bmm_sums;
   # sort keys for consistency
@@ -418,9 +407,6 @@ my $SKIP_EVENT = q{};
     for my $score(sort {$b<=>$a} keys %{$reads{$read}}) {
       my @records = @{$reads{$read}{$score}};
       if(@records != 1) { # if best score has more than one alignment it is irrelevant
-#print Dumper(\@records);
-#print "MULTI MAX\n";
-#<STDIN>;
         next READ;
       }
       my $record = $records[0];
@@ -428,8 +414,6 @@ my $SKIP_EVENT = q{};
         $type_strand{$record->[0].$record->[6]} += 1;
         $bmm_sums{$record->[0]} += bmm($record->[8], $record->[9]);
       }
-#$SKIP_EVENT = <STDIN> unless($SKIP_EVENT eq q{1});
-#chomp $SKIP_EVENT;
       next READ; # remaining items are worse alignments
     }
   }
@@ -437,8 +421,7 @@ my $SKIP_EVENT = q{};
   my $wtn = $type_strand{'REF-'} || 0;
   my $mtp = $type_strand{'ALT+'} || 0;
   my $mtn = $type_strand{'ALT-'} || 0;
-#print "waiting...\n";
-#<STDIN>;
+
   return ($wtp, $wtn, $mtp, $mtn, $bmm_sums{REF}, $bmm_sums{ALT});
 }
 
@@ -464,23 +447,6 @@ sub parse_axt_event {
     $change_seq = $v_h->{change_alt};
   }
 
-# eval {
-#   my $exp_pos = $v_h->{change_pos_low} - $t_start; # duplicate of if block code
-#   print join "\t", $t_name, $t_start, $t_end, $q_name, $q_start, $q_end, $strand, $score;
-#   printf "\n%s\n%s\n", $t_seq, $q_seq;
-#   print "exp_pos: $exp_pos\n";
-#   printf "q_seqlen: %s\n", length $q_seq;
-#   my $sub_q_seq = substr($q_seq, $exp_pos, length $change_seq);
-#   my $lpad = q{ } x $exp_pos;
-#   print $lpad.$change_seq."\n";
-#   print $lpad.$sub_q_seq."\n";
-#   my $boo = $t_start <= $v_h->{change_pos_low} && $t_end > $change_pos_high;
-#   print "$boo: $t_start <= $v_h->{change_pos_low} && $t_end > $change_pos_high\n";
-
-#   print "INDEX: ".index($q_seq, $change_seq, $exp_pos)."\n";
-# }; print "OUT OF BOUNDS\n" if $@;
-
-
   # all the reads that span the range are kept
   my $retval = 0;
   if($t_start <= ($v_h->{change_pos_low} - $PAD_EVENT) && $t_end > ($change_pos_high + $PAD_EVENT)) {
@@ -499,14 +465,11 @@ sub parse_axt_event {
       }
     }
   }
-#print "KEEP: $retval\n";
   return $retval;
 }
 
 sub sam_record {
   my($self, $v_h, $rec, $sample) = @_;
-#  warn Dumper($v_h);
-#  warn Dumper($rec);
 
   my $qname = $rec->[3];
   my $seq = $rec->[9];
@@ -523,25 +486,18 @@ sub sam_record {
     my $m_c = ($v_h->{change_pos} - $rec->[1]) + 1;
     $m_c += 1 if($v_h->{PC} eq 'I');
     $cigar = $m_c.'M';
-#print $cigar."\n";
     my $change_ref = length($v_h->{REF});
     my $change_alt = length($v_h->{ALT});
     if($change_ref) {
       $cigar .= $change_ref.'D';
-#print $cigar."\n";
     }
     if($change_alt) {
       $cigar .= $change_alt.'I';
-#print $cigar."\n";
       $m_c += $change_alt; # as consumes read
     }
     $cigar .= (length($seq) - $m_c).'M';
-#print $cigar."\n";
   }
-#printf "%s:%d-%d\n", $v_h->{CHROM}, $pos, $pos + 100;
   printf {$self->{sfh}->{$sample}} "%s\n", join "\t", $qname, $flag, $v_h->{CHROM}, $pos, 60, $cigar, '*', 0, 0, $seq, '*';
-
-#  <STDIN>;
 }
 
 sub sam_depth {
@@ -565,9 +521,10 @@ sub sam_to_bam {
     my $bam = $self->{bamfile}->{$sample};
     my $tmp = $bam;
     $tmp =~ s/bam$/tmp/;
-    my $command = sprintf q{bash -c 'set -o pipefail ; samtools view -uT %s %s | samtools sort -T %s -o %s -'},
-                  $self->{ref}, $sam,
-                  $tmp, $bam;
+    my $command = sprintf q{bash -c 'set -o pipefail ; samtools view -uT %s %s | samtools sort -l 0 -T %s - | samtools calmd - %s > %s'},
+                  $self->{ref}, $sam, # view
+                  $tmp, # sort
+                  $self->{'ref'}, $bam; # calmd
     my ($c_out, $c_err, $c_exit) = capture { system($command); };
     if($c_exit) {
       warn "An error occurred while executing $command\n";
@@ -587,7 +544,6 @@ sub flanking_ref {
     ($v_h->{POS} - $self->{target_pad})+1,
     $v_h->{POS},
   );
-#print "$ref_left\n";
 
   my $ref_right = $self->{fai}->get_sequence_no_length(
     sprintf $LOCI_FMT,
@@ -595,7 +551,7 @@ sub flanking_ref {
     $v_h->{END},
     $v_h->{END} + $self->{target_pad},
   );
-#print "$ref_right\n";
+
   return [$ref_left, $ref_right]
 }
 
@@ -609,7 +565,6 @@ sub blat_ref_alt {
   my $change_at = length $ref_left;
 
   my $call_type = $v_h->{PC};
-  # THIS MAY NOT BE CORRECT NOW
   if($call_type eq 'I') {
     $change_at -= 1; # force base before
   }
@@ -636,16 +591,8 @@ sub blat_ref_alt {
     $seq_right = substr($ref_right, 0, ($r_end - $r_start));
   }
 
-
   my $change_ref = $seq_left.$ref.$seq_right;
   my $change_alt = $seq_left.$alt.$seq_right;
-
-# printf ">REF\n%s%s%s\n", $ref_left, $ref, $ref_right;
-# printf ">ALT\n%s%s%s\n", $ref_left, $alt, $ref_right;
-# printf "%s - %s - %s\n", $seq_left, $ref, $seq_right;
-# printf "%s - %s - %s\n", $seq_left, $alt, $seq_right;
-# printf "%d - %d = %d\n", $r_end, $r_start, $r_end - $r_start;
-# printf "%s %s %s\n", $q_start, $q_end, $change_at;
 
   $v_h->{q_start} = $q_start;
   $v_h->{q_end} = $q_end;

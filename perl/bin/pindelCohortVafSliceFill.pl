@@ -26,7 +26,7 @@ use Sanger::CGP::Pindel::OutputGen::VcfBlatAugment;
 
   $augment->output_header;
   $augment->process_records;
-
+  $augment->sam_to_bam;
 }
 
 sub setup {

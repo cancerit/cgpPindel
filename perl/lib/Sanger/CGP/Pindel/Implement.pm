@@ -264,7 +264,7 @@ sub concat {
   # now deal with the sam files
   unless(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 'calmd')) {
     my $samtools = _which('samtools');
-    my $command =  sprintf q{(%s view -H %s | grep -P '^@(HD|SQ)' && sort %s | uniq) | %s sort -l 0 -T %s - | %s calmd -b - %s > %s},
+    my $command =  sprintf q{(%s view -H %s | grep -P '^@(HD|SQ)' && grep -vP '^@(HD|SQ)' %s | sort | uniq) | %s sort -l 0 -T %s - | %s calmd -b - %s > %s},
                     $samtools, $hts_input,
                     File::Spec->catfile($vcf, sprintf 'blat_*.%s.sam', $sample_name),
                     $samtools, File::Spec->catfile($vcf, 'srt'),
@@ -399,14 +399,14 @@ sub flag {
   my $tmp = $options->{'tmp'};
   return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
 
-# FlagVcf.pl
-# -r ~kr2/GitHub/cgpPindel/perl/rules/genomicRules.lst
-# -sr ~kr2/GitHub/cgpPindel/perl/rules/softRules.lst
-# -a /lustre/scratch112/sanger/cgppipe/nst_pipe/test_ref/human/37/e58/vagrent/codingexon_regions.indel.bed.gz
-# -u /lustre/scratch112/sanger/kr2/pan_cancer_test_sets/pindel_np_gen/huge_file.gff3.gz
-# -s /lustre/scratch112/sanger/cgppipe/nst_pipe/test_ref/human/37/gsm_reference_repeat.gff.gz
-# -i pindel_farm/PD13371a_vs_PD13371b.vcf.gz
-# -o pindel_farm/PD13371a_vs_PD13371b.flag_new_np.github.vcf
+  # FlagVcf.pl
+  # -r ~kr2/GitHub/cgpPindel/perl/rules/genomicRules.lst
+  # -sr ~kr2/GitHub/cgpPindel/perl/rules/softRules.lst
+  # -a /lustre/scratch112/sanger/cgppipe/nst_pipe/test_ref/human/37/e58/vagrent/codingexon_regions.indel.bed.gz
+  # -u /lustre/scratch112/sanger/kr2/pan_cancer_test_sets/pindel_np_gen/huge_file.gff3.gz
+  # -s /lustre/scratch112/sanger/cgppipe/nst_pipe/test_ref/human/37/gsm_reference_repeat.gff.gz
+  # -i pindel_farm/PD13371a_vs_PD13371b.vcf.gz
+  # -o pindel_farm/PD13371a_vs_PD13371b.flag_new_np.github.vcf
 
   my $stub = File::Spec->catfile($options->{'outdir'}, $options->{'tumour_name'}.'_vs_'.$options->{'normal_name'});
 
@@ -718,6 +718,86 @@ sub cohort_files {
   }
   $opts->{'hts_files'} = \@files;
   return 1;
+}
+
+sub cohort_split {
+  my $options = shift;
+
+  my $tmp = $options->{'tmp'};
+  return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
+
+  my $command = $^X.' '._which('pindelCohortVafSplit.pl');
+  $command .= sprintf ' -i %s -o %s -s %d', $options->{input}, $options->{split_dir}, $options->{size};
+
+  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
+
+  PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
+}
+
+sub fill_split_vaf {
+  my ($index_in, $options) = @_;
+  my $tmp = $options->{'tmp'};
+
+  return 1 if(exists $options->{'index'} && $index_in != $options->{'index'});
+
+  my @split_files = @{$options->{split_files}};
+
+  my @indicies = limited_indicies($options, $index_in, scalar @split_files);
+  for my $index(@indicies) {
+    next if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
+    my $split_file = $split_files[$index-1];
+    my $fill_file = $split_file =~ s/vcf$/vaf.vcf/r;
+    my $command = $^X.' '._which('pindelCohortVafSliceFill.pl');
+    $command .= sprintf ' -r %s -i %s -o %s ', $options->{ref}, $split_file, $fill_file;
+    $command .= join q{ }, @{$options->{primary_hts}};
+
+    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
+    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
+  }
+}
+
+sub merge_vaf_bams {
+  my ($index_in, $options) = @_;
+  my $tmp = $options->{'tmp'};
+
+  return 1 if(exists $options->{'index'} && $index_in != $options->{'index'});
+  my @indicies = limited_indicies($options, $index_in, scalar @{$options->{secondary_hts}});
+  for my $index(@indicies) {
+    next if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
+    my $arr_idx = $index-1;
+    my $sample = sanitised_sample_from_bam($options->{primary_hts}->[$arr_idx]);
+
+    my @split_bams;
+    for my $f(glob(catfile($options->{'split_dir'}, sprintf '*.vaf.%s.bam', $sample))) {
+      push @split_bams, $f if($f =~ m{/\d+\.vaf.$sample\.bam$});
+    }
+    my $command = _which('samtools');
+    # needs to attempt to clean up duplicate reads
+    $command .= sprintf q{ merge --output-fmt SAM -nf - %s | pee 'grep ^@' 'grep -v ^@ | sort | uniq' | samtools view -u - | samtools sort -o %s -},
+                          join( q{ }, $options->{secondary_hts}->[$arr_idx], @split_bams),
+                          catfile($options->{output}, sprintf('%s.vaf.bam', $sample));
+
+    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
+    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
+  }
+}
+
+sub fill_vcf_merge {
+  my $options = shift;
+  my $tmp = $options->{'tmp'};
+  return if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
+  my @split_bams;
+  for my $f(glob(catfile($options->{'split_dir'}, sprintf '*.vaf.vcf'))) {
+    push @split_bams, $f if($f =~ m{/\d+\.vaf\.vcf$});
+  }
+  my $final_vcf = catfile($options->{output}, sprintf '%s.vaf.vcf.gz', $options->{name});
+  my $merge = sprintf q{(grep '^#' %s ; grep -vh '^#' %s | sort -k1,1 -k2,2n -k 4,4 -k5,5) | bgzip -c > %s},
+              $split_bams[0], join(q{ } , @split_bams),
+              $final_vcf;
+  my $tabix = sprintf q{tabix -fp vcf %s}, $final_vcf;
+
+  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), [$merge, $tabix], 0);
+  PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
 }
 
 1;
