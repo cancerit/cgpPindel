@@ -36,11 +36,11 @@ const my @HEADER_ENDS => do {
 const my $HEADER_LINES => 3393;
 
 const my $DATA_ARR_D => [qw(chr10 11201 id CA C 390 . PC=D;RS=11201;RE=11205;LEN=1;S1=11;S2=849.236;REP=3 GT:PP:NP ./.:10:0)];
-const my $RES_ARR_D => [12, 3, 0.015, 8, 3, 0.006, 0.423];
+const my $RES_ARR_D => [qw(chr10 11201 id CA C 390 . PC=D;RS=11201;RE=11205;LEN=1;S1=11;S2=849.236;REP=3 GT:PP:NP ./.:10:0:12:3:0.015:8:3:0.006:0.423)];
 const my $DATA_ARR_DI => [qw(chr10 22777 id AGAAACTGTG ACTGTGAGATAGATATATATAGATAGATATAT 105 . PC=DI;RS=22777;RE=22787;LEN=9;S1=6;REP=0 GT:PP:NP ./.:0:5)];
-const my $RES_ARR_DI => [2, 2, 0.002, 2, 8, 0.017, 0.714];
+const my $RES_ARR_DI => [qw(chr10 22777 id AGAAACTGTG ACTGTGAGATAGATATATATAGATAGATATAT 105 . PC=DI;RS=22777;RE=22787;LEN=9;S1=6;REP=0 GT:PP:NP ./.:0:5:2:2:0.002:2:8:0.017:0.714)];
 const my $DATA_ARR_SI => [qw(chr10 11643 id C CG 150 . PC=I;RS=11643;RE=11649;LEN=1;S1=6;S2=421.908;REP=4 GT:PP:NP ./.:0:5)];
-const my $RES_ARR_SI => [7, 10, 0.014, 7, 10, 0.005, '0.500'];
+const my $RES_ARR_SI => [qw(chr10 11643 id C CG 150 . PC=I;RS=11643;RE=11649;LEN=1;S1=6;S2=421.908;REP=4 GT:PP:NP ./.:0:5:7:10:0.014:7:10:0.005:0.500)];
 
 my ($stdout_fh, $buffer);
 my ($sam_stdout_fh, $sam_buffer);
@@ -60,23 +60,24 @@ subtest 'Header checks' => sub {
 
 subtest 'Simple Deletion checks' => sub {
   my $vba = new_vba(catfile($DATA, 'D.vcf'));
-  my $v_h = $vba->to_data_hash($DATA_ARR_D);
-  my $gt_out = $vba->blat_record($v_h);
-  is_deeply($gt_out->[0], $RES_ARR_D);
+  my @tmp = @{$DATA_ARR_D};
+  $vba->blat_record(\@tmp);
+  is_deeply(\@tmp, $RES_ARR_D);
 };
 
 subtest 'Simple Insertion checks' => sub {
   my $vba = new_vba(catfile($DATA, 'SI.vcf'));
-  my $v_h = $vba->to_data_hash($DATA_ARR_SI);
-  my $gt_out = $vba->blat_record($v_h);
-  is_deeply($gt_out->[0], $RES_ARR_SI);
+  my @tmp = @{$DATA_ARR_SI};
+  $vba->blat_record(\@tmp);
+  is_deeply(\@tmp, $RES_ARR_SI);
 };
 
 subtest 'Complex event checks' => sub {
   my $vba = new_vba(catfile($DATA, 'DI.vcf'));
-  my $v_h = $vba->to_data_hash($DATA_ARR_DI);
-  my $gt_out = $vba->blat_record($v_h);
-  is_deeply($gt_out->[0], $RES_ARR_DI);
+  my @tmp = @{$DATA_ARR_DI};
+  $vba->blat_record(\@tmp);
+  print join q{ }, @tmp;
+  is_deeply(\@tmp, $RES_ARR_DI);
 };
 
 done_testing();
@@ -90,7 +91,7 @@ sub new_vba {
     ref => catfile($DATA, 'chr10_1-23700.fa'),
     ofh => buffer_fh(),
     outpath => $tmp,
-    hts_file => [catfile($DATA, 'test.bam')],
+    hts_files => [catfile($DATA, 'test.bam')],
   ]);
   my $sample = $obj->{vcf_sample_order}->[0];
   $obj->{sfh}->{$sample} = sam_buffer_fh();
