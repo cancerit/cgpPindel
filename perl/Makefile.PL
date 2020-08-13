@@ -39,6 +39,10 @@ WriteMakefile(
                         bin/pindelCohort_to_vcf.pl
                         bin/pindel_vcfSortNsplit.pl
                         bin/pindel_blat_vaf.pl
+                        bin/pindelCohortMerge.pl
+                        bin/pindelCohortVafFill.pl
+                        bin/pindelCohortVafSplit.pl
+                        bin/pindelCohortVafSliceFill.pl
                         )],
   PREREQ_PM     => {
                      'Const::Fast' => 0.014,
