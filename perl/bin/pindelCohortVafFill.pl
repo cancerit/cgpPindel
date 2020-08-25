@@ -36,16 +36,16 @@ const my @VALID_PROCESS => keys %INDEX_MAX;
   }
 
   if(!exists $options->{'process'} || $options->{'process'} eq 'fill') {
-    for my $f(glob(catfile($options->{'split_dir'}, '*.vcf'))) {
-      push @{$options->{split_files}}, $f if($f =~ m{/\d+.vcf$});
+    for my $f(glob(catfile($options->{'split_dir'}, '*.vcf.gz'))) {
+      push @{$options->{split_files}}, $f if($f =~ m{/\d+.vcf.gz$});
     }
     $threads->add_function('fill', \&Sanger::CGP::Pindel::Implement::fill_split_vaf);
-    $threads->run(scalar @{$options->{split_files}}, 'fill', $options)
+    $threads->run(scalar @{$options->{split_files}}, 'fill', $options);
   }
 
   if(!exists $options->{'process'} || $options->{'process'} eq 'bams') {
     $threads->add_function('bams', \&Sanger::CGP::Pindel::Implement::merge_vaf_bams);
-    $threads->run(scalar @{$options->{primary_hts}}, 'bams', $options)
+    $threads->run(scalar @{$options->{primary_hts}}, 'bams', $options);
   }
 
   if(!exists $options->{'process'} || $options->{'process'} eq 'finalise') {
@@ -78,6 +78,7 @@ sub setup {
               'i|index:i' => \$opts{'index'},
               'l|limit:i' => \$opts{'limit'},
               'a|abort' => \$opts{'abort'},
+              'd|data=s' => \$opts{'data'},
   );
 
   if(defined $opts{v}) {
@@ -108,26 +109,37 @@ sub setup {
   }
 
   PCAP::Cli::file_for_reading('input', $opts{input});
+  PCAP::Cli::file_for_reading('data', $opts{data});
   PCAP::Cli::file_for_reading('ref', $opts{ref});
 
-  if(@ARGV < 2) {
-    die "Error: At least 2 sample.bam/cram datasets are requied."
+  if(@ARGV) {
+    die "ERROR: No positional arguments expected."
   }
 
-  my @hts_pairs = @ARGV;
-  for my $hts_pair(@hts_pairs) {
-    my ($primary, $secondary) = split /:/, $hts_pair;
+  open my $D, '<', $opts{data};
+  while(my $l = <$D>) {
+    chomp $l;
+    my ($primary, $secondary);
+    if($l =~ m/^([^\t]+)\t([^\t]+)$/) {
+      ($primary, $secondary) = ($1, $2);
+    }
+    else {
+      die "ERROR: file '$opts{data}' is malformed\n";
+    }
     PCAP::Cli::file_for_reading('bam/cram files', $primary);
     PCAP::Cli::file_for_reading('bam/cram files', $secondary);
     push @{$opts{primary_hts}}, $primary;
     push @{$opts{secondary_hts}}, $secondary;
   }
+  close $D;
 
   $opts{tmp} = catdir($opts{output}, 'tmpCohortVafFill');
   make_path($opts{tmp});
 
   $opts{split_dir} = catdir($opts{tmp}, 'split');
   make_path($opts{split_dir});
+  $opts{fill_dir} = catdir($opts{tmp}, 'fill');
+  make_path($opts{fill_dir});
 
   make_path(catdir($opts{tmp}, 'logs'));
 
@@ -142,12 +154,17 @@ pindelCohortVafFill.pl - Takes merged cohort VCF and fills in gaps in farm frien
 
 =head1 SYNOPSIS
 
-pindelCohortVafFill.pl [options] -i ... -o ... -r ... SAMPLE.bam:PINDEL.bam ...
+pindelCohortVafFill.pl [options] -i ... -o ... -r ... -d ...
 
   Required parameters:
     -file      -f   VCF file to read in.
     -output    -o   Workspace directory and final output.
     -ref       -r   File path to the reference file used to provide the coordinate system.
+    -data      -d   File containing list of sequence data files for all samples used in "-file"
+                    - format: tab separated BWA mapping followed by pindel_cohort reads, one sample per line.
+
+                        sample_A_bwa.bam<TAB>sample_A_pindel.bam
+                        sample_B_bwa.bam<TAB>sample_B_pindel.bam
 
   Optional parameters:
     -name      -n   Stub name for final output files [$output/cohort...]

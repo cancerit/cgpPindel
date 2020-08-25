@@ -264,7 +264,7 @@ sub concat {
   # now deal with the sam files
   unless(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 'calmd')) {
     my $samtools = _which('samtools');
-    my $command =  sprintf q{(%s view -H %s | grep -P '^@(HD|SQ)' && grep -vP '^@(HD|SQ)' %s | sort | uniq) | %s sort -l 0 -T %s - | %s calmd -b - %s > %s},
+    my $command =  sprintf q{(%s view -H %s | grep -P '^@(HD|SQ)' && grep -hvP '^@(HD|SQ)' %s | sort | uniq) | %s sort -l 0 -T %s - | %s calmd -b - %s > %s},
                     $samtools, $hts_input,
                     File::Spec->catfile($vcf, sprintf 'blat_*.%s.sam', $sample_name),
                     $samtools, File::Spec->catfile($vcf, 'srt'),
@@ -736,9 +736,9 @@ sub cohort_split {
 
 sub fill_split_vaf {
   my ($index_in, $options) = @_;
-  my $tmp = $options->{'tmp'};
+  my $tmp = $options->{tmp};
 
-  return 1 if(exists $options->{'index'} && $index_in != $options->{'index'});
+  return 1 if(exists $options->{index} && $index_in != $options->{index});
 
   my @split_files = @{$options->{split_files}};
 
@@ -746,7 +746,8 @@ sub fill_split_vaf {
   for my $index(@indicies) {
     next if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
     my $split_file = $split_files[$index-1];
-    my $fill_file = $split_file =~ s/vcf$/vaf.vcf/r;
+    my $fill_basename = fileparse($split_file);
+    my $fill_file = catfile($options->{fill_dir}, $fill_basename);
     my $command = $^X.' '._which('pindelCohortVafSliceFill.pl');
     $command .= sprintf ' -r %s -i %s -o %s ', $options->{ref}, $split_file, $fill_file;
     $command .= join q{ }, @{$options->{primary_hts}};
@@ -766,33 +767,50 @@ sub merge_vaf_bams {
     next if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
     my $arr_idx = $index-1;
     my $sample = sanitised_sample_from_bam($options->{primary_hts}->[$arr_idx]);
+    my $sort_tmp = catdir($options->{'tmp'}, sprintf 'sort_tmp_%d', $index);
+    make_path($sort_tmp);
+    my $in_file_list = catfile($sort_tmp, 'merge_files');
 
     my @split_bams;
-    for my $f(glob(catfile($options->{'split_dir'}, sprintf '*.vaf.%s.bam', $sample))) {
-      push @split_bams, $f if($f =~ m{/\d+\.vaf.$sample\.bam$});
+    for my $f(glob(catfile($options->{'fill_dir'}, sprintf '*.vcf.gz.%s.bam', $sample))) {
+      push @split_bams, $f if($f =~ m{/\d+\.vcf.gz.$sample\.bam$});
     }
+    # list of bams to merge
+    lines_to_file($in_file_list, [$options->{secondary_hts}->[$arr_idx], @split_bams]);
     my $command = _which('samtools');
     # needs to attempt to clean up duplicate reads
-    $command .= sprintf q{ merge --output-fmt SAM -nf - %s | pee 'grep ^@' 'grep -v ^@ | sort | uniq' | samtools view -u - | samtools sort -o %s -},
-                          join( q{ }, $options->{secondary_hts}->[$arr_idx], @split_bams),
-                          catfile($options->{output}, sprintf('%s.vaf.bam', $sample));
+    $command .= sprintf q{ merge --output-fmt SAM -b %s - | pee 'grep ^@' 'grep -v ^@ | sort -S 2G -T %s | uniq' | samtools view -u - | samtools sort -m 2G -T %s -o %s -},
+                          $in_file_list, # merge filelist
+                          $sort_tmp, # sort tmptfile
+                          catfile($sort_tmp, 'samsort'),
+                          catfile($options->{output}, sprintf('%s.vaf.bam', $sample)); # outfile
 
     PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
+    remove_tree($sort_tmp);
     PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
   }
+}
+
+sub lines_to_file {
+  my($file_name, $list_of_str) = @_;
+  open my $fh, '>', $file_name;
+  print $fh join "\n", @{$list_of_str};
+  print $fh "\n"; # to make valid file
+  close $fh;
 }
 
 sub fill_vcf_merge {
   my $options = shift;
   my $tmp = $options->{'tmp'};
   return if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
-  my @split_bams;
-  for my $f(glob(catfile($options->{'split_dir'}, sprintf '*.vaf.vcf'))) {
-    push @split_bams, $f if($f =~ m{/\d+\.vaf\.vcf$});
+  my @split_vcf;
+  for my $f(glob(catfile($options->{fill_dir}, sprintf '.vcf'))) {
+    push @split_vcf, $f if($f =~ m{/\d+\.vaf\.vcf$});
   }
+  push @split_vcf, catfile($options->{split_dir}, 'complete_rec.vaf.vcf.gz');
   my $final_vcf = catfile($options->{output}, sprintf '%s.vaf.vcf.gz', $options->{name});
   my $merge = sprintf q{(grep '^#' %s ; grep -vh '^#' %s | sort -k1,1 -k2,2n -k 4,4 -k5,5) | bgzip -c > %s},
-              $split_bams[0], join(q{ } , @split_bams),
+              $split_vcf[0], join(q{ } , @split_vcf),
               $final_vcf;
   my $tabix = sprintf q{tabix -fp vcf %s}, $final_vcf;
 

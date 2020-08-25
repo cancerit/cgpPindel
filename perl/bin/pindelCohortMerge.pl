@@ -26,10 +26,10 @@ my ($records, $sample_order) = collate_data($vcf_by_sample);
 
 # write stuff
 header($options->{output}, $options->{vcfs}, $sample_head);
-records($options->{output}, $records, $sample_order, $options->{all}, $options->{np}, $options->{control});
+records($options->{output}, $records, $sample_order, $options->{min_vaf}, $options->{np}, $options->{control});
 
 sub records {
-  my ($output, $records, $sample_order, $all, $np_tree, $control) = @_;
+  my ($output, $records, $sample_order, $min_vaf, $np_tree, $control) = @_;
   my %ds = %{$records};
   my $uuid_gen = Data::UUID->new;
   my @samples = @{$sample_order};
@@ -56,25 +56,24 @@ sub records {
 
         my ($ref, $alt) = split ':', $seq_key;
         my $row = join "\t", $chr, $pos, $uuid_gen->to_string($uuid_gen->create), $ref, $alt, q{.}, q{}, $info, $format;
-        my $samples_with_vaf = 0;
+        my $samples_with_min_vaf = 0;
         for my $s(@samples) {
           if(exists $ds{$chr}{$pos}{$seq_key}{$s}) {
             $row .= "\t".$ds{$chr}{$pos}{$seq_key}{$s};
-            $samples_with_vaf++ if($row !~ m/:0\.000$/);
+            my ($last_vaf) = $row =~ m/:([0-9.]+)$/;
+            $last_vaf = 0 if($last_vaf eq q{.});
+            $samples_with_min_vaf++ if($last_vaf >= $min_vaf);
           }
           else {
             $row .= "\t.";
           }
         }
-        if($all || $samples_with_vaf > 0) {
+        if($samples_with_min_vaf > 0) {
           print $output $row."\n";
         }
       }
     }
   }
-  #printf "Loci requiring fill-in: %d\n", $fill_in_loci;
-  #printf "Fill in required for: %d\n", $to_fill_in;
-
 }
 
 sub collate_data {
@@ -167,14 +166,15 @@ sub setup{
   my %opts = (
     'cmd' => join(" ", $0, @ARGV),
     'mnps' => 1,
+    'min_vaf' => 0,
   );
   GetOptions( 'h|help' => \$opts{h},
               'm|man' => \$opts{m},
               'v|version' => \$opts{v},
               'o|output=s' => \$opts{output},
               'n|np=s' => \$opts{np},
-              's|mnps=i' => \$opts{'mnps'},
-              'a|all' => \$opts{all},
+              's|mnps=i' => \$opts{mnps},
+              'k|min:f' => \$opts{min_vaf},
               'd|debug' => \$opts{debug},
               'c|control=s' => \$opts{control},
   );
@@ -186,6 +186,14 @@ sub setup{
 
   pod2usage(-verbose => 1) if(defined $opts{h});
   pod2usage(-verbose => 2) if(defined $opts{m});
+
+  if(defined $opts{min_vaf}) {
+    if($opts{min_vaf} < 0 || $opts{min_vaf} > 1) {
+      print STDERR "ERROR: -vaf is a fraction and must be between 0 and 1.\n";
+      pod2usage(-verbose => 1);
+    }
+    $opts{min_vaf} = (sprintf '%.3f', $opts{min_vaf}) + 0; # force number to be stored
+  }
 
   my @vcfs = @ARGV;
   $opts{vcfs} = \@vcfs;
@@ -224,7 +232,8 @@ pindelCohortMerge.pl [options] A.vcf.gz B.vcf.gz [...]
     -output    -o   File path for VCF output (not compressed)
 
   Optional parameters:
-    -all       -a   Keep all events, even if VAF == 0/. for all samples
+    -min       -k   Keep events VAF >= VALUE (3dp) for 1 or more samples
+                     - default is to retain events even if VAF == 0/. for all samples
     -np        -n   Normal panel gff3 file - ommit if no filtering required.
     -mnps      -s   Minimum normal panel samples required to exclude [default: >=1]
     -control   -c   Exclude any events where this sample has calls.

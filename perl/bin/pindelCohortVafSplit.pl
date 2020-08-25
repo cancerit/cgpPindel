@@ -11,6 +11,7 @@ use Getopt::Long;
 use File::Path qw(make_path);
 use File::Spec::Functions;
 use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
+use IO::Compress::Gzip qw(:constants gzip $GzipError);
 use PCAP::Cli;
 
 {
@@ -21,15 +22,15 @@ use PCAP::Cli;
 sub split_data {
   my ($input, $outdir, $max_e) = @_;
   make_path($outdir);
-  my $part_fmt = '%s/%04d.vcf';
+  my $part_fmt = '%s/%04d.vcf.gz';
   my @header;
   my $no_vaf_count = 0;
   my $no_vaf_file_no = 0;
 
-  my $complete_rec = catfile($outdir, 'complete_rec.vcf');
+  my $complete_rec = catfile($outdir, 'complete_rec.vaf.vcf.gz');
   my $no_vaf_file = sprintf $part_fmt, $outdir, $no_vaf_file_no++;
 
-  open my $COMP, '>', $complete_rec;
+  my $COMP = new IO::Compress::Gzip $complete_rec, -Level => Z_BEST_SPEED or die "IO::Compress::Gzip failed: $GzipError\n";
   my $NO_VAF;
 
   my $z = IO::Uncompress::Gunzip->new($input, MultiStream => 1) or die "gunzip failed: $GunzipError\n";
@@ -41,7 +42,8 @@ sub split_data {
     }
     unless($NO_VAF) {
       warn "Creating $no_vaf_file\n";
-      open $NO_VAF, '>', $no_vaf_file;
+      $NO_VAF = new IO::Compress::Gzip $no_vaf_file, -Level => Z_BEST_SPEED or die "IO::Compress::Gzip failed: $GzipError\n";
+      #open $NO_VAF, '>', $no_vaf_file;
       print $NO_VAF join q{}, @header;
     }
     chomp $line;
@@ -56,7 +58,8 @@ sub split_data {
         close $NO_VAF;
         $no_vaf_file = sprintf $part_fmt, $outdir, $no_vaf_file_no++;
         warn "\nCreating $no_vaf_file\n";
-        open $NO_VAF, '>', $no_vaf_file;
+        $NO_VAF = new IO::Compress::Gzip $no_vaf_file, -Level => Z_BEST_SPEED or die "IO::Compress::Gzip failed: $GzipError\n";
+        #open $NO_VAF, '>', $no_vaf_file;
         print $NO_VAF join q{}, @header;
         $no_vaf_count = 0;
       }

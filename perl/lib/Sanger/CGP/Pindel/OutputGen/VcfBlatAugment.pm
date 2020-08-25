@@ -29,6 +29,7 @@ use File::Basename;
 use List::Util qw(min max);
 use File::Temp qw(tempfile);
 use Capture::Tiny qw(capture);
+use IO::Compress::Gzip qw(:constants gzip $GzipError);
 use Vcf;
 use Bio::DB::HTS;
 use Bio::DB::HTS::Faidx;
@@ -108,11 +109,12 @@ sub _align_output {
   $self->_fa_dict();
   $outpath =~ s/\.vcf$//;
   for my $sample(@{$self->{vcf_sample_order}}) {
-    my $sam_file = sprintf '%s.%s.sam', $outpath, $sample;
+    my $sam_file = sprintf '%s.%s.sam.gz', $outpath, $sample;
     $self->{samfile}->{$sample} = $sam_file;
     $self->{bamfile}->{$sample} = sprintf '%s.%s.bam', $outpath, $sample;
     unlink $sam_file if(-e $sam_file);
-    open my $SAM, '>', $sam_file;
+
+    my $SAM = new IO::Compress::Gzip $sam_file, -Level => Z_BEST_SPEED or die "IO::Compress::Gzip failed: $GzipError\n";
     print $SAM join "\n", @{$self->{fa_dict}};
     print $SAM "\n";
     $self->{sfh}->{$sample} = $SAM;
@@ -321,7 +323,7 @@ sub blat_record {
     }
     my $gt_set = $self->blat_reads($v_h, $file_target, $sample);
     if($v_d->[$gt_pos] eq q{.}) {
-      $v_d->[$gt_pos] = join q{:}, './.:.:.', @{$gt_set};
+      $v_d->[$gt_pos] = join q{:}, './.:.:.:.:.', @{$gt_set};
     }
     else {
       $v_d->[$gt_pos] = join q{:}, $v_d->[$gt_pos], @{$gt_set};
@@ -521,8 +523,9 @@ sub sam_to_bam {
     my $bam = $self->{bamfile}->{$sample};
     my $tmp = $bam;
     $tmp =~ s/bam$/tmp/;
-    my $command = sprintf q{bash -c 'set -o pipefail ; samtools view -uT %s %s | samtools sort -l 0 -T %s - | samtools calmd - %s > %s'},
-                  $self->{ref}, $sam, # view
+    my $command = sprintf q{bash -c 'set -o pipefail ; zcat %s | samtools view -uT %s - | samtools sort -l 0 -T %s - | samtools calmd - %s > %s'},
+                  $sam, # zcat
+                  $self->{ref}, # view
                   $tmp, # sort
                   $self->{'ref'}, $bam; # calmd
     my ($c_out, $c_err, $c_exit) = capture { system($command); };

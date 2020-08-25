@@ -8,6 +8,7 @@ use Pod::Usage qw(pod2usage);
 use FindBin qw($Bin);
 use lib "$Bin/../lib";
 use Getopt::Long;
+use IO::Compress::Gzip qw(:constants gzip $GzipError);
 
 use PCAP::Cli;
 use Sanger::CGP::Pindel::OutputGen::VcfBlatAugment;
@@ -59,7 +60,8 @@ sub setup {
   $opts{'hts_files'} = \@htsfiles;
 
   $opts{outpath} = $opts{output};
-  open my $ofh, '>', $opts{output};
+
+  my $ofh = new IO::Compress::Gzip $opts{output}, -Level => Z_BEST_SPEED or die "IO::Compress::Gzip failed: $GzipError\n";
   $opts{output} = $ofh;
 
   return \%opts;
@@ -81,7 +83,7 @@ pindelCohortVafSliceFill.pl [options] SAMPLE_1.bam SAMPLE_2.bam [...]
   Required parameters:
     -ref       -r   File path to the reference file used to provide the coordinate system.
     -input     -i   VCF file to read in.
-    -output    -o   File path for VCF output (not compressed), colcated sample bams
+    -output    -o   File path for VCF output (gz compressed), colcated sample bams
 
   Other:
     -help      -h   Brief help message.
