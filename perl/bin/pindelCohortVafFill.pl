@@ -29,13 +29,14 @@ const my @VALID_PROCESS => keys %INDEX_MAX;
 
 {
   my $options = setup();
-  my $threads = PCAP::Threaded->new($options->{'threads'});
+  my $threads = PCAP::Threaded->new($options->{threads});
 
-  if(!exists $options->{'process'} || $options->{'process'} eq 'split') {
+  if(!exists $options->{process} || $options->{process} eq 'split') {
     Sanger::CGP::Pindel::Implement::cohort_split($options);
+    vaf_fill_seqdata($options);
   }
 
-  if(!exists $options->{'process'} || $options->{'process'} eq 'fill') {
+  if(!exists $options->{process} || $options->{process} eq 'fill') {
     for my $f(glob(catfile($options->{'split_dir'}, '*.vcf.gz'))) {
       push @{$options->{split_files}}, $f if($f =~ m{/\d+.vcf.gz$});
     }
@@ -43,18 +44,31 @@ const my @VALID_PROCESS => keys %INDEX_MAX;
     $threads->run(scalar @{$options->{split_files}}, 'fill', $options);
   }
 
-  if(!exists $options->{'process'} || $options->{'process'} eq 'bams') {
+  if(!exists $options->{process} || $options->{process} eq 'bams') {
     $threads->add_function('bams', \&Sanger::CGP::Pindel::Implement::merge_vaf_bams);
     $threads->run(scalar @{$options->{primary_hts}}, 'bams', $options);
   }
 
-  if(!exists $options->{'process'} || $options->{'process'} eq 'finalise') {
+  if(!exists $options->{process} || $options->{process} eq 'finalise') {
     Sanger::CGP::Pindel::Implement::fill_vcf_merge($options);
-    move(catdir($options->{tmp}, 'logs'), catdir($options->{output}, 'logs'));
-    remove_tree($options->{tmp});
+    if(!$options->{debug}) {
+      move(catdir($options->{tmp}, 'logs'), catdir($options->{output}, 'logs'));
+      remove_tree($options->{tmp});
+    }
   }
 
 
+}
+
+sub vaf_fill_seqdata {
+  my ($options) = @_;
+  my $bwa_files = $options->{bwa_file_list};
+  return if (-e $bwa_files);
+  open my $FH, '>', $bwa_files;
+  for my $f(@{$options->{primary_hts}}) {
+    print $FH qq{$f\n};
+  }
+  close $FH;
 }
 
 sub setup {
@@ -73,12 +87,13 @@ sub setup {
               'o|output=s' => \$opts{output},
               's|size:i' => \$opts{size},
               'n|name:s' => \$opts{name},
-              'c|cpus:i' => \$opts{'threads'},
-              'p|process:s' => \$opts{'process'},
-              'i|index:i' => \$opts{'index'},
-              'l|limit:i' => \$opts{'limit'},
-              'a|abort' => \$opts{'abort'},
-              'd|data=s' => \$opts{'data'},
+              'c|cpus:i' => \$opts{threads},
+              'p|process:s' => \$opts{process},
+              'i|index:i' => \$opts{index},
+              'l|limit:i' => \$opts{limit},
+              'a|abort' => \$opts{abort},
+              'd|data=s' => \$opts{data},
+              'debug' => \$opts{debug}
   );
 
   if(defined $opts{v}) {
@@ -140,6 +155,7 @@ sub setup {
   make_path($opts{split_dir});
   $opts{fill_dir} = catdir($opts{tmp}, 'fill');
   make_path($opts{fill_dir});
+  $opts{bwa_file_list} = catfile($opts{tmp}, 'bwa_files.lst');
 
   make_path(catdir($opts{tmp}, 'logs'));
 
@@ -184,6 +200,7 @@ pindelCohortVafFill.pl [options] -i ... -o ... -r ... -d ...
     -help      -h   Brief help message.
     -man       -m   Full documentation.
     -version   -v   Prints the version number.
+    -debug          Don't cleanup anything
 
 =head1 DESCRIPTION
 

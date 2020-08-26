@@ -51,13 +51,6 @@ const my @VALID_PROCESS => keys %INDEX_MAX;
 {
   my $options = setup();
   my $threads = PCAP::Threaded->new($options->{'threads'});
-  #&PCAP::Threaded::disable_out_err if(exists $options->{'index'});
-
-  # register any process that can run in parallel here
-  $threads->add_function('input', \&Sanger::CGP::Pindel::Implement::input_cohort);
-  $threads->add_function('pindel', \&Sanger::CGP::Pindel::Implement::pindel);
-  $threads->add_function('blat', \&Sanger::CGP::Pindel::Implement::blat);
-
 
   # start processes here (in correct order obviously), add conditions for skipping based on 'process' option
   if(!exists $options->{'process'} || $options->{'process'} eq 'input') {
@@ -66,6 +59,7 @@ const my @VALID_PROCESS => keys %INDEX_MAX;
   if(!exists $options->{'process'} || $options->{'process'} eq 'pindel') {
     my $jobs = Sanger::CGP::Pindel::Implement::determine_jobs($options); # method still needed to populate info
     $jobs = $options->{'limit'} if(exists $options->{'limit'} && defined $options->{'limit'});
+    $threads->add_function('pindel', \&Sanger::CGP::Pindel::Implement::pindel);
     $threads->run($jobs, 'pindel', $options);
   }
   if(!exists $options->{'process'} || $options->{'process'} eq 'parse') {
@@ -75,6 +69,7 @@ const my @VALID_PROCESS => keys %INDEX_MAX;
   if(!exists $options->{'process'} || $options->{'process'} eq 'blat') {
     my $jobs = scalar @{$options->{'split_files'}};
     $jobs = $options->{'limit'} if(exists $options->{'limit'} && defined $options->{'limit'});
+    $threads->add_function('blat', \&Sanger::CGP::Pindel::Implement::blat);
     $threads->run($jobs, 'blat', $options);
   }
   if(!exists $options->{'process'} || $options->{'process'} eq 'concat') {

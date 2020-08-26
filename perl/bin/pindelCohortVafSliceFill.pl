@@ -39,6 +39,7 @@ sub setup {
               'i|input=s' => \$opts{input},
               'r|ref=s' => \$opts{ref},
               'o|output=s' => \$opts{output},
+              'd|data=s' => \$opts{data},
   );
 
   if(defined $opts{v}) {
@@ -53,10 +54,15 @@ sub setup {
 
   $opts{align} = $opts{output}.'.fill.sam' unless(defined $opts{align});
 
-  my @htsfiles = @ARGV;
-  for my $hts(@htsfiles) {
-    PCAP::Cli::file_for_reading('bam/cram files', $hts);
+  my @htsfiles;
+  open my $D, '<', $opts{data};
+  while(my $hts_file = <$D>) {
+    chomp $hts_file;
+    PCAP::Cli::file_for_reading('bam/cram files', $hts_file);
+    push @htsfiles, $hts_file;
   }
+  close $D;
+
   $opts{'hts_files'} = \@htsfiles;
 
   $opts{outpath} = $opts{output};
@@ -76,14 +82,14 @@ pindelCohortVafSliceFill.pl - Takes a VCF and adds VAF for sample/event with no 
 
 =head1 SYNOPSIS
 
-pindelCohortVafSliceFill.pl [options] SAMPLE_1.bam SAMPLE_2.bam [...]
-
-  SAMPLE*.bam should have co-located *.bai and *.bas files.
+pindelCohortVafSliceFill.pl [options]
 
   Required parameters:
     -ref       -r   File path to the reference file used to provide the coordinate system.
     -input     -i   VCF file to read in.
     -output    -o   File path for VCF output (gz compressed), colcated sample bams
+    -data      -d   File containing list of BWA mappingfiles for all samples used in "-input"
+                    - format: one BWA bam/cram file per line, expects co-located *.bai
 
   Other:
     -help      -h   Brief help message.

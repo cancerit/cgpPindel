@@ -264,9 +264,9 @@ sub concat {
   # now deal with the sam files
   unless(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 'calmd')) {
     my $samtools = _which('samtools');
-    my $command =  sprintf q{(%s view -H %s | grep -P '^@(HD|SQ)' && grep -hvP '^@(HD|SQ)' %s | sort | uniq) | %s sort -l 0 -T %s - | %s calmd -b - %s > %s},
+    my $command =  sprintf q{(%s view -H %s | grep -P '^@(HD|SQ)' && zgrep -hvP '^@(HD|SQ)' %s | sort | uniq) | %s sort -l 0 -T %s - | %s calmd -b - %s > %s},
                     $samtools, $hts_input,
-                    File::Spec->catfile($vcf, sprintf 'blat_*.%s.sam', $sample_name),
+                    File::Spec->catfile($vcf, sprintf 'blat_*.%s.sam.gz', $sample_name),
                     $samtools, File::Spec->catfile($vcf, 'srt'),
                     $samtools, $options->{'reference'}, $bam;
     PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), ['set -o pipefail', $command], 'calmd');
@@ -749,8 +749,7 @@ sub fill_split_vaf {
     my $fill_basename = fileparse($split_file);
     my $fill_file = catfile($options->{fill_dir}, $fill_basename);
     my $command = $^X.' '._which('pindelCohortVafSliceFill.pl');
-    $command .= sprintf ' -r %s -i %s -o %s ', $options->{ref}, $split_file, $fill_file;
-    $command .= join q{ }, @{$options->{primary_hts}};
+    $command .= sprintf ' -r %s -i %s -o %s -d %s', $options->{ref}, $split_file, $fill_file, $options->{bwa_file_list};
 
     PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
     PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
@@ -803,14 +802,14 @@ sub fill_vcf_merge {
   my $options = shift;
   my $tmp = $options->{'tmp'};
   return if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
-  my @split_vcf;
-  for my $f(glob(catfile($options->{fill_dir}, sprintf '.vcf'))) {
-    push @split_vcf, $f if($f =~ m{/\d+\.vaf\.vcf$});
+  my @split_filled_vcf;
+  for my $f(glob(catfile($options->{fill_dir}, '*.vcf.gz'))) {
+    push @split_filled_vcf, $f if($f =~ m{/\d+\.vcf.gz$});
   }
-  push @split_vcf, catfile($options->{split_dir}, 'complete_rec.vaf.vcf.gz');
+  my $complete_recs = catfile($options->{split_dir}, 'complete_rec.vaf.vcf.gz');
   my $final_vcf = catfile($options->{output}, sprintf '%s.vaf.vcf.gz', $options->{name});
-  my $merge = sprintf q{(grep '^#' %s ; grep -vh '^#' %s | sort -k1,1 -k2,2n -k 4,4 -k5,5) | bgzip -c > %s},
-              $split_vcf[0], join(q{ } , @split_vcf),
+  my $merge = sprintf q{(zgrep '^#' %s ; zgrep -vh '^#' %s | sort -k1,1 -k2,2n -k 4,4 -k5,5) | bgzip -c > %s},
+              $complete_recs, join(q{ } , @split_filled_vcf, $complete_recs),
               $final_vcf;
   my $tabix = sprintf q{tabix -fp vcf %s}, $final_vcf;
 
