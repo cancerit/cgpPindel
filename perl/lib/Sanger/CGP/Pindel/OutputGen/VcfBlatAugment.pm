@@ -38,6 +38,7 @@ use Sanger::CGP::Vcf::VcfProcessLog;
 use Sanger::CGP::PindelPostProcessing::VcfSoftFlagger;
 use Sanger::CGP::Vcf::VcfUtil;
 use PCAP::Bam::Bas;
+use File::Spec::Functions;
 
 use Data::Dumper;
 
@@ -107,11 +108,10 @@ sub _fa_dict {
 sub _align_output {
   my ($self, $outpath) = @_;
   $self->_fa_dict();
-  $outpath =~ s/\.vcf$//;
   for my $sample(@{$self->{vcf_sample_order}}) {
-    my $sam_file = sprintf '%s.%s.sam.gz', $outpath, $sample;
+    my $sam_file = catfile($outpath, (sprintf '%s.sam.gz', $sample));
     $self->{samfile}->{$sample} = $sam_file;
-    $self->{bamfile}->{$sample} = sprintf '%s.%s.bam', $outpath, $sample;
+    $self->{bamfile}->{$sample} = catfile($outpath, (sprintf '%s.bam', $sample));
     unlink $sam_file if(-e $sam_file);
 
     my $SAM = new IO::Compress::Gzip $sam_file, -Level => Z_BEST_SPEED or die "IO::Compress::Gzip failed: $GzipError\n";

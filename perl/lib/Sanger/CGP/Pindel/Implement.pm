@@ -27,7 +27,7 @@ use warnings FATAL => 'all';
 use autodie qw(:all);
 use Cwd qw(cwd);
 use Const::Fast qw(const);
-use File::Spec;
+use File::Spec::Functions;
 use File::Which qw(which);
 use File::Copy qw(copy);
 use File::Path qw(make_path remove_tree);
@@ -38,7 +38,6 @@ use FindBin qw($Bin);
 use Getopt::Long;
 use Pod::Usage qw(pod2usage);
 use File::Basename;
-use File::Spec::Functions;
 
 use Sanger::CGP::Pindel;
 
@@ -62,13 +61,13 @@ sub input_cohort{
   my ($options) = @_;
 
   my $tmp = $options->{'tmp'};
-  return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
+  return 1 if PCAP::Threaded::success_exists(catdir($tmp, 'progress'), 0);
 
   my $input = $options->{'hts_files'}->[0];
   my $max_threads = $options->{'threads'};
 
   my $sample = sanitised_sample_from_bam($input);
-  my $gen_out = File::Spec->catdir($tmp, $sample);
+  my $gen_out = catdir($tmp, $sample);
   make_path($gen_out) unless(-e $gen_out);
 
   my $command = "$^X ";
@@ -77,8 +76,8 @@ sub input_cohort{
   $command .= " -r $options->{reference}";
   $command .= " -e $options->{badloci}" if(exists $options->{'badloci'});
 
-  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
-  PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
+  PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), $command, 0);
+  PCAP::Threaded::touch_success(catdir($tmp, 'progress'), 0);
   return 1;
 }
 
@@ -87,7 +86,7 @@ sub input {
   return 1 if(exists $options->{'index'} && $index != $options->{'index'});
 
   my $tmp = $options->{'tmp'};
-  return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
+  return 1 if PCAP::Threaded::success_exists(catdir($tmp, 'progress'), $index);
 
   my @inputs = ($options->{'tumour'}, $options->{'normal'});
   my $iter = 1;
@@ -104,7 +103,7 @@ sub input {
     $max_threads = 1 if($max_threads == 0);
 
     my $sample = sanitised_sample_from_bam($input);
-    my $gen_out = File::Spec->catdir($tmp, $sample);
+    my $gen_out = catdir($tmp, $sample);
     make_path($gen_out) unless(-e $gen_out);
 
     my $command = "$^X ";
@@ -113,11 +112,11 @@ sub input {
     $command .= " -r $options->{reference}";
     $command .= " -e $options->{badloci}" if(exists $options->{'badloci'});
 
-    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
+    PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), $command, $index);
 
     #
     ## The rest is auto-magical
-    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
+    PCAP::Threaded::touch_success(catdir($tmp, 'progress'), $index);
   }
   return 1;
 }
@@ -131,7 +130,7 @@ sub pindel {
   my @seqs = sort keys %{$options->{'seqs'}};
   my @indicies = limited_indicies($options, $index_in, scalar @seqs);
 	for my $index(@indicies) {
-    next if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
+    next if PCAP::Threaded::success_exists(catdir($tmp, 'progress'), $index);
     my $seq = $seqs[$index-1];
 
     ## build commands for this index
@@ -140,10 +139,10 @@ sub pindel {
     my @command_set;
 
     # was split
-    my $refs = File::Spec->catdir($tmp, 'refs');
+    my $refs = catdir($tmp, 'refs');
     make_path($refs) unless(-e $refs);
 
-    my $refseq_file = File::Spec->catfile($refs, "$seq.fa");
+    my $refseq_file = catfile($refs, "$seq.fa");
 
     my $split_comm = _which('samtools');
     $split_comm .= sprintf $SAMTOOLS_FAIDX,  $options->{'reference'},
@@ -153,16 +152,16 @@ sub pindel {
     push @command_set, $split_comm;
 
     # was filter
-    my $filter_out = File::Spec->catdir($tmp, 'filter');
+    my $filter_out = catdir($tmp, 'filter');
     make_path($filter_out) unless(-e $filter_out);
 
-    my $filtered_seq = File::Spec->catfile($filter_out, $seq);
+    my $filtered_seq = catfile($filter_out, $seq);
 
     # pindel
-    my $gen_out = File::Spec->catdir($tmp, 'pout');
+    my $gen_out = catdir($tmp, 'pout');
     make_path($gen_out) unless(-e $gen_out);
 
-    my ($bd_fh, $bd_file) = tempfile(File::Spec->catfile($tmp, 'pindel_db_XXXX'), UNLINK => 0);
+    my ($bd_fh, $bd_file) = tempfile(catfile($tmp, 'pindel_db_XXXX'), UNLINK => 0);
     close $bd_fh;
 
     unlink $filtered_seq if(-e $filtered_seq);
@@ -182,11 +181,11 @@ sub pindel {
                                                 $bd_file,
                                                 5;
 
-    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), \@command_set, $index);
+    PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), \@command_set, $index);
 
     # a little cleanup
     for my $ext((qw(BP INV LI TD))) {
-      unlink File::Spec->catfile($gen_out, (join '_', $seq, $seq, $ext));
+      unlink catfile($gen_out, (join '_', $seq, $seq, $ext));
     }
     unlink $bd_file;
     unlink $refseq_file;
@@ -195,7 +194,7 @@ sub pindel {
     #
     ## The rest is auto-magical
 
-    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
+    PCAP::Threaded::touch_success(catdir($tmp, 'progress'), $index);
   }
   return 1;
 }
@@ -204,12 +203,12 @@ sub parse {
   my ($options) = @_;
   my $tmp = $options->{'tmp'};
 
-  my $pout = File::Spec->catdir($tmp, 'pout');
-  my $vcf = File::Spec->catdir($tmp, 'vcf');
+  my $pout = catdir($tmp, 'pout');
+  my $vcf = catdir($tmp, 'vcf');
   make_path($vcf) unless(-e $vcf);
-  my $collated_vcf = File::Spec->catfile($vcf, 'raw.vcf');
+  my $collated_vcf = catfile($vcf, 'raw.vcf');
 
-  unless(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 'tovcf')) {
+  unless(PCAP::Threaded::success_exists(catdir($tmp, 'progress'), 'tovcf')) {
     my $bad_loci = q{};
     if($options->{badloci}) {
       $bad_loci = sprintf q{ -b %s }, $options->{badloci};
@@ -217,22 +216,22 @@ sub parse {
     my $command = $^X.' '._which('pindelCohort_to_vcf.pl');
     $command .= sprintf $COHORT_2_VCF,
                         $options->{'reference'},
-                        File::Spec->catfile($pout, '%_%_%'),
+                        catfile($pout, '%_%_%'),
                         $collated_vcf,
                         $bad_loci,
                         join(q{ }, @{$options->{hts_files}});
-    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 'tovcf');
-    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 'tovcf');
+    PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), $command, 'tovcf');
+    PCAP::Threaded::touch_success(catdir($tmp, 'progress'), 'tovcf');
   }
-  unless(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 'split')) {
+  unless(PCAP::Threaded::success_exists(catdir($tmp, 'progress'), 'split')) {
     #perl pindel_vcfSortNsplit.pl run_PD26988a/tmpPindel/vcf/raw.vcf 10000 tsrt
     my $command = $^X.' '._which('pindel_vcfSortNsplit.pl');
     $command .= sprintf q{ %s %d %s},
                         $collated_vcf,
                         $VCF_SPLIT_SIZE,
                         $vcf;
-    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 'split');
-    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 'split');
+    PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), $command, 'split');
+    PCAP::Threaded::touch_success(catdir($tmp, 'progress'), 'split');
   }
   return 1;
 }
@@ -241,49 +240,49 @@ sub concat {
   my ($options) = @_;
   my $tmp = $options->{'tmp'};
 
-  my $vcf = File::Spec->catdir($tmp, 'vcf');
+  my $vcf = catdir($tmp, 'vcf');
   my $hts_input = $options->{'hts_files'}->[0];
   my $sample_name = (PCAP::Bam::sample_name($hts_input))[0];
-  my $vcf_gz = File::Spec->catfile($options->{'outdir'}, sprintf('%s.pindel.vcf.gz', $sample_name));
-  my $bam = File::Spec->catfile($options->{'outdir'}, sprintf('%s.pindel.bam', $sample_name));
-  unless(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 'concat')) {
+  my $vcf_gz = catfile($options->{'outdir'}, sprintf('%s.pindel.vcf.gz', $sample_name));
+  my $bam = catfile($options->{'outdir'}, sprintf('%s.pindel.bam', $sample_name));
+  unless(PCAP::Threaded::success_exists(catdir($tmp, 'progress'), 'concat')) {
     #vcf-concat blat_*.vcf
     my $command = _which('vcf-concat');
     $command .= sprintf q{ %s | bgzip -c > %s},
-                File::Spec->catfile($vcf, 'blat_*.vcf'),
+                catfile($vcf, 'blat_*.vcf'),
                 $vcf_gz;
-    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), ['set -o pipefail', $command], 'concat');
-    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 'concat');
+    PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), ['set -o pipefail', $command], 'concat');
+    PCAP::Threaded::touch_success(catdir($tmp, 'progress'), 'concat');
   }
-  unless(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 'tabix')) {
+  unless(PCAP::Threaded::success_exists(catdir($tmp, 'progress'), 'tabix')) {
     my $command = _which('tabix');
     $command .= sprintf q{ -f -p vcf %s}, $vcf_gz;
-    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 'tabix');
-    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 'tabix');
+    PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), $command, 'tabix');
+    PCAP::Threaded::touch_success(catdir($tmp, 'progress'), 'tabix');
   }
   # now deal with the sam files
-  unless(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 'calmd')) {
+  unless(PCAP::Threaded::success_exists(catdir($tmp, 'progress'), 'calmd')) {
     my $samtools = _which('samtools');
     my $command =  sprintf q{(%s view -H %s | grep -P '^@(HD|SQ)' && zgrep -hvP '^@(HD|SQ)' %s | sort | uniq) | %s sort -l 0 -T %s - | %s calmd -b - %s > %s},
                     $samtools, $hts_input,
-                    File::Spec->catfile($vcf, sprintf 'blat_*.%s.sam.gz', $sample_name),
-                    $samtools, File::Spec->catfile($vcf, 'srt'),
+                    catfile($vcf, sprintf 'blat_*.%s.sam.gz', $sample_name),
+                    $samtools, catfile($vcf, 'srt'),
                     $samtools, $options->{'reference'}, $bam;
-    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), ['set -o pipefail', $command], 'calmd');
-    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 'calmd');
+    PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), ['set -o pipefail', $command], 'calmd');
+    PCAP::Threaded::touch_success(catdir($tmp, 'progress'), 'calmd');
   }
-  unless(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 'index')) {
+  unless(PCAP::Threaded::success_exists(catdir($tmp, 'progress'), 'index')) {
     my $command = _which('samtools');
     $command .= sprintf q{ index %s}, $bam;
-    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 'index');
-    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 'index');
+    PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), $command, 'index');
+    PCAP::Threaded::touch_success(catdir($tmp, 'progress'), 'index');
   }
   return 1;
 }
 
 sub split_files {
   my $options = shift;
-  my $vcf = File::Spec->catdir($options->{'tmp'}, 'vcf');
+  my $vcf = catdir($options->{'tmp'}, 'vcf');
   my $patt = catfile($vcf, 'split_*.vcf');
   my @files = sort glob $patt;
   return \@files;
@@ -292,7 +291,7 @@ sub split_files {
 sub blat {
   my ($index_in, $options) = @_;
   my $tmp = $options->{'tmp'};
-  my $vcf = File::Spec->catdir($tmp, 'vcf');
+  my $vcf = catdir($tmp, 'vcf');
   # -i run_PD26988a/tmpPindel/vcf/raw.vcf
 
   return 1 if(exists $options->{'index'} && $index_in != $options->{'index'});
@@ -300,7 +299,7 @@ sub blat {
   my @split_files = @{$options->{'split_files'}};
   my @indicies = limited_indicies($options, $index_in, scalar @split_files);
 	for my $index(@indicies) {
-    next if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
+    next if PCAP::Threaded::success_exists(catdir($tmp, 'progress'), $index);
 
     my $split_file = $split_files[$index-1];
     my $blat_file = $split_file;
@@ -312,8 +311,8 @@ sub blat {
                         $split_file,
                         $blat_file;
 
-    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
-    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
+    PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), $command, $index);
+    PCAP::Threaded::touch_success(catdir($tmp, 'progress'), $index);
   }
   return 1;
 }
@@ -327,18 +326,18 @@ sub pindel_to_vcf {
   my @seqs = sort keys %{$options->{'seqs'}};
   my @indicies = limited_indicies($options, $index_in, scalar @seqs);
 	for my $index(@indicies) {
-    next if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
+    next if PCAP::Threaded::success_exists(catdir($tmp, 'progress'), $index);
     my $seq = $seqs[$index-1];
-    my $pout = File::Spec->catdir($tmp, 'pout');
+    my $pout = catdir($tmp, 'pout');
 
     my @in_files;
     for my $type(qw(D SI)) {
-      my $in_file = File::Spec->catfile($pout, $seq.'_'.$seq.'_'.$type);
+      my $in_file = catfile($pout, $seq.'_'.$seq.'_'.$type);
       push @in_files, $in_file if(-e $in_file && -f $in_file);
     }
 
     if(scalar @in_files > 0) {
-      my $vcf = File::Spec->catdir($tmp, 'vcf');
+      my $vcf = catdir($tmp, 'vcf');
       make_path($vcf) unless(-e $vcf);
 
       my $pg = Sanger::CGP::Pindel::OutputGen::BamUtil::pg_from_caller('pindel', 'cgpPindel indel detection', $VERSION, $options->{'cmd'});
@@ -348,8 +347,8 @@ sub pindel_to_vcf {
       $command .= sprintf $PIN_2_VCF, $options->{'tumour'},
                                       $options->{'normal'},
                                       $options->{'reference'},
-                                      File::Spec->catfile($vcf, $seq.'_pindel.vcf'),
-                                      File::Spec->catfile($vcf, $seq.'_pindel'),
+                                      catfile($vcf, $seq.'_pindel.vcf'),
+                                      catfile($vcf, $seq.'_pindel'),
                                       $options->{'seqtype'},
                                       $options->{'seqtype'},
                                       $pg,
@@ -359,13 +358,13 @@ sub pindel_to_vcf {
       $command .= ' -s' if(defined $options->{'skipgerm'});
       $command .= ' -as '.$options->{'assembly'} if(defined $options->{'assembly'});
       $command .= ' -sp '.$options->{'species'}   if(defined $options->{'species'});
-      PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
+      PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), $command, $index);
     }
 
     #
     ## The rest is auto-magical
 
-    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
+    PCAP::Threaded::touch_success(catdir($tmp, 'progress'), $index);
   }
   return 1;
 }
@@ -374,10 +373,10 @@ sub merge_and_bam {
   my $options = shift;
 
   my $tmp = $options->{'tmp'};
-  return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
+  return 1 if PCAP::Threaded::success_exists(catdir($tmp, 'progress'), 0);
 
-  my $vcf = File::Spec->catdir($tmp, 'vcf');
-  my $outstub = File::Spec->catfile($options->{'outdir'}, $options->{'tumour_name'}.'_vs_'.$options->{'normal_name'});
+  my $vcf = catdir($tmp, 'vcf');
+  my $outstub = catfile($options->{'outdir'}, $options->{'tumour_name'}.'_vs_'.$options->{'normal_name'});
   my $command = "$^X ";
   $command .= _which('pindel_merge_vcf_bam.pl');
   $command .= sprintf $PIN_MERGE, $outstub, $vcf, $options->{'reference'};
@@ -388,16 +387,16 @@ sub merge_and_bam {
     $command .= ' -s';
   }
 
-  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
+  PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), $command, 0);
 
-  PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
+  PCAP::Threaded::touch_success(catdir($tmp, 'progress'), 0);
 }
 
 sub flag {
   my $options = shift;
 
   my $tmp = $options->{'tmp'};
-  return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
+  return 1 if PCAP::Threaded::success_exists(catdir($tmp, 'progress'), 0);
 
   # FlagVcf.pl
   # -r ~kr2/GitHub/cgpPindel/perl/rules/genomicRules.lst
@@ -408,7 +407,7 @@ sub flag {
   # -i pindel_farm/PD13371a_vs_PD13371b.vcf.gz
   # -o pindel_farm/PD13371a_vs_PD13371b.flag_new_np.github.vcf
 
-  my $stub = File::Spec->catfile($options->{'outdir'}, $options->{'tumour_name'}.'_vs_'.$options->{'normal_name'});
+  my $stub = catfile($options->{'outdir'}, $options->{'tumour_name'}.'_vs_'.$options->{'normal_name'});
 
   my $new_vcf = "$stub.flagged.vcf";
   my $command = "$^X ";
@@ -437,11 +436,11 @@ sub flag {
   $germ .= sprintf $PIN_GERM, find_germline_rule($options), $vcf_gz, $germ_bed;
   push @commands, $germ;
 
-  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), \@commands, 0);
+  PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), \@commands, 0);
 
   unlink $new_vcf;
 
-  PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
+  PCAP::Threaded::touch_success(catdir($tmp, 'progress'), 0);
 }
 
 sub find_germline_rule {
@@ -515,12 +514,12 @@ sub determine_jobs {
     die "ERROR: Unexpected combination of BAM/CRAM inputs";
   }
   for my $in_bam(@samples) {
-    my $samp_path = File::Spec->catdir($tmp, sanitised_sample_from_bam($in_bam));
+    my $samp_path = catdir($tmp, sanitised_sample_from_bam($in_bam));
     my @files = file_list($samp_path, qr/\.txt(:?\.gz)$/);
     for my $file(@files) {
       my ($seq) = $file =~ m/(.+)\.txt(:?\.gz)$/;
       if(first { $seq eq $_ } @valid_seqs) {
-        push @{$seqs{$seq}}, File::Spec->catfile($samp_path, $file);
+        push @{$seqs{$seq}}, catfile($samp_path, $file);
       }
     }
   }
@@ -585,7 +584,7 @@ sub fragmented_files {
 sub _which {
   my $prog = shift;
   my $l_bin = $Bin;
-  my $path = File::Spec->catfile($l_bin, $prog);
+  my $path = catfile($l_bin, $prog);
   $path = which($prog) unless(-e $path);
   return $path;
 }
@@ -649,7 +648,7 @@ sub shared_setup {
   PCAP::Cli::file_for_reading('reference', $opts{'reference'});
   PCAP::Cli::out_dir_check('outdir', $opts{'outdir'});
 
-  my $final_logs = File::Spec->catdir($opts{'outdir'}, 'logs');
+  my $final_logs = catdir($opts{'outdir'}, 'logs');
   if(-e $final_logs) {
     warn "NOTE: Presence of '$final_logs' directory suggests successful complete analysis, please delete to rerun\n";
     exit 0;
@@ -672,11 +671,11 @@ sub shared_setup {
     $opts{$key} = cwd().'/'.$opts{$key} if(defined $opts{$key} && -e $opts{$key} && $opts{$key} !~ m/^\//);
   }
 
-  my $tmpdir = File::Spec->catdir($opts{'outdir'}, 'tmpPindel');
+  my $tmpdir = catdir($opts{'outdir'}, 'tmpPindel');
   make_path($tmpdir) unless(-d $tmpdir);
-  my $progress = File::Spec->catdir($tmpdir, 'progress');
+  my $progress = catdir($tmpdir, 'progress');
   make_path($progress) unless(-d $progress);
-  my $logs = File::Spec->catdir($tmpdir, 'logs');
+  my $logs = catdir($tmpdir, 'logs');
   make_path($logs) unless(-d $logs);
 
   $opts{'tmp'} = $tmpdir;
@@ -724,14 +723,14 @@ sub cohort_split {
   my $options = shift;
 
   my $tmp = $options->{'tmp'};
-  return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
+  return 1 if PCAP::Threaded::success_exists(catdir($tmp, 'progress'), 0);
 
   my $command = $^X.' '._which('pindelCohortVafSplit.pl');
   $command .= sprintf ' -i %s -o %s -s %d', $options->{input}, $options->{split_dir}, $options->{size};
 
-  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
+  PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), $command, 0);
 
-  PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
+  PCAP::Threaded::touch_success(catdir($tmp, 'progress'), 0);
 }
 
 sub fill_split_vaf {
@@ -744,15 +743,15 @@ sub fill_split_vaf {
 
   my @indicies = limited_indicies($options, $index_in, scalar @split_files);
   for my $index(@indicies) {
-    next if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
+    next if PCAP::Threaded::success_exists(catdir($tmp, 'progress'), $index);
     my $split_file = $split_files[$index-1];
-    my $fill_basename = fileparse($split_file);
-    my $fill_file = catfile($options->{fill_dir}, $fill_basename);
+    my $fill_basename = fileparse($split_file, '.vcf.gz');
+    my $fill_dir = catdir($options->{fill_dir}, $fill_basename);
     my $command = $^X.' '._which('pindelCohortVafSliceFill.pl');
-    $command .= sprintf ' -r %s -i %s -o %s -d %s', $options->{ref}, $split_file, $fill_file, $options->{bwa_file_list};
+    $command .= sprintf ' -r %s -i %s -o %s -d %s', $options->{ref}, $split_file, $fill_dir, $options->{bwa_file_list};
 
-    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
-    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
+    PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), $command, $index);
+    PCAP::Threaded::touch_success(catdir($tmp, 'progress'), $index);
   }
 }
 
@@ -763,7 +762,7 @@ sub merge_vaf_bams {
   return 1 if(exists $options->{'index'} && $index_in != $options->{'index'});
   my @indicies = limited_indicies($options, $index_in, scalar @{$options->{secondary_hts}});
   for my $index(@indicies) {
-    next if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
+    next if PCAP::Threaded::success_exists(catdir($tmp, 'progress'), $index);
     my $arr_idx = $index-1;
     my $sample = sanitised_sample_from_bam($options->{primary_hts}->[$arr_idx]);
     my $sort_tmp = catdir($options->{'tmp'}, sprintf 'sort_tmp_%d', $index);
@@ -771,8 +770,8 @@ sub merge_vaf_bams {
     my $in_file_list = catfile($sort_tmp, 'merge_files');
 
     my @split_bams;
-    for my $f(glob(catfile($options->{'fill_dir'}, sprintf '*.vcf.gz.%s.bam', $sample))) {
-      push @split_bams, $f if($f =~ m{/\d+\.vcf.gz.$sample\.bam$});
+    for my $f(glob(catfile($options->{'fill_dir'}, '*', sprintf '%s.bam', $sample))) {
+      push @split_bams, $f if($f =~ m{/\d+/$sample\.bam$});
     }
     # list of bams to merge
     lines_to_file($in_file_list, [$options->{secondary_hts}->[$arr_idx], @split_bams]);
@@ -784,9 +783,9 @@ sub merge_vaf_bams {
                           catfile($sort_tmp, 'samsort'),
                           catfile($options->{output}, sprintf('%s.vaf.bam', $sample)); # outfile
 
-    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
+    PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), $command, $index);
     remove_tree($sort_tmp);
-    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
+    PCAP::Threaded::touch_success(catdir($tmp, 'progress'), $index);
   }
 }
 
@@ -801,7 +800,7 @@ sub lines_to_file {
 sub fill_vcf_merge {
   my $options = shift;
   my $tmp = $options->{'tmp'};
-  return if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
+  return if PCAP::Threaded::success_exists(catdir($tmp, 'progress'), 0);
   my @split_filled_vcf;
   for my $f(glob(catfile($options->{fill_dir}, '*.vcf.gz'))) {
     push @split_filled_vcf, $f if($f =~ m{/\d+\.vcf.gz$});
@@ -813,8 +812,8 @@ sub fill_vcf_merge {
               $final_vcf;
   my $tabix = sprintf q{tabix -fp vcf %s}, $final_vcf;
 
-  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), [$merge, $tabix], 0);
-  PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
+  PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), [$merge, $tabix], 0);
+  PCAP::Threaded::touch_success(catdir($tmp, 'progress'), 0);
 }
 
 1;

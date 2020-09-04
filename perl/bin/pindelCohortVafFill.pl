@@ -56,8 +56,6 @@ const my @VALID_PROCESS => keys %INDEX_MAX;
       remove_tree($options->{tmp});
     }
   }
-
-
 }
 
 sub vaf_fill_seqdata {

@@ -8,6 +8,8 @@ use Pod::Usage qw(pod2usage);
 use FindBin qw($Bin);
 use lib "$Bin/../lib";
 use Getopt::Long;
+use File::Spec::Functions;
+use File::Path qw(make_path);
 use IO::Compress::Gzip qw(:constants gzip $GzipError);
 
 use PCAP::Cli;
@@ -63,11 +65,12 @@ sub setup {
   }
   close $D;
 
-  $opts{'hts_files'} = \@htsfiles;
+  $opts{hts_files} = \@htsfiles;
 
   $opts{outpath} = $opts{output};
+  make_path($opts{outpath}) unless(-e $opts{outpath});
 
-  my $ofh = new IO::Compress::Gzip $opts{output}, -Level => Z_BEST_SPEED or die "IO::Compress::Gzip failed: $GzipError\n";
+  my $ofh = new IO::Compress::Gzip catfile($opts{output}, 'slice.vcf.gz'), -Level => Z_BEST_SPEED or die "IO::Compress::Gzip failed: $GzipError\n";
   $opts{output} = $ofh;
 
   return \%opts;
@@ -87,7 +90,7 @@ pindelCohortVafSliceFill.pl [options]
   Required parameters:
     -ref       -r   File path to the reference file used to provide the coordinate system.
     -input     -i   VCF file to read in.
-    -output    -o   File path for VCF output (gz compressed), colcated sample bams
+    -output    -o   Directory for VCF output (gz compressed) and colocated sample bams
     -data      -d   File containing list of BWA mappingfiles for all samples used in "-input"
                     - format: one BWA bam/cram file per line, expects co-located *.bai
 

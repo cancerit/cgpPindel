@@ -21,6 +21,7 @@
 
 use strict;
 use File::Temp qw(tempdir);
+use File::Path qw(make_path);
 use Test::More;
 use Test::Fatal;
 use File::Spec::Functions;
@@ -47,11 +48,11 @@ my ($sam_stdout_fh, $sam_buffer);
 
 subtest 'Initialisation checks' => sub {
   use_ok($MODULE);
-  new_vba(catfile($DATA, 'D.vcf'));
+  new_vba(catdir($DATA, 'D'));
 };
 
 subtest 'Header checks' => sub {
-  my $vba = new_vba(catfile($DATA, 'D.vcf'));
+  my $vba = new_vba(catdir($DATA, 'D'));
   ok($vba->output_header);
   my @lines = split /\n/, $buffer;
   is(scalar @lines, $HEADER_LINES, 'Expected number of header lines');
@@ -59,21 +60,21 @@ subtest 'Header checks' => sub {
 };
 
 subtest 'Simple Deletion checks' => sub {
-  my $vba = new_vba(catfile($DATA, 'D.vcf'));
+  my $vba = new_vba(catdir($DATA, 'D'));
   my @tmp = @{$DATA_ARR_D};
   $vba->blat_record(\@tmp);
   is_deeply(\@tmp, $RES_ARR_D);
 };
 
 subtest 'Simple Insertion checks' => sub {
-  my $vba = new_vba(catfile($DATA, 'SI.vcf'));
+  my $vba = new_vba(catdir($DATA, 'SI'));
   my @tmp = @{$DATA_ARR_SI};
   $vba->blat_record(\@tmp);
   is_deeply(\@tmp, $RES_ARR_SI);
 };
 
 subtest 'Complex event checks' => sub {
-  my $vba = new_vba(catfile($DATA, 'DI.vcf'));
+  my $vba = new_vba(catdir($DATA, 'DI'));
   my @tmp = @{$DATA_ARR_DI};
   $vba->blat_record(\@tmp);
   print join q{ }, @tmp;
@@ -84,10 +85,11 @@ done_testing();
 
 
 sub new_vba {
-  my $vcf = shift;
+  my $dir = shift;
   my $tmp = '/tmp/pindel_test_stuff';
+  make_path($tmp);
   my $obj = new_ok($MODULE, [
-    input => $vcf,
+    input => catfile($dir, 'test.vcf'),
     ref => catfile($DATA, 'chr10_1-23700.fa'),
     ofh => buffer_fh(),
     outpath => $tmp,
