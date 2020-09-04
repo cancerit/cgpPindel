@@ -37,8 +37,6 @@ use File::Path qw(remove_tree make_path);
 use PCAP::Cli;
 use Sanger::CGP::Pindel::Implement;
 
-use Data::Dumper;
-
 const my %INDEX_MAX => (
                   'input'   => 1,
                   'pindel'  => -1,

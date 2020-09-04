@@ -4,13 +4,13 @@ use strict;
 use warnings FATAL => 'all';
 use autodie qw(:all);
 use Cwd qw(abs_path);
-use Pod::Usage qw(pod2usage);
-use FindBin qw($Bin);
-use lib "$Bin/../lib";
-use Getopt::Long;
-use File::Spec::Functions;
 use File::Path qw(make_path);
+use File::Spec::Functions;
+use FindBin qw($Bin);
+use Getopt::Long;
 use IO::Compress::Gzip qw(:constants gzip $GzipError);
+use lib "$Bin/../lib";
+use Pod::Usage qw(pod2usage);
 
 use PCAP::Cli;
 use Sanger::CGP::Pindel::OutputGen::VcfBlatAugment;
@@ -74,7 +74,6 @@ sub setup {
   $opts{output} = $ofh;
 
   return \%opts;
-
 }
 
 __END__

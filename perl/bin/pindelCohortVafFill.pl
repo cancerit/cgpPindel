@@ -145,6 +145,11 @@ sub setup {
     push @{$opts{secondary_hts}}, $secondary;
   }
   close $D;
+  my $sample_count = @{$opts{primary_hts}};
+  if($opts{size} < $sample_count * 5) {
+    $opts{size} = $sample_count * 5;
+    warn sprintf "WARNING: -size has been automatically increased to %d (5x sample number), see '-help'\n", $opts{size};
+  }
 
   $opts{tmp} = catdir($opts{output}, 'tmpCohortVafFill');
   make_path($opts{tmp});
@@ -183,6 +188,7 @@ pindelCohortVafFill.pl [options] -i ... -o ... -r ... -d ...
   Optional parameters:
     -name      -n   Stub name for final output files [$output/cohort...]
     -size      -s   Number of Sample/event combinations per-file when processing [10000]
+                     - Automatically increased to a minimum of 5x number of samples (for efficiency).
     -abort     -a   Abort noisily if data appears to have been processed (silent exit otherwise)
     -cpus      -c   Number of cores to use. [1]
 

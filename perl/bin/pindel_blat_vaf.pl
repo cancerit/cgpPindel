@@ -4,10 +4,12 @@ use strict;
 use warnings FATAL => 'all';
 use autodie qw(:all);
 use Cwd qw(abs_path);
-use Pod::Usage qw(pod2usage);
+use File::Path qw(make_path);
+use File::Spec::Functions;
 use FindBin qw($Bin);
-use lib "$Bin/../lib";
 use Getopt::Long;
+use lib "$Bin/../lib";
+use Pod::Usage qw(pod2usage);
 
 use PCAP::Cli;
 use Sanger::CGP::Pindel::OutputGen::VcfBlatAugment;
@@ -67,10 +69,12 @@ sub setup{
     }
   }
 
-  $opts{align} = $opts{output}.'.sam' unless(defined $opts{align});
-
   $opts{outpath} = $opts{output};
-  open my $ofh, '>', $opts{output};
+  make_path($opts{outpath}) unless(-e $opts{outpath});
+
+  $opts{align} = catfile($opts{outpath}, 'data.sam');
+
+  open my $ofh, '>', catfile($opts{outpath}, 'data.vcf');
   $opts{output} = $ofh;
 
   return \%opts;
@@ -90,7 +94,7 @@ pindel_blat_vaf.pl [options]
     -ref       -r   File path to the reference file used to provide the coordinate system.
     -input     -i   VCF file to read in.
     -hts            BAM/CRAM file for associated sample.
-    -output    -o   File path for VCF output (not compressed)
+    -output    -o   Directory for VCF output (gz compressed) and colocated sample bams
 
   Other:
     -help      -h   Brief help message.

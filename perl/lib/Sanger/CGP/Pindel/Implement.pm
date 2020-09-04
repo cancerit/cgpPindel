@@ -25,25 +25,23 @@ package Sanger::CGP::Pindel::Implement;
 use strict;
 use warnings FATAL => 'all';
 use autodie qw(:all);
-use Cwd qw(cwd);
+use Capture::Tiny;
 use Const::Fast qw(const);
-use File::Spec::Functions;
-use File::Which qw(which);
+use Cwd qw(cwd);
+use File::Basename;
 use File::Copy qw(copy);
 use File::Path qw(make_path remove_tree);
+use File::Spec::Functions;
 use File::Temp qw(tempfile);
-use Capture::Tiny;
-use List::Util qw(first);
+use File::Which qw(which);
 use FindBin qw($Bin);
 use Getopt::Long;
+use List::Util qw(first);
 use Pod::Usage qw(pod2usage);
-use File::Basename;
 
-use Sanger::CGP::Pindel;
-
-use PCAP::Threaded;
 use PCAP::Bam;
-
+use PCAP::Threaded;
+use Sanger::CGP::Pindel;
 use Sanger::CGP::Pindel::OutputGen::BamUtil;
 
 const my $PINDEL_GEN_COMM => q{ -b %s -o %s -t %s};
@@ -240,16 +238,16 @@ sub concat {
   my ($options) = @_;
   my $tmp = $options->{'tmp'};
 
-  my $vcf = catdir($tmp, 'vcf');
   my $hts_input = $options->{'hts_files'}->[0];
   my $sample_name = (PCAP::Bam::sample_name($hts_input))[0];
   my $vcf_gz = catfile($options->{'outdir'}, sprintf('%s.pindel.vcf.gz', $sample_name));
   my $bam = catfile($options->{'outdir'}, sprintf('%s.pindel.bam', $sample_name));
   unless(PCAP::Threaded::success_exists(catdir($tmp, 'progress'), 'concat')) {
-    #vcf-concat blat_*.vcf
+    #vcf-concat blat_*/data.vcf
     my $command = _which('vcf-concat');
     $command .= sprintf q{ %s | bgzip -c > %s},
-                catfile($vcf, 'blat_*.vcf'),
+                catfile($tmp, 'blat_*/data.vcf'),
+                #catfile($vcf, 'blat_*.vcf'),
                 $vcf_gz;
     PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), ['set -o pipefail', $command], 'concat');
     PCAP::Threaded::touch_success(catdir($tmp, 'progress'), 'concat');
@@ -265,8 +263,8 @@ sub concat {
     my $samtools = _which('samtools');
     my $command =  sprintf q{(%s view -H %s | grep -P '^@(HD|SQ)' && zgrep -hvP '^@(HD|SQ)' %s | sort | uniq) | %s sort -l 0 -T %s - | %s calmd -b - %s > %s},
                     $samtools, $hts_input,
-                    catfile($vcf, sprintf 'blat_*.%s.sam.gz', $sample_name),
-                    $samtools, catfile($vcf, 'srt'),
+                    catfile($tmp, (sprintf 'blat_*/%s.sam.gz', $sample_name)),
+                    $samtools, catfile($tmp, 'srt'),
                     $samtools, $options->{'reference'}, $bam;
     PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), ['set -o pipefail', $command], 'calmd');
     PCAP::Threaded::touch_success(catdir($tmp, 'progress'), 'calmd');
@@ -294,22 +292,22 @@ sub blat {
   my $vcf = catdir($tmp, 'vcf');
   # -i run_PD26988a/tmpPindel/vcf/raw.vcf
 
-  return 1 if(exists $options->{'index'} && $index_in != $options->{'index'});
+  return 1 if(exists $options->{index} && $index_in != $options->{index});
 
-  my @split_files = @{$options->{'split_files'}};
+  my @split_files = @{$options->{split_files}};
   my @indicies = limited_indicies($options, $index_in, scalar @split_files);
 	for my $index(@indicies) {
     next if PCAP::Threaded::success_exists(catdir($tmp, 'progress'), $index);
 
     my $split_file = $split_files[$index-1];
-    my $blat_file = $split_file;
+    my $blat_file = fileparse($split_file, '.vcf');
     $blat_file =~ s/split_([a-z]+)/blat_$1/;
     my $command = $^X.' '._which('pindel_blat_vaf.pl');
     $command .= sprintf q{ -r %s -hts %s -i %s -o %s},
-                        $options->{'reference'},
+                        $options->{reference},
                         $options->{hts_files}->[0],
                         $split_file,
-                        $blat_file;
+                        catfile($tmp, $blat_file);
 
     PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), $command, $index);
     PCAP::Threaded::touch_success(catdir($tmp, 'progress'), $index);
@@ -802,8 +800,8 @@ sub fill_vcf_merge {
   my $tmp = $options->{'tmp'};
   return if PCAP::Threaded::success_exists(catdir($tmp, 'progress'), 0);
   my @split_filled_vcf;
-  for my $f(glob(catfile($options->{fill_dir}, '*.vcf.gz'))) {
-    push @split_filled_vcf, $f if($f =~ m{/\d+\.vcf.gz$});
+  for my $f(glob(catfile($options->{fill_dir}, '*', 'slice.vcf.gz'))) {
+    push @split_filled_vcf, $f if($f =~ m{/\d+/slice\.vcf\.gz$});
   }
   my $complete_recs = catfile($options->{split_dir}, 'complete_rec.vaf.vcf.gz');
   my $final_vcf = catfile($options->{output}, sprintf '%s.vaf.vcf.gz', $options->{name});

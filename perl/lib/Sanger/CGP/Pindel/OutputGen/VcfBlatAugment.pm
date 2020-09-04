@@ -24,23 +24,23 @@ package Sanger::CGP::Pindel::OutputGen::VcfBlatAugment;
 use strict;
 use warnings FATAL => 'all';
 use autodie qw(:all);
+use Capture::Tiny qw(capture);
 use Const::Fast qw(const);
 use File::Basename;
-use List::Util qw(min max);
+use File::Spec::Functions;
 use File::Temp qw(tempfile);
-use Capture::Tiny qw(capture);
 use IO::Compress::Gzip qw(:constants gzip $GzipError);
-use Vcf;
+use List::Util qw(min max);
+
 use Bio::DB::HTS;
 use Bio::DB::HTS::Faidx;
-use Sanger::CGP::Pindel;
-use Sanger::CGP::Vcf::VcfProcessLog;
-use Sanger::CGP::PindelPostProcessing::VcfSoftFlagger;
-use Sanger::CGP::Vcf::VcfUtil;
-use PCAP::Bam::Bas;
-use File::Spec::Functions;
+use Vcf;
 
-use Data::Dumper;
+use PCAP::Bam::Bas;
+use Sanger::CGP::Pindel;
+use Sanger::CGP::PindelPostProcessing::VcfSoftFlagger;
+use Sanger::CGP::Vcf::VcfProcessLog;
+use Sanger::CGP::Vcf::VcfUtil;
 
 const my $SD_MULT => 2;
 const my $V_FMT => 8;
