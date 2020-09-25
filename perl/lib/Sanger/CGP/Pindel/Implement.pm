@@ -261,7 +261,8 @@ sub concat {
   # now deal with the sam files
   unless(PCAP::Threaded::success_exists(catdir($tmp, 'progress'), 'calmd')) {
     my $samtools = _which('samtools');
-    my $command =  sprintf q{(%s view -H %s | grep -P '^@(HD|SQ)' && zgrep -hvP '^@(HD|SQ)' %s | sort | uniq) | %s sort -l 0 -T %s - | %s calmd -b - %s > %s},
+    my $command =  sprintf q{rm -f %s && (%s view -H %s | grep -P '^@(HD|SQ)' && zgrep -hvP '^@(HD|SQ)' %s | sort | uniq) | %s sort -l 0 -T %s - | %s calmd -b - %s > %s},
+                    catfile($tmp, 'srt.????.bam'), # cleanup anything that may be have been left by previous run
                     $samtools, $hts_input,
                     catfile($tmp, (sprintf 'blat_*/%s.sam.gz', $sample_name)),
                     $samtools, catfile($tmp, 'srt'),
