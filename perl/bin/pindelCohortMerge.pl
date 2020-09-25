@@ -234,7 +234,7 @@ pindelCohortMerge.pl [options] A.vcf.gz B.vcf.gz [...]
   Optional parameters:
     -min       -k   Keep events VAF >= VALUE (3dp) for 1 or more samples
                      - default is to retain events even if VAF == 0/. for all samples
-    -np        -n   Normal panel gff3 file - ommit if no filtering required.
+    -np        -n   Normal panel gff3 file - omit if no filtering required.
     -mnps      -s   Minimum normal panel samples required to exclude [default: >=1]
     -control   -c   Exclude any events where this sample has calls.
 
