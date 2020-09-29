@@ -1,7 +1,7 @@
 package Sanger::CGP::Pindel;
 
 ########## LICENCE ##########
-# Copyright (c) 2014-2019 Genome Research Ltd.
+# Copyright (c) 2014-2020 Genome Research Ltd.
 #
 # Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
@@ -26,7 +26,7 @@ use strict;
 use Const::Fast qw(const);
 
 use base 'Exporter';
-our $VERSION = '3.4.0';
+our $VERSION = '3.4.1';
 our @EXPORT = qw($VERSION);
 
 1;
