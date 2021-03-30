@@ -9,7 +9,7 @@ jobs:
       # build the image from our area, use docker login to protect against future rate-limiting
      - run: |
           set -e
-          echo "$DOCKERHUB_PASS" | docker login --username $DOCKERHUB_USER --password-stdin
+          docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASS
           docker build -t wtsicgp/cgppindel:$CIRCLE_BRANCH .
           docker images | grep -c cgppindel
           echo 'Verify program(s) from each inherited base image - dockstore-cgpbigwig'
