@@ -19,8 +19,8 @@ jobs:
           name: Build Docker image
           command: |
             set -e
-            docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASSWORD
-            docker login -u $QUAYIO_USER -p $QUAYIO_PASSWORD
+            docker login -u "$DOCKERHUB_USER" -p "$DOCKERHUB_PASSWORD"
+            docker login -u "$QUAYIO_USER" -p "$QUAYIO_PASSWORD"
             docker build -t $IMAGE_NAME:$CIRCLE_BRANCH .
             echo 'Verify program(s) from each inherited base image - cgpbigwig'
             docker run -t --rm $IMAGE_NAME:$CIRCLE_BRANCH bwjoin --version
