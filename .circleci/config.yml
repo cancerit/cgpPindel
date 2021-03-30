@@ -1,4 +1,11 @@
-version: 2
+# 1. Set your default branch to develop
+# 2. In circleci project settings->advanced set:
+#    - GitHub Status Updates (this should be on already)
+#    - Only build pull requests
+#    - Auto-cancel redundant builds
+#    - Free and Open Source (this should be on already)
+
+version: 2.1
 jobs:
   build:
     environment:
