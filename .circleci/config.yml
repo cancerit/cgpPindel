@@ -17,25 +17,25 @@ jobs:
      - run: |
           set -e
           docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASSWORD
-          docker build -t wtsicgp/cgppindel:$CIRCLE_BRANCH .
+          docker build -t quay.io/wtsicgp/cgppindel:$CIRCLE_BRANCH .
           docker images | grep -c cgppindel
           echo 'Verify program(s) from each inherited base image - dockstore-cgpbigwig'
-          docker run -t --rm cgppindel bwjoin --version
+          docker run -t --rm quay.io/wtsicgp/cgppindel bwjoin --version
           echo 'Verify program(s) from each inherited base image - dockstore-cgpmap'
-          docker run -t --rm cgppindel bwa_mem.pl -version
-          docker run -t --rm cgppindel bammarkduplicates2 --version
-          docker run -t --rm cgppindel samtools --version
-          docker run -t --rm cgppindel bash -c 'bwa 2>&1 | grep Version'
+          docker run -t --rm quay.io/wtsicgp/cgppindel bwa_mem.pl -version
+          docker run -t --rm quay.io/wtsicgp/cgppindel bammarkduplicates2 --version
+          docker run -t --rm quay.io/wtsicgp/cgppindel samtools --version
+          docker run -t --rm quay.io/wtsicgp/cgppindel bash -c 'bwa 2>&1 | grep Version'
           echo 'Verify program(s) from this repo'
-          docker run -t --rm cgppindel pindel.pl --version
-          docker run -t --rm cgppindel pindel_input_gen.pl --version
-          docker run -t --rm cgppindel pindel_2_combined_vcf.pl --version
-          docker run -t --rm cgppindel FlagVcf.pl --version
-          docker run -t --rm cgppindel pindel_merge_vcf_bam.pl --version
-          docker run -t --rm cgppindel pindel_np_from_vcf.pl --version
-          docker run -t --rm cgppindel pindel_germ_bed.pl --version
-          docker run -t --rm cgppindel which pindel
-          docker run -t --rm cgppindel which filter_pindel_reads
+          docker run -t --rm quay.io/wtsicgp/cgppindel pindel.pl --version
+          docker run -t --rm quay.io/wtsicgp/cgppindel pindel_input_gen.pl --version
+          docker run -t --rm quay.io/wtsicgp/cgppindel pindel_2_combined_vcf.pl --version
+          docker run -t --rm quay.io/wtsicgp/cgppindel FlagVcf.pl --version
+          docker run -t --rm quay.io/wtsicgp/cgppindel pindel_merge_vcf_bam.pl --version
+          docker run -t --rm quay.io/wtsicgp/cgppindel pindel_np_from_vcf.pl --version
+          docker run -t --rm quay.io/wtsicgp/cgppindel pindel_germ_bed.pl --version
+          docker run -t --rm quay.io/wtsicgp/cgppindel which pindel
+          docker run -t --rm quay.io/wtsicgp/cgppindel which filter_pindel_reads
 
      ## deploy the image
      #- run: docker push company/app:$CIRCLE_BRANCH
