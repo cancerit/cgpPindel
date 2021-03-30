@@ -162,6 +162,15 @@ sub np_lookup {
   return \%tree;
 }
 
+sub vcf_list {
+  my $list_file = shift;
+  my @vcfs;
+  open my $LIST, '<', $list_file;
+  map { chomp $_; push @vcfs, $_; } <$LIST>;
+  close $LIST;
+  return \@vcfs;
+}
+
 sub setup{
   my %opts = (
     'cmd' => join(" ", $0, @ARGV),
@@ -177,6 +186,7 @@ sub setup{
               'k|min:f' => \$opts{min_vaf},
               'd|debug' => \$opts{debug},
               'c|control=s' => \$opts{control},
+              'l|list:s' => \$opts{list},
   );
 
   if(defined $opts{'v'}) {
@@ -195,7 +205,13 @@ sub setup{
     $opts{min_vaf} = (sprintf '%.3f', $opts{min_vaf}) + 0; # force number to be stored
   }
 
-  my @vcfs = @ARGV;
+  my @vcfs;
+  if($opts{list}) {
+    @vcfs = @{vcf_list($opts{list})};
+  }
+  else {
+    @vcfs = @ARGV;
+  }
   $opts{vcfs} = \@vcfs;
 
   if(@vcfs < 2) {
@@ -226,12 +242,15 @@ pindelCohortMerge.pl - Takes outputs from pindelCohort.pl and merges into a sing
 
 =head1 SYNOPSIS
 
-pindelCohortMerge.pl [options] A.vcf.gz B.vcf.gz [...]
+pindelCohortMerge.pl [options] A.vcf.gz B.vcf.gz...
+or
+pindelCohortMerge.pl [options] -l vcf.list
 
   Required parameters:
     -output    -o   File path for VCF output (not compressed)
 
   Optional parameters:
+    -list      -l   Text list of vcf files, 1 per line
     -min       -k   Keep events VAF >= VALUE (3dp) for 1 or more samples
                      - default is to retain events even if VAF == 0/. for all samples
     -np        -n   Normal panel gff3 file - omit if no filtering required.
