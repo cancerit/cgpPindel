@@ -19,30 +19,31 @@ jobs:
           name: Build Docker image
           command: |
             set -e
+            CLEAN_BRANCH=$(echo $CIRCLE_BRANCH | tr / -)
             docker login -u "$DOCKERHUB_USER" -p "$DOCKERHUB_PASSWORD"
             docker login -u "$QUAYIO_USER" -p "$QUAYIO_PASSWORD" quay.io
-            docker build -t $IMAGE_NAME:$CIRCLE_BRANCH .
+            docker build -t $IMAGE_NAME:$CLEAN_BRANCH .
             echo 'Verify program(s) from each inherited base image - cgpbigwig'
-            docker run -t --rm $IMAGE_NAME:$CIRCLE_BRANCH bwjoin --version
+            docker run -t --rm $IMAGE_NAME:$CLEAN_BRANCH bwjoin --version
             echo 'Verify program(s) from each inherited base image - pcap-core'
-            docker run -t --rm $IMAGE_NAME:$CIRCLE_BRANCH bwa_mem.pl -version
-            docker run -t --rm $IMAGE_NAME:$CIRCLE_BRANCH bammarkduplicates2 --version
-            docker run -t --rm $IMAGE_NAME:$CIRCLE_BRANCH samtools --version
-            docker run -t --rm $IMAGE_NAME:$CIRCLE_BRANCH bash -c 'bwa 2>&1 | grep Version'
+            docker run -t --rm $IMAGE_NAME:$CLEAN_BRANCH bwa_mem.pl -version
+            docker run -t --rm $IMAGE_NAME:$CLEAN_BRANCH bammarkduplicates2 --version
+            docker run -t --rm $IMAGE_NAME:$CLEAN_BRANCH samtools --version
+            docker run -t --rm $IMAGE_NAME:$CLEAN_BRANCH bash -c 'bwa 2>&1 | grep Version'
             echo 'Verify program(s) from this repo'
-            docker run -t --rm $IMAGE_NAME:$CIRCLE_BRANCH pindel.pl --version
-            docker run -t --rm $IMAGE_NAME:$CIRCLE_BRANCH pindel_input_gen.pl --version
-            docker run -t --rm $IMAGE_NAME:$CIRCLE_BRANCH pindel_2_combined_vcf.pl --version
-            docker run -t --rm $IMAGE_NAME:$CIRCLE_BRANCH FlagVcf.pl --version
-            docker run -t --rm $IMAGE_NAME:$CIRCLE_BRANCH pindel_merge_vcf_bam.pl --version
-            docker run -t --rm $IMAGE_NAME:$CIRCLE_BRANCH pindel_np_from_vcf.pl --version
-            docker run -t --rm $IMAGE_NAME:$CIRCLE_BRANCH pindel_germ_bed.pl --version
-            docker run -t --rm $IMAGE_NAME:$CIRCLE_BRANCH which pindel
-            docker run -t --rm $IMAGE_NAME:$CIRCLE_BRANCH which filter_pindel_reads
-            BRANCH_OR_TAG="${CIRCLE_TAG:-$CIRCLE_BRANCH}"
+            docker run -t --rm $IMAGE_NAME:$CLEAN_BRANCH pindel.pl --version
+            docker run -t --rm $IMAGE_NAME:$CLEAN_BRANCH pindel_input_gen.pl --version
+            docker run -t --rm $IMAGE_NAME:$CLEAN_BRANCH pindel_2_combined_vcf.pl --version
+            docker run -t --rm $IMAGE_NAME:$CLEAN_BRANCH FlagVcf.pl --version
+            docker run -t --rm $IMAGE_NAME:$CLEAN_BRANCH pindel_merge_vcf_bam.pl --version
+            docker run -t --rm $IMAGE_NAME:$CLEAN_BRANCH pindel_np_from_vcf.pl --version
+            docker run -t --rm $IMAGE_NAME:$CLEAN_BRANCH pindel_germ_bed.pl --version
+            docker run -t --rm $IMAGE_NAME:$CLEAN_BRANCH which pindel
+            docker run -t --rm $IMAGE_NAME:$CLEAN_BRANCH which filter_pindel_reads
+            BRANCH_OR_TAG="${CIRCLE_TAG:-$CLEAN_BRANCH}"
             if [ "$CIRCLE_TAG" = "$BRANCH_OR_TAG" ]; then
               echo 'Pushing image'
-              docker push $IMAGE_NAME:$CIRCLE_BRANCH
+              docker push $IMAGE_NAME:$CLEAN_BRANCH
             else
               echo "I am not a tag so not pushing image"
             fi
