@@ -19,7 +19,8 @@ jobs:
           name: Build Docker image
           command: |
             set -e
-            CLEAN_BRANCH=$(echo $CIRCLE_BRANCH | tr / -)
+            BRANCH_OR_TAG="${CIRCLE_TAG:-$CLEAN_BRANCH}"
+            CLEAN_BRANCH=$(echo $BRANCH_OR_TAG | tr / -)
             docker login -u "$DOCKERHUB_USER" -p "$DOCKERHUB_PASSWORD"
             docker login -u "$QUAYIO_USER" -p "$QUAYIO_PASSWORD" quay.io
             docker build -t $IMAGE_NAME:$CLEAN_BRANCH .
@@ -40,7 +41,6 @@ jobs:
             docker run -t --rm $IMAGE_NAME:$CLEAN_BRANCH pindel_germ_bed.pl --version
             docker run -t --rm $IMAGE_NAME:$CLEAN_BRANCH which pindel
             docker run -t --rm $IMAGE_NAME:$CLEAN_BRANCH which filter_pindel_reads
-            BRANCH_OR_TAG="${CIRCLE_TAG:-$CLEAN_BRANCH}"
             if [ "$CIRCLE_TAG" = "$BRANCH_OR_TAG" ]; then
               echo 'Pushing image'
               docker push $IMAGE_NAME:$CLEAN_BRANCH
