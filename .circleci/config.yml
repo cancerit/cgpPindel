@@ -1,9 +1,12 @@
-# 1. Set your default branch to develop
+# 1. Set your GitHub default branch to dev/develop
 # 2. In circleci project settings->advanced set:
 #    - GitHub Status Updates (this should be on already)
 #    - Only build pull requests
 #    - Auto-cancel redundant builds
 #    - Free and Open Source (this should be on already)
+# 3. If existing project with quay.io, remove the quay build triggers.
+#    - as circleci is pusing the image
+#    - reevaluate when/if quay.io adds ability to authenticate pulls
 
 version: 2.1
 jobs:
