@@ -22,10 +22,10 @@ jobs:
           name: Build Docker image
           command: |
             set -e
-            BRANCH_OR_TAG="${CIRCLE_TAG:-$CLEAN_BRANCH}"
+            BRANCH_OR_TAG="${CIRCLE_TAG:-$CIRCLE_BRANCH}"
             CLEAN_BRANCH=$(echo $BRANCH_OR_TAG | tr / -)
-            docker login -u "$DOCKERHUB_USER" -p "$DOCKERHUB_PASSWORD"
-            docker login -u "$QUAYIO_USER" -p "$QUAYIO_PASSWORD" quay.io
+            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USER" --password-stdin
+            echo "$QUAYIO_PASSWORD" | docker login -u "$QUAYIO_USER" --password-stdin quay.io
             docker build -t $IMAGE_NAME:$CLEAN_BRANCH .
             echo 'Verify program(s) from each inherited base image - cgpbigwig'
             docker run -t --rm $IMAGE_NAME:$CLEAN_BRANCH bwjoin --version
