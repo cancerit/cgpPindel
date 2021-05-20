@@ -26,10 +26,10 @@ my ($records, $sample_order) = collate_data($vcf_by_sample);
 
 # write stuff
 header($options->{output}, $options->{vcfs}, $sample_head);
-records($options->{output}, $records, $sample_order, $options->{min_vaf}, $options->{np}, $options->{control});
+records($options->{output}, $records, $sample_order, $options->{min_vaf}, $options->{np}, $options->{control}, $options->{min_blat});
 
 sub records {
-  my ($output, $records, $sample_order, $min_vaf, $np_tree, $control) = @_;
+  my ($output, $records, $sample_order, $min_vaf, $np_tree, $control, $min_blat) = @_;
   my %ds = %{$records};
   my $uuid_gen = Data::UUID->new;
   my @samples = @{$sample_order};
@@ -57,18 +57,25 @@ sub records {
         my ($ref, $alt) = split ':', $seq_key;
         my $row = join "\t", $chr, $pos, $uuid_gen->to_string($uuid_gen->create), $ref, $alt, q{.}, q{}, $info, $format;
         my $samples_with_min_vaf = 0;
+        my $samples_with_min_blat = 0;
         for my $s(@samples) {
           if(exists $ds{$chr}{$pos}{$seq_key}{$s}) {
+            #GT:S1:S2:PP:NP:WTP:WTN:WTM:MTP:MTN:MTM:VAF
+            #./.:12:205.534:3:2:4:3:.:3:2:0.003:0.417
+            my ($mtp, $mtn, $vaf) = (split /:/, $ds{$chr}{$pos}{$seq_key}{$s})[8,9,11];
             $row .= "\t".$ds{$chr}{$pos}{$seq_key}{$s};
-            my ($last_vaf) = $row =~ m/:([0-9.]+)$/;
-            $last_vaf = 0 if($last_vaf eq q{.});
-            $samples_with_min_vaf++ if($last_vaf >= $min_vaf);
+            # need to review if these are all q{.} when one is
+            $vaf = 0 if($vaf eq q{.});
+            $mtp = 0 if($mtp eq q{.});
+            $mtn = 0 if($mtn eq q{.});
+            $samples_with_min_vaf++ if($vaf >= $min_vaf);
+            $samples_with_min_blat++ if($mtp >= $min_blat && $mtn >= $min_blat);
           }
           else {
             $row .= "\t.";
           }
         }
-        if($samples_with_min_vaf > 0) {
+        if($samples_with_min_vaf > 0 && $samples_with_min_blat > 0) {
           print $output $row."\n";
         }
       }
@@ -176,6 +183,7 @@ sub setup{
     'cmd' => join(" ", $0, @ARGV),
     'mnps' => 1,
     'min_vaf' => 0,
+    'min_blat' => 4,
   );
   GetOptions( 'h|help' => \$opts{h},
               'm|man' => \$opts{m},
@@ -184,6 +192,7 @@ sub setup{
               'n|np=s' => \$opts{np},
               's|mnps=i' => \$opts{mnps},
               'k|min:f' => \$opts{min_vaf},
+              'b|blat:i' => \$opts{min_blat},
               'd|debug' => \$opts{debug},
               'c|control=s' => \$opts{control},
               'l|list:s' => \$opts{list},
@@ -254,8 +263,9 @@ pindelCohortMerge.pl [options] -l vcf.list
     -min       -k   Keep events VAF >= VALUE (3dp) for 1 or more samples
                      - default is to retain events even if VAF == 0/. for all samples
     -np        -n   Normal panel gff3 file - omit if no filtering required.
-    -mnps      -s   Minimum normal panel samples required to exclude [default: >=1]
-    -control   -c   Exclude any events where this sample has calls.
+    -mnps      -s   Minimum normal panel samples required to exclude [default: 1]
+    -control   -c   Exclude events where this sample has calls.
+    -blat      -b   Exclude events where no sample has MTP >= N && MTN >= N [default: 4]
 
   Other:
     -help      -h   Brief help message.
