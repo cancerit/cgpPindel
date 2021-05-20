@@ -22,3 +22,4 @@
 .idea/*
 /python/env
 /tmp
+*.code-workspace
