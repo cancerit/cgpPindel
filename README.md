@@ -2,11 +2,7 @@
 
 cgpPindel contains the Cancer Genome Projects workflow for [Pindel][pindel-core].
 
-[![Quay Badge][quay-status]][quay-repo]
-
-| Master                                        | Develop                                         |
-| --------------------------------------------- | ----------------------------------------------- |
-| [![Master Badge][travis-master]][travis-base] | [![Develop Badge][travis-develop]][travis-base] |
+[![cancerit](https://circleci.com/gh/cancerit/cgpPindel.svg?style=svg)](https://circleci.com/gh/cancerit/cgpPindel)
 
 The is a lightly modified version of pindel v2.0 with CGP specific processing for:
 
@@ -18,25 +14,24 @@ The is a lightly modified version of pindel v2.0 with CGP specific processing fo
 
 Contents:
 
-<!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
-
 * [Docker, Singularity and Dockstore](#docker-singularity-and-dockstore)
 * [Dependencies/Install](#dependenciesinstall)
 * [Creating a release](#creating-a-release)
   * [Preparation](#preparation)
   * [Release process](#release-process)
     * [Code changes](#code-changes)
-    * [Docker image](#docker-image)
+    * [Testing](#testing)
+      * [Regression CI](#regression-ci)
+      * [Public CI](#public-ci)
     * [Cutting the release](#cutting-the-release)
 * [LICENCE](#licence)
 
-<!-- /TOC -->
-
 ## Docker, Singularity and Dockstore
 
-There are pre-built images containing this codebase on quay.io.
+There are pre-built images containing this codebase on quay.io.  When pulling an image you must specify
+the version there is no `latest`.
 
-* [cgpPindel][cgpPindel-git]: Contained within this repository
+* [cgpPindel quay.io][quay-repo]: Contained within this repository
   * Smallest build required to use cgpPindel
   * Not linked to Dockstore (yet)
   * Updated most frequently
@@ -49,7 +44,7 @@ The docker images are known to work correctly after import into a singularity im
 
 ## Dependencies/Install
 
-Please install the following first:
+When doing a native install please install the following first:
 
 * [PCAP-core v2.0+][pcap-core-rel]
 * [cgpVcf v2.0+][cgpvcf-rel]
@@ -77,37 +72,48 @@ Please be aware that this expects basic C compilation libraries and tools to be 
 
 ### Release process
 
-This project is maintained using HubFlow.
+This project is maintained using the [HubFlow][hubflow-docs] methodology.
 
 #### Code changes
 
 1. Make appropriate changes
 2. Update `perl/lib/Sanger/CGP/Pindel.pm` to the correct version (adding rc/beta to end if applicable).
 3. Update `CHANGES.md` to show major items.
-4. Run `./prerelease.sh`
-5. Check all tests and coverage reports are acceptable.
-6. Commit the updated docs and updated module/version.
-7. Push commits.
+4. Commit the updated docs and updated module/version.
+5. Push commits.
 
-#### Docker image
+#### Testing
 
-1. Use the GitHub tools to draft a release.
-2. Build image locally
-3. Run example inputs and verify any changes are acceptable
-4. Bump version in `Dockerfile`
-5. Push changes
+##### Regression CI
+
+An internal CI system is used to validate each release using real, large scale datasets.
+
+##### Public CI
+
+Circleci is used to:
+
+* Build Docker image (unit tests are part of build)
+* Validate expected tools exist
+* For tags only: push image to quay.io
+
+CI only runs for:
+
+* Branches with pull-requests
+* Default branch (`dev`)
+* Tags
 
 #### Cutting the release
 
-1. Check state on Travis
+Internal regression CI processes must be completed prior to this.
+
+1. Check state on [Circleci][circle-repo]
 2. Generate the release (add notes to GitHub)
 3. Confirm that image has been built on [quay.io][quay-builds]
-4. Update the [dockstore][dockstore-cgpPindel] entry, see [their docs][dockstore-get-started].
 
 ## LICENCE
 
 ```
-Copyright (c) 2014-2018 Genome Research Ltd.
+Copyright (c) 2014-2021 Genome Research Ltd.
 
 Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 
@@ -142,15 +148,15 @@ identical to a statement that reads ‘Copyright (c) 2005, 2006, 2007, 2008,
 [pcap-core-rel]: https://github.com/cancerit/PCAP-core/releases
 [ds-cgpwxs-git]: https://github.com/cancerit/dockstore-cgpwxs
 [ds-cgpwgs-git]: https://github.com/cancerit/dockstore-cgpwgs
-[cgpPindel-git]: https://github.com/cancerit/cgpPindel
 [pindel-core]: http://gmt.genome.wustl.edu/pindel/current
+[hubflow-docs]: https://datasift.github.io/gitflow/
 
-<!-- Travis -->
-[travis-base]: https://travis-ci.org/cancerit/cgpPindel
-[travis-master]: https://travis-ci.org/cancerit/cgpPindel.svg?branch=master
-[travis-develop]: https://travis-ci.org/cancerit/cgpPindel.svg?branch=dev
+<!-- Circleci -->
+[circle-repo]: https://app.circleci.com/pipelines/github/cancerit/cgpPindel
+[circle-badge-svg]: https://circleci.com/gh/cancerit/cgpPindel.svg?style=svg
+<!-- point this at the default branch -->
+[circle-badge-link]: https://travis-ci.org/cancerit/cgpPindel.svg?branch=dev
 
 <!-- Quay.io -->
-[quay-status]: https://quay.io/repository/wtsicgp/cgppindel/status
 [quay-repo]: https://quay.io/repository/wtsicgp/cgppindel
 [quay-builds]: https://quay.io/repository/wtsicgp/cgppindel?tab=builds
