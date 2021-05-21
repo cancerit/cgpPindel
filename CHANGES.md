@@ -1,5 +1,10 @@
 # CHANGES
 
+## 3.5.0
+
+* Update to core pindel algorithm to allow complex DI events to have longer inserted sequence than deleted
+  * Masking real events
+
 ## 3.4.1
 
 * Updated Dockerfile to use pcap-core 5.4.0 - htslib/samtools 1.11
