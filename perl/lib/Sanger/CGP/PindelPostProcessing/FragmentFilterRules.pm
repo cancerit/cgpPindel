@@ -1,7 +1,7 @@
 package Sanger::CGP::PindelPostProcessing::FragmentFilterRules;
 
 ########## LICENCE ##########
-# Copyright (c) 2014-2018 Genome Research Ltd.
+# Copyright (c) 2014-2021 Genome Research Ltd.
 #
 # Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
