@@ -106,7 +106,7 @@ sub setup {
   delete $opts{'index'} unless(defined $opts{'index'});
   delete $opts{'limit'} unless(defined $opts{'limit'});
 
-  for my $param(qw(input ref output)) {
+  for my $param(qw(input ref output data)) {
     pod2usage(-verbose => 1, -message=> sprintf('ERROR: -%s must be defined', $param), -exit => 2) unless(defined $opts{$param});
   }
 
@@ -176,10 +176,10 @@ pindelCohortVafFill.pl - Takes merged cohort VCF and fills in gaps in farm frien
 pindelCohortVafFill.pl [options] -i ... -o ... -r ... -d ...
 
   Required parameters:
-    -file      -f   VCF file to read in.
+    -input     -f   VCF file to read in.
     -output    -o   Workspace directory and final output.
     -ref       -r   File path to the reference file used to provide the coordinate system.
-    -data      -d   File containing list of sequence data files for all samples used in "-file"
+    -data      -d   File containing list of sequence data files for all samples used in "-input"
                     - format: tab separated BWA mapping followed by pindel_cohort reads, one sample per line.
 
                         sample_A_bwa.bam<TAB>sample_A_pindel.bam
