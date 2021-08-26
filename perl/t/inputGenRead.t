@@ -1,23 +1,4 @@
-########## LICENCE ##########
-# Copyright (c) 2014-2021 Genome Research Ltd.
-#
-# Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
-#
-# This file is part of cgpPindel.
-#
-# cgpPindel is free software: you can redistribute it and/or modify it under
-# the terms of the GNU Affero General Public License as published by the Free
-# Software Foundation; either version 3 of the License, or (at your option) any
-# later version.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
-# details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program. If not, see <http://www.gnu.org/licenses/>.
-########## LICENCE ##########
+
 
 use strict;
 use Test::More;
@@ -45,4 +26,3 @@ $obj = new_ok($MODULE, [\$cleaned, 2]);
 is($obj->frac_pbq_poor, $EXP_FRAC_PBQ, 'Check poor qual PBQ fraction');
 
 done_testing();
-

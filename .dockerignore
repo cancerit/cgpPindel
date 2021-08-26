@@ -12,3 +12,5 @@
 /perl/docs.tar.gz
 /python/env
 /install_tmp
+/.circleci
+/*.code-workspace

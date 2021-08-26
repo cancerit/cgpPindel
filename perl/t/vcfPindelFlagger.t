@@ -1,9 +1,3 @@
-####################################################
-# Copyright (c) 2014-2021 Genome Research Ltd.
-# Author: CASM/Cancer IT, cgphelp@sanger.ac.uk
-# See LICENCE for details
-####################################################
-
 use strict;
 use warnings;
 use Cwd 'abs_path';

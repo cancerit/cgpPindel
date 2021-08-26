@@ -6,37 +6,37 @@ cgpPindel contains the Cancer Genome Projects workflow for [Pindel][pindel-core]
 
 The is a lightly modified version of pindel v2.0 with CGP specific processing for:
 
-* Input file generation
-* Conversion from pindel text output to:
-  * tumour and normal BAM alignment files
-  * VCF
-  * Application of VCF filters.
+- Input file generation
+- Conversion from pindel text output to:
+  - tumour and normal BAM alignment files
+  - VCF
+  - Application of VCF filters.
 
 Contents:
 
-* [Docker, Singularity and Dockstore](#docker-singularity-and-dockstore)
-* [Dependencies/Install](#dependenciesinstall)
-* [Creating a release](#creating-a-release)
-  * [Preparation](#preparation)
-  * [Release process](#release-process)
-    * [Code changes](#code-changes)
-    * [Testing](#testing)
-      * [Regression CI](#regression-ci)
-      * [Public CI](#public-ci)
-    * [Cutting the release](#cutting-the-release)
-* [LICENCE](#licence)
+- [Docker, Singularity and Dockstore](#docker-singularity-and-dockstore)
+- [Dependencies/Install](#dependenciesinstall)
+- [Creating a release](#creating-a-release)
+  - [Preparation](#preparation)
+  - [Release process](#release-process)
+    - [Code changes](#code-changes)
+    - [Testing](#testing)
+      - [Regression CI](#regression-ci)
+      - [Public CI](#public-ci)
+    - [Cutting the release](#cutting-the-release)
+- [LICENCE](#licence)
 
 ## Docker, Singularity and Dockstore
 
 There are pre-built images containing this codebase on quay.io.  When pulling an image you must specify
 the version there is no `latest`.
 
-* [cgpPindel quay.io][quay-repo]: Contained within this repository
-  * Smallest build required to use cgpPindel
-  * Not linked to Dockstore (yet)
-  * Updated most frequently
-* [dockstore-cgpwxs][ds-cgpwxs-git]: Contains tools specific to WXS analysis.
-* [dockstore-cgpwgs][ds-cgpwgs-git]: Contains additional tools for WGS analysis.
+- [cgpPindel quay.io][quay-repo]: Contained within this repository
+  - Smallest build required to use cgpPindel
+  - Not linked to Dockstore (yet)
+  - Updated most frequently
+- [dockstore-cgpwxs][ds-cgpwxs-git]: Contains tools specific to WXS analysis.
+- [dockstore-cgpwgs][ds-cgpwgs-git]: Contains additional tools for WGS analysis.
 
 These were primarily designed for use with dockstore.org but can be used as normal containers.
 
@@ -46,8 +46,8 @@ The docker images are known to work correctly after import into a singularity im
 
 When doing a native install please install the following first:
 
-* [PCAP-core v2.0+][pcap-core-rel]
-* [cgpVcf v2.0+][cgpvcf-rel]
+- [PCAP-core v2.0+][pcap-core-rel]
+- [cgpVcf v2.0+][cgpvcf-rel]
 
 Please see these for any child dependencies.
 
@@ -63,52 +63,79 @@ are installed into the target area.
 
 Please be aware that this expects basic C compilation libraries and tools to be available.
 
-## Creating a release
+## Developers
 
-### Preparation
+Please use `pre-commit` on this project.  You can install to `$HOME/bin` via:
 
-* Commit/push all relevant changes.
-* Pull a clean version of the repo and use this for the following steps.
+```bash
+curl https://pre-commit.com/install-local.py | python -
+```
 
-### Release process
+In you checkout please run:
+
+```bash
+pre-commit install
+```
+
+### Updating licence headers
+
+Please use [skywalking-eyes](https://github.com/apache/skywalking-eyes).
+
+Expected workflow:
+
+1. Check state before modifying `.licenserc.yaml`:
+   - `docker run -it --rm -v $(pwd):/github/workspace apache/skywalking-eyes header check`
+   - You should get some 'valid' here, those without a header as 'invalid'
+1. Modify `.licenserc.yaml`
+1. Apply the changes:
+   - `docker run -it --rm -v $(pwd):/github/workspace apache/skywalking-eyes header fix`
+1. Add/commit changes
+
+This is executed in the CI pipeline.
+
+*DO NOT* edit the header in the files, please modify the date component of `content` in `.licenserc.yaml`.  The only exception being:
+
+- `README.md`
+
+If you need to make more extensive changes to the license carefully test the pattern is functional.
+
+### Code changes
 
 This project is maintained using the [HubFlow][hubflow-docs] methodology.
 
-#### Code changes
-
 1. Make appropriate changes
-2. Update `perl/lib/Sanger/CGP/Pindel.pm` to the correct version (adding rc/beta to end if applicable).
-3. Update `CHANGES.md` to show major items.
-4. Commit the updated docs and updated module/version.
-5. Push commits.
+1. Update `perl/lib/Sanger/CGP/Pindel.pm` to the correct version (adding rc/beta to end if applicable).
+1. Update `CHANGES.md` to show major items.
+1. Commit the updated docs and updated module/version.
+1. Push commits.
 
-#### Testing
+### Testing
 
-##### Regression CI
+#### Regression CI
 
 An internal CI system is used to validate each release using real, large scale datasets.
 
-##### Public CI
+#### Public CI
 
 Circleci is used to:
 
-* Build Docker image (unit tests are part of build)
-* Validate expected tools exist
-* For tags only: push image to quay.io
+- Build Docker image (unit tests are part of build)
+- Validate expected tools exist
+- For tags only: push image to quay.io
 
 CI only runs for:
 
-* Branches with pull-requests
-* Default branch (`dev`)
-* Tags
+- Branches with pull-requests
+- Default branch (`dev`)
+- Tags
 
 #### Cutting the release
 
 Internal regression CI processes must be completed prior to this.
 
 1. Check state on [Circleci][circle-repo]
-2. Generate the release (add notes to GitHub)
-3. Confirm that image has been built on [quay.io][quay-builds]
+1. Generate the release (add notes to GitHub)
+1. Confirm that image has been pushed to [quay.io][quay-tags]
 
 ## LICENCE
 
@@ -144,19 +171,19 @@ identical to a statement that reads ‘Copyright (c) 2005, 2006, 2007, 2008,
 ```
 
 <!-- References -->
-[cgpvcf-rel]: https://github.com/cancerit/cgpVcf/releases
-[pcap-core-rel]: https://github.com/cancerit/PCAP-core/releases
-[ds-cgpwxs-git]: https://github.com/cancerit/dockstore-cgpwxs
-[ds-cgpwgs-git]: https://github.com/cancerit/dockstore-cgpwgs
-[pindel-core]: http://gmt.genome.wustl.edu/pindel/current
-[hubflow-docs]: https://datasift.github.io/gitflow/
 
 <!-- Circleci -->
-[circle-repo]: https://app.circleci.com/pipelines/github/cancerit/cgpPindel
-[circle-badge-svg]: https://circleci.com/gh/cancerit/cgpPindel.svg?style=svg
+
 <!-- point this at the default branch -->
-[circle-badge-link]: https://travis-ci.org/cancerit/cgpPindel.svg?branch=dev
 
 <!-- Quay.io -->
+
+[cgpvcf-rel]: https://github.com/cancerit/cgpVcf/releases
+[circle-repo]: https://app.circleci.com/pipelines/github/cancerit/cgpPindel
+[ds-cgpwgs-git]: https://github.com/cancerit/dockstore-cgpwgs
+[ds-cgpwxs-git]: https://github.com/cancerit/dockstore-cgpwxs
+[hubflow-docs]: https://datasift.github.io/gitflow/
+[pcap-core-rel]: https://github.com/cancerit/PCAP-core/releases
+[pindel-core]: http://gmt.genome.wustl.edu/pindel/current
 [quay-repo]: https://quay.io/repository/wtsicgp/cgppindel
-[quay-builds]: https://quay.io/repository/wtsicgp/cgppindel?tab=builds
+[quay-tags]: https://quay.io/repository/wtsicgp/cgppindel?tab=tags
