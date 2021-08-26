@@ -12,17 +12,18 @@ The is a lightly modified version of pindel v2.0 with CGP specific processing fo
   - VCF
   - Application of VCF filters.
 
+Details of execution and referencing can be found in the [wiki][cgppindel-wiki]
+
 Contents:
 
 - [Docker, Singularity and Dockstore](#docker-singularity-and-dockstore)
 - [Dependencies/Install](#dependenciesinstall)
-- [Creating a release](#creating-a-release)
-  - [Preparation](#preparation)
-  - [Release process](#release-process)
-    - [Code changes](#code-changes)
-    - [Testing](#testing)
-      - [Regression CI](#regression-ci)
-      - [Public CI](#public-ci)
+- [Developers](#developers)
+  - [Updating licence headers](#updating-licence-headers)
+  - [Code changes](#code-changes)
+  - [Testing](#testing)
+    - [Regression CI](#regression-ci)
+    - [Public CI](#public-ci)
     - [Cutting the release](#cutting-the-release)
 - [LICENCE](#licence)
 
@@ -178,6 +179,7 @@ identical to a statement that reads ‘Copyright (c) 2005, 2006, 2007, 2008,
 
 <!-- Quay.io -->
 
+[cgppindel-wiki]: https://github.com/cancerit/cgpPindel/wiki
 [cgpvcf-rel]: https://github.com/cancerit/cgpVcf/releases
 [circle-repo]: https://app.circleci.com/pipelines/github/cancerit/cgpPindel
 [ds-cgpwgs-git]: https://github.com/cancerit/dockstore-cgpwgs
