@@ -511,7 +511,7 @@ sub determine_jobs {
   my %seqs;
   my @samples;
   if(exists $options->{'tumour'} && exists $options->{'normal'}) {
-    push @samples, $options->{'tumour'} && exists $options->{'normal'};
+    push @samples, $options->{'tumour'}, $options->{'normal'};
   }
   elsif(exists $options->{'hts_files'}) {
     @samples = @{$options->{'hts_files'}};
