@@ -33,7 +33,7 @@ header:
       2009, 2010, 2011, 2012’.
 
     pattern: |
-      Copyright \(c\) \d+ .+
+      Copyright \(c\) [-0-9]+ .+
 
       Author: .+
 
