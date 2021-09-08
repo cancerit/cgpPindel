@@ -2,7 +2,11 @@
 
 cgpPindel contains the Cancer Genome Projects workflow for [Pindel][pindel-core].
 
-[![cancerit](https://circleci.com/gh/cancerit/cgpPindel.svg?style=svg)](https://circleci.com/gh/cancerit/cgpPindel)
+| Master                                        | Develop                                         |
+| --------------------------------------------- | ----------------------------------------------- |
+| [![Master Badge][circle-master]][circle-base] | [![Develop Badge][circle-develop]][circle-base] |
+
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
 The is a lightly modified version of pindel v2.0 with CGP specific processing for:
 
@@ -84,12 +88,19 @@ Please use [skywalking-eyes](https://github.com/apache/skywalking-eyes).
 
 Expected workflow:
 
+Expected workflow:
+
+```bash
+# recent build, change to apache/skywalking-eyes:0.2.0 once released
+export DOCKER_IMG=ghcr.io/apache/skywalking-eyes/license-eye
+```
+
 1. Check state before modifying `.licenserc.yaml`:
-   - `docker run -it --rm -v $(pwd):/github/workspace apache/skywalking-eyes header check`
+   - `docker run -it --rm -v $(pwd):/github/workspace $DOCKER_IMG header check`
    - You should get some 'valid' here, those without a header as 'invalid'
 1. Modify `.licenserc.yaml`
 1. Apply the changes:
-   - `docker run -it --rm -v $(pwd):/github/workspace apache/skywalking-eyes header fix`
+   - `docker run -it --rm -v $(pwd):/github/workspace $DOCKER_IMG header fix`
 1. Add/commit changes
 
 This is executed in the CI pipeline.
@@ -173,14 +184,15 @@ identical to a statement that reads ‘Copyright (c) 2005, 2006, 2007, 2008,
 
 <!-- References -->
 
-<!-- Circleci -->
-
-<!-- point this at the default branch -->
+<!-- Circle-ci -->
 
 <!-- Quay.io -->
 
 [cgppindel-wiki]: https://github.com/cancerit/cgpPindel/wiki
 [cgpvcf-rel]: https://github.com/cancerit/cgpVcf/releases
+[circle-base]: https://circleci.com/gh/cancerit/cgpPindel.svg?style=shield
+[circle-develop]: https://circleci.com/gh/cancerit/cgpPindel.svg?style=shield&branch=dev%3B
+[circle-master]: https://circleci.com/gh/cancerit/cgpPindel.svg?style=shield&branch=master%3B
 [circle-repo]: https://app.circleci.com/pipelines/github/cancerit/cgpPindel
 [ds-cgpwgs-git]: https://github.com/cancerit/dockstore-cgpwgs
 [ds-cgpwxs-git]: https://github.com/cancerit/dockstore-cgpwxs
