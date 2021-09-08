@@ -254,7 +254,6 @@ sub concat {
     my $command = _which('vcf-concat');
     $command .= sprintf q{ %s | bgzip -c > %s},
                 catfile($tmp, 'blat_*/data.vcf'),
-                #catfile($vcf, 'blat_*.vcf'),
                 $vcf_gz;
     PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), ['set -o pipefail', $command], 'concat');
     PCAP::Threaded::touch_success(catdir($tmp, 'progress'), 'concat');
