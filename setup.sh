@@ -33,6 +33,7 @@
 # need to keep in sync with Dockerfile
 export VER_CGPVCF="v2.2.1"
 export VER_VCFTOOLS="0.1.16"
+export VER_BLAT="v385"
 
 get_file () {
 # output, source
@@ -57,11 +58,6 @@ if [[ $# -eq 2 ]] ; then
   CGP_PERLLIBS=$2
 fi
 
-# ALL tool versions used by opt-build.sh
-# need to keep in sync with Dockerfile
-export VER_CGPVCF="v2.2.1"
-export VER_VCFTOOLS="0.1.16"
-export VER_BLAT="v385"
 
 # get current directory
 INIT_DIR=`pwd`
