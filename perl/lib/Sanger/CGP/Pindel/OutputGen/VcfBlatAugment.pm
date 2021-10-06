@@ -35,7 +35,7 @@ use Capture::Tiny qw(capture);
 use Const::Fast qw(const);
 use File::Basename;
 use File::Spec::Functions;
-use File::Temp qw(tempfile);
+use File::Temp qw(tempfile tempdir);
 use IO::Compress::Gzip qw(:constants gzip $GzipError);
 use List::Util qw(min max);
 
@@ -52,7 +52,8 @@ use Sanger::CGP::Vcf::VcfUtil;
 const my $SD_MULT => 2;
 const my $V_FMT => 8;
 const my $V_GT_START => 9;
-const my $READS_AND_BLAT => q{bash -c 'set -o pipefail ; samtools view -uF 3840 %s %s | samtools fasta - > %s && blat -t=dna -q=dna -noTrimA -minIdentity=95 -noHead -out=psl %s %s %s && pslPretty -long -axt %s %s %s /dev/stdout'};
+const my $READS_ONLY => q{bash -c 'set -o pipefail; samtools view -uF 3840 %s %s | samtools fasta - > %s'};
+const my $BLAT_ONLY => q{bash -c 'blat -t=dna -q=dna -noTrimA -minIdentity=95 -noHead -out=psl %s %s %s && pslPretty -long -axt %s %s %s /dev/stdout'};
 # returns +ve and then -ve results
 const my $LOCI_FMT => '%s:%d-%d';
 const my $PAD_EVENT => 3;
@@ -299,16 +300,24 @@ sub to_data_hash {
 sub process_records {
   my $self = shift;
   my $fh = $self->{ofh};
+  my $readtmp_dir;
+  my $last_chr_pos = q{.};
   while(my $v_d = $self->{vcf}->next_data_array) {
+    my $this_c_p = sprintf "%s:%d", $v_d->[0], $v_d->[1];
+    if($last_chr_pos ne $this_c_p) {
+      # we use very large search range, so if the start pos doesn't change don't want to reparse reads
+      $readtmp_dir = tempdir( CLEANUP => 1 );
+      $last_chr_pos = $this_c_p;
+    }
     $v_d->[$V_FMT] .= $self->{fmt_ext} unless($self->{fill_in});
-    $self->blat_record($v_d);
+    $self->blat_record($v_d, $readtmp_dir);
     printf $fh "%s\n", join "\t", @{$v_d};
   }
   $self->_close_sams
 }
 
 sub blat_record {
-  my ($self, $v_d) = @_;
+  my ($self, $v_d, $readtmp_dir) = @_;
   my $v_h = $self->to_data_hash($v_d);
 
   # now attempt the blat stuff
@@ -329,7 +338,7 @@ sub blat_record {
     if($self->{fill_in} && $v_d->[$gt_pos] ne q{.}) {
       next;
     }
-    my $gt_set = $self->blat_reads($v_h, $file_target, $sample);
+    my $gt_set = $self->blat_reads($v_h, $file_target, $readtmp_dir, $sample);
     if($v_d->[$gt_pos] eq q{.}) {
       $v_d->[$gt_pos] = join q{:}, './.:.:.:.:.', @{$gt_set};
     }
@@ -350,14 +359,18 @@ sub read_ranges {
 }
 
 sub blat_reads {
-  my ($self, $v_h, $file_target, $sample) = @_;
-  # setup the temp files
-  my ($fh_query, $file_query) = tempfile( SUFFIX => '.fa', UNLINK => 1);
-  close $fh_query or die "Failed to close $file_query (query reads)";
+  my ($self, $v_h, $file_target, $readtmp_dir, $sample) = @_;
+  my $file_query = sprintf '%s/%s.fa', $readtmp_dir, $sample;
+  # setup the temp file
   my ($fh_psl, $file_psl) = tempfile( SUFFIX => '.psl', UNLINK => 1);
   close $fh_psl or die "Failed to close $file_psl (psl output)";
 
-  my $c_blat = sprintf $READS_AND_BLAT, $self->{hts}->{$sample}->hts_path, $self->read_ranges($v_h, $sample), $file_query, $file_target, $file_query, $file_psl, $file_psl, $file_target, $file_query;
+  if(! -e $file_query) {
+    my $c_reads = sprintf $READS_ONLY, $self->{hts}->{$sample}->hts_path, $self->read_ranges($v_h, $sample), $file_query;
+    my ($r_out, $r_err, $r_exit) = capture { system([0], $c_reads); };
+  }
+
+  my $c_blat = sprintf $BLAT_ONLY, $file_target, $file_query, $file_psl, $file_psl, $file_target, $file_query;
   my ($c_out, $c_err, $c_exit) = capture { system([0,255], $c_blat); };
   if($c_exit == 255 && $c_err =~ m/processed 0 reads/ms) {
     # No reads found
@@ -370,7 +383,6 @@ sub blat_reads {
   }
 
   # tempfile unlink only does it on shutdown when used in this way
-  unlink $file_query;
   unlink $file_psl;
 
   my ($wtp, $wtn, $mtp, $mtn, $wt_bmm, $mt_bmm) = $self->psl_axt_parser(\$c_out, $v_h, $sample);

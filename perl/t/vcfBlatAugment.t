@@ -41,21 +41,21 @@ subtest 'Header checks' => sub {
 subtest 'Simple Deletion checks' => sub {
   my $vba = new_vba(catdir($DATA, 'D'));
   my @tmp = @{$DATA_ARR_D};
-  $vba->blat_record(\@tmp);
+  $vba->blat_record(\@tmp, tempdir(CLEANUP => 1));
   is_deeply(\@tmp, $RES_ARR_D);
 };
 
 subtest 'Simple Insertion checks' => sub {
   my $vba = new_vba(catdir($DATA, 'SI'));
   my @tmp = @{$DATA_ARR_SI};
-  $vba->blat_record(\@tmp);
+  $vba->blat_record(\@tmp, tempdir(CLEANUP => 1));
   is_deeply(\@tmp, $RES_ARR_SI);
 };
 
 subtest 'Complex event checks' => sub {
   my $vba = new_vba(catdir($DATA, 'DI'));
   my @tmp = @{$DATA_ARR_DI};
-  $vba->blat_record(\@tmp);
+  $vba->blat_record(\@tmp, tempdir(CLEANUP => 1));
   print join q{ }, @tmp;
   is_deeply(\@tmp, $RES_ARR_DI);
 };
