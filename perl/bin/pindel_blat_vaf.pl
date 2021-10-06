@@ -52,6 +52,7 @@ use Sanger::CGP::Pindel::OutputGen::VcfBlatAugment;
     sam => $options->{align},
     hts_files => $options->{hts},
     outpath => $options->{outpath},
+    debug => $options->{debug},
   );
 
   $augment->output_header;
@@ -126,6 +127,7 @@ pindel_blat_vaf.pl [options]
     -output    -o   Directory for VCF output (gz compressed) and colocated sample bams
 
   Other:
+    -debug     -d   Turn on additional outputs.
     -help      -h   Brief help message.
     -man       -m   Full documentation.
     -version   -v   Prints the version number.

@@ -54,10 +54,9 @@ const my $V_FMT => 8;
 const my $V_GT_START => 9;
 const my $READS_AND_BLAT => q{bash -c 'set -o pipefail ; samtools view -uF 3840 %s %s | samtools fasta - > %s && blat -t=dna -q=dna -noTrimA -minIdentity=95 -noHead -out=psl %s %s %s && pslPretty -long -axt %s %s %s /dev/stdout'};
 # returns +ve and then -ve results
-const my $SAM_DEPTH_PN => q{bash -c "set -o pipefail ; samtools view -uF 3844 %s %s | pee 'samtools view -c -F 16 -' 'samtools view -c -f 16 -'"};
 const my $LOCI_FMT => '%s:%d-%d';
 const my $PAD_EVENT => 3;
-const my $MAPPED_RL_MULT => 0.6;
+const my $MAPPED_RL_MULT => 0.9;
 
 1;
 
@@ -72,6 +71,7 @@ sub new{
     ofh => $args{ofh}, # vcf
     hts_files => $args{hts_files},
     fill_in => $args{fill_in},
+    debug => $args{debug} || 0,
   };
   bless $self, $class;
 
@@ -176,7 +176,8 @@ sub _buffer_sizes {
     my $b = PCAP::Bam::Bas->new($self->{hts}->{$hts_sample}->hts_path.'.bas');
     my $sample;
     for my $rg($b->read_groups) {
-      my $m_sd = int ($b->get($rg, 'mean_insert_size') + ($b->get($rg, 'insert_size_sd') * $SD_MULT));
+      #my $m_sd = int ($b->get($rg, 'mean_insert_size') + ($b->get($rg, 'insert_size_sd') * $SD_MULT));
+      my $m_sd = int ($b->get($rg, 'mean_insert_size') * 5);
       $max_ins = $m_sd if($m_sd > $max_ins);
       my $tmp_max = max ($b->get($rg, 'read_length_r1'), $b->get($rg, 'read_length_r2'));
       my $tmp_min = min ($b->get($rg, 'read_length_r1'), $b->get($rg, 'read_length_r2'));
@@ -375,11 +376,7 @@ sub blat_reads {
   my ($wtp, $wtn, $mtp, $mtn, $wt_bmm, $mt_bmm) = $self->psl_axt_parser(\$c_out, $v_h, $sample);
   my ($wtm, $mtm) = (q{.}, q{.});
   my $wtr = $wtp + $wtn;
-  if($wtr == 0) {
-    ($wtp, $wtn) = $self->sam_depth($v_h, $sample);
-    $wtr = $wtp + $wtn;
-  }
-  else {
+  if($wtr > 0) {
     $wtm = sprintf("%.3f", $wt_bmm / $wtr);
   }
   my $mtr = $mtp+$mtn;
@@ -507,20 +504,6 @@ sub sam_record {
     $cigar .= (length($seq) - $m_c).'M';
   }
   printf {$self->{sfh}->{$sample}} "%s\n", join "\t", $qname, $flag, $v_h->{CHROM}, $pos, 60, $cigar, '*', 0, 0, $seq, '*';
-}
-
-sub sam_depth {
-  my ($self, $v_h, $sample) = @_;
-  my $mid_point = int ($v_h->{RS} + (($v_h->{RE} - $v_h->{RS})*0.5));
-  my $read_search = sprintf $LOCI_FMT, $v_h->{CHROM}, $mid_point, $mid_point;
-  my $c_samcount = sprintf $SAM_DEPTH_PN, $self->{hts}->{$sample}->hts_path, $read_search;
-  my ($c_out, $c_err, $c_exit) = capture { system($c_samcount); };
-  if($c_exit) {
-    warn "An error occurred while executing $c_samcount\n";
-    warn "\tERROR$c_err\n";
-    exit $c_exit;
-  }
-  return (split /\n/, $c_out);
 }
 
 sub sam_to_bam {

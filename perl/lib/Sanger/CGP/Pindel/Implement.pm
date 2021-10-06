@@ -780,15 +780,20 @@ sub merge_vaf_bams {
     }
     # list of bams to merge
     lines_to_file($in_file_list, [$options->{secondary_hts}->[$arr_idx], @split_bams]);
-    my $command = _which('samtools');
+    my $merged_bam = catfile($options->{output}, sprintf('%s.vaf.bam', $sample));
+    my $sort_prefix = catfile($sort_tmp, 'samsort');
+    my $sort_cleanup = sprintf 'rm -rf %s.*.bam', $sort_prefix;
+    my $sam_merge = _which('samtools');
     # needs to attempt to clean up duplicate reads
-    $command .= sprintf q{ merge --output-fmt SAM -b %s - | pee 'grep ^@' 'grep -v ^@ | sort -S 2G -T %s | uniq' | samtools view -u - | samtools sort -m 2G -T %s -o %s -},
+    $sam_merge .= sprintf q{ merge --output-fmt SAM -b %s - | pee 'grep ^@' 'grep -v ^@ | sort -S 2G -T %s | uniq' | samtools view -u - | samtools sort -m 2G -T %s -o %s -},
                           $in_file_list, # merge filelist
                           $sort_tmp, # sort tmptfile
-                          catfile($sort_tmp, 'samsort'),
-                          catfile($options->{output}, sprintf('%s.vaf.bam', $sample)); # outfile
+                          $sort_prefix,
+                          $merged_bam; # outfile
+    my $sam_idx = _which('samtools');
+    $sam_idx .= sprintf q{ index %s}, $merged_bam;
 
-    PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), $command, $index);
+    PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), [$sort_cleanup, $sam_merge, $sam_idx], $index);
     remove_tree($sort_tmp);
     PCAP::Threaded::touch_success(catdir($tmp, 'progress'), $index);
   }
