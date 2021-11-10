@@ -87,6 +87,10 @@ my %RULE_DESCS = ('FF001' => { 'tag' =>'INFO/LEN',
                               'name' => 'FF018',
                               'desc' => 'Sufficient Depth: Pass if depth > 10',
                               'test' => \&flag_018},
+                  'FF019' => { 'tag'  => 'INFO/LEN',
+                              'name' => 'FF019',
+                              'desc' => 'Fail when tumour supporting fragments < 3 or tumour fraction of supporting fragments < 0.05',
+                              'test' => \&flag_019},
 );
 
 our $previous_format_hash;
@@ -449,5 +453,38 @@ sub flag_018 {
 
   return $FAIL;
 }
+
+sub flag_019 {
+  my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
+  use_prev($$RECORD[8]);
+
+  my @tum_geno = split(':',$$RECORD[10]);
+  if(($tum_geno[$previous_format_hash->{'FC'}] < 3) ||
+    ($tum_geno[$previous_format_hash->{'FC'}] / $tum_geno[$previous_format_hash->{'FD'}] < 0.05)){
+    return $FAIL;
+  }
+
+  return $PASS;
+}
+
+# sub flag_020 {
+#   my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
+#   use_prev($$RECORD[8]);
+
+#   my @nor_geno = split(':',$$RECORD[9]);
+#   my @tum_geno = split(':',$$RECORD[10]);
+#   if(($nor_geno[$previous_format_hash->{'FD'}] + $tum_geno[$previous_format_hash->{'FD'}] < 200 && (
+#     $nor_geno[$previous_format_hash->{'FC'}] <= 1 && 
+#     $nor_geno[$previous_format_hash->{'FD'}] && 
+#     $nor_geno[$previous_format_hash->{'FC'}] < ($tum_geno[$previous_format_hash->{'FC'}] * 0.1))
+#     ||
+#     (
+      
+#     ))){
+#     return $FAIL;
+#   }
+
+#   return $PASS;
+# }
 
 1;
