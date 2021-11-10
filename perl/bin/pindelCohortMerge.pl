@@ -98,7 +98,8 @@ sub records {
             $mtp = 0 if($mtp eq q{.});
             $mtn = 0 if($mtn eq q{.});
             $samples_with_min_vaf++ if($vaf >= $min_vaf);
-            $samples_with_min_blat++ if($mtp >= $min_blat && $mtn >= $min_blat);
+            # $samples_with_min_blat++ if($mtp >= $min_blat && $mtn >= $min_blat);
+            $samples_with_min_blat++ if($mtp >= 1 && $mtn >= 1 && $mtp + $mtn >= $min_blat);
           }
           else {
             $row .= "\t.";
@@ -294,7 +295,7 @@ pindelCohortMerge.pl [options] -l vcf.list
     -np        -n   Normal panel gff3 file - omit if no filtering required.
     -mnps      -s   Minimum normal panel samples required to exclude [default: 1]
     -control   -c   Exclude events where this sample has calls.
-    -blat      -b   Exclude events where no sample has MTP >= N && MTN >= N [default: 4]
+    -blat      -b   Exclude events where no sample has MTP+MTN >= N (1 reads must be present in each direction) [default: 4]
 
   Other:
     -help      -h   Brief help message.

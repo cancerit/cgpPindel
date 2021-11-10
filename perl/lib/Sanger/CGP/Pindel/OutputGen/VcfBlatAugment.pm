@@ -34,6 +34,7 @@ use autodie qw(:all);
 use Capture::Tiny qw(capture);
 use Const::Fast qw(const);
 use File::Basename;
+use File::Path qw(remove_tree);
 use File::Spec::Functions;
 use File::Temp qw(tempfile tempdir);
 use IO::Compress::Gzip qw(:constants gzip $GzipError);
@@ -57,6 +58,7 @@ const my $BLAT_ONLY => q{bash -c 'blat -t=dna -q=dna -noTrimA -minIdentity=95 -n
 # returns +ve and then -ve results
 const my $LOCI_FMT => '%s:%d-%d';
 const my $PAD_EVENT => 3;
+const my $LARGE_D => 100;
 const my $MAPPED_RL_MULT => 0.9;
 
 1;
@@ -200,7 +202,8 @@ sub _buffer_sizes {
   }
   $self->{min_rl} = $min_rl;
   $self->{max_insert} = $max_ins;
-  $self->{target_pad} = $max_rl;
+  #$self->{target_pad} = $max_rl;
+  $self->{target_pad} = $max_ins; # as expanded search space we need to expan the match space
   return 1;
 }
 
@@ -210,7 +213,7 @@ sub _hts {
     my $tmp = Bio::DB::HTS->new(-bam => $hts, -fasta => $self->{ref});
     my $sample = $self->_sample_from_hts($tmp);
     if(exists $self->{hts}->{$sample}) {
-      die sprintf "ERROR: More than one BAM/CRAM file for sample %s, %s vs %s\n", $sample, $self->{hts}->{$sample}->hts_path, $hts->hts_path;
+      die sprintf "ERROR: More than one BAM/CRAM file for sample %s, %s vs %s\n", $sample, $self->{hts}->{$sample}->hts_path, $hts;
     }
     $self->{hts}->{$sample} = $tmp;
   }
@@ -300,18 +303,21 @@ sub to_data_hash {
 sub process_records {
   my $self = shift;
   my $fh = $self->{ofh};
-  my $readtmp_dir;
+  my $readtmp_dir = tempdir( CLEANUP => 0 ); # doesn't clear as you would expect
   my $last_chr_pos = q{.};
   while(my $v_d = $self->{vcf}->next_data_array) {
     my $this_c_p = sprintf "%s:%d", $v_d->[0], $v_d->[1];
     if($last_chr_pos ne $this_c_p) {
       # we use very large search range, so if the start pos doesn't change don't want to reparse reads
-      $readtmp_dir = tempdir( CLEANUP => 1 );
+      remove_tree($readtmp_dir, { keep_root => 1 });
       $last_chr_pos = $this_c_p;
     }
     $v_d->[$V_FMT] .= $self->{fmt_ext} unless($self->{fill_in});
     $self->blat_record($v_d, $readtmp_dir);
     printf $fh "%s\n", join "\t", @{$v_d};
+  }
+  if(-d $readtmp_dir) {
+    remove_tree($readtmp_dir);
   }
   $self->_close_sams
 }
@@ -365,20 +371,32 @@ sub blat_reads {
   my ($fh_psl, $file_psl) = tempfile( SUFFIX => '.psl', UNLINK => 1);
   close $fh_psl or die "Failed to close $file_psl (psl output)";
 
+  my $c_reads = sprintf $READS_ONLY, $self->{hts}->{$sample}->hts_path, $self->read_ranges($v_h, $sample), $file_query;
   if(! -e $file_query) {
-    my $c_reads = sprintf $READS_ONLY, $self->{hts}->{$sample}->hts_path, $self->read_ranges($v_h, $sample), $file_query;
     my ($r_out, $r_err, $r_exit) = capture { system([0], $c_reads); };
   }
 
   my $c_blat = sprintf $BLAT_ONLY, $file_target, $file_query, $file_psl, $file_psl, $file_target, $file_query;
   my ($c_out, $c_err, $c_exit) = capture { system([0,255], $c_blat); };
-  if($c_exit == 255 && $c_err =~ m/processed 0 reads/ms) {
+  if($c_exit == 255 && ($c_err =~ m/processed 0 reads/ms || $c_err =~ m/End of file reading 4 bytes/ms)) {
     # No reads found
     $c_exit = 0;
   }
   if($c_exit) {
-    warn "An error occurred while executing $c_blat\n";
-    warn "\tERROR$c_err\n";
+    warn "An error occurred while executing: $c_blat\n";
+    warn "\tERROR: $c_err\n";
+    warn "\tECODE: $c_exit\n";
+    warn "Read command: $c_reads\n";
+    warn "DATA BLOCK\n";
+    warn "Target:\n";
+    my ($t_out, $t_err, $t_exit) = capture { system("cat $file_target"); };
+    warn $t_out;
+    warn "Query:\n";
+    ($t_out, $t_err, $t_exit) = capture { system("cat $file_query"); };
+    warn $t_out;
+    warn "PSL:\n";
+    ($t_out, $t_err, $t_exit) = capture { system("cat $file_psl"); };
+    warn $t_out;
     exit $c_exit;
   }
 
@@ -419,6 +437,11 @@ sub psl_axt_parser {
 
   my %type_strand;
   my %bmm_sums;
+  my @ref_reads;
+  my $is_del = 0;
+  if(length $v_h->{change_ref} > length $v_h->{change_alt}) {
+    $is_del = 1;
+  }
   # sort keys for consistency
   READ: for my $read(sort keys %reads) {
     # get the alignment with the highest score
@@ -428,9 +451,14 @@ sub psl_axt_parser {
         next READ;
       }
       my $record = $records[0];
+      my $ref_or_alt = $record->[0];
+      if($is_del == 1 && $ref_or_alt eq 'REF') {
+        # see block at end of this function
+        push @ref_reads, $record;
+      }
       if($self->parse_axt_event($v_h, $record, $sample) == 1) {
-        $type_strand{$record->[0].$record->[6]} += 1;
-        $bmm_sums{$record->[0]} += bmm($record->[8], $record->[9]);
+        $type_strand{$ref_or_alt.$record->[6]} += 1;
+        $bmm_sums{$ref_or_alt} += bmm($record->[8], $record->[9]);
       }
       next READ; # remaining items are worse alignments
     }
@@ -440,17 +468,60 @@ sub psl_axt_parser {
   my $mtp = $type_strand{'ALT+'} || 0;
   my $mtn = $type_strand{'ALT-'} || 0;
 
+  # only relevant for deletions
+  if($is_del == 1 && $wtp == 0 && $wtn == 0 && $v_h->{RE} - $v_h->{RS} > $LARGE_D) {
+    # if a deletion is large it can cause no REF depth as impossible for a read to span the ends of the event.
+    # rather than specifying a cutoff we rely on the data to drive this
+    my $add_bmb_sum;
+    ($wtp, $wtn, $add_bmb_sum) = $self->parse_axt_del_ref($v_h, \@ref_reads, $sample);
+    $bmm_sums{'REF'} += $add_bmb_sum;
+  }
+
   return ($wtp, $wtn, $mtp, $mtn, $bmm_sums{REF}, $bmm_sums{ALT});
 }
 
-sub bmm {
-  my ($a, $b) = @_; # need a copy of the strings anyway
-  my $len = length $a;
-  my $diffs = 0;
-  for(0..($len-1)) {
-    $diffs++ if(chop $a ne chop $b);
+sub parse_axt_del_ref {
+  my ($self, $v_h, $records, $sample) = @_;
+  # Need to return
+  #   pos reads
+  #   neg reads
+  #   mismatch fractions (via bmm)
+  # Augment $self->sam_record($v_h, $rec, $sample);
+
+  # some rules:
+  # - this shouldn't be getting called if the event spans both ends so can assume reads at each end can be saved without a check
+  # - require near perfect match to ref, but reads that get here are known NOT to have a better ALT mapping
+
+  my ($wtp, $wtn, $bmm_sum) = (0,0,0);
+  my $change_len = $v_h->{change_pos_high} - $v_h->{change_pos_low};
+  my $mid_point = $v_h->{change_pos_low} + int($change_len/2);
+  for my $rec(@{ $records }) {
+    my ($t_name, $t_start, $t_end, $q_name, $q_start, $q_end, $strand, $score, $t_seq, $q_seq) = @{ $rec };
+    if(
+        ($t_start < $v_h->{change_pos_low} && $t_end > $v_h->{change_pos_low})
+        ||
+        ($t_start < $v_h->{change_pos_high} && $t_end > $v_h->{change_pos_high})
+        #($t_start < $v_h->{change_pos_low} && $t_end > $v_h->{change_pos_low})
+    ) {
+      if($strand eq '+') {
+        $wtp += 1;
+      }
+      else {
+        $wtn += 1;
+      }
+      $bmm_sum += bmm($t_seq, $q_seq);
+      $self->sam_record($v_h, $rec, $sample);
+    }
   }
-  return $diffs/$len;
+  # we've counted 2 locations so can't just return the full value
+  # this is under review
+  if($wtp > 0) {
+    $wtp = int($wtp/2) + 1;
+  }
+  if($wtn > 0) {
+    $wtn = int($wtn/2) + 1;
+  }
+  return ($wtp, $wtn, $bmm_sum);
 }
 
 sub parse_axt_event {
@@ -484,6 +555,16 @@ sub parse_axt_event {
     }
   }
   return $retval;
+}
+
+sub bmm {
+  my ($a, $b) = @_; # need a copy of the strings anyway
+  my $len = length $a;
+  my $diffs = 0;
+  for(0..($len-1)) {
+    $diffs++ if(chop $a ne chop $b);
+  }
+  return $diffs/$len;
 }
 
 sub sam_record {
@@ -525,7 +606,7 @@ sub sam_to_bam {
     my $bam = $self->{bamfile}->{$sample};
     my $tmp = $bam;
     $tmp =~ s/bam$/tmp/;
-    my $command = sprintf q{bash -c 'set -o pipefail ; zcat %s | samtools view -uT %s - | samtools sort -l 0 -T %s - | samtools calmd - %s > %s'},
+    my $command = sprintf q{bash -c 'set -o pipefail ; zcat %s | pee "grep ^@" "grep -v ^@ | sort | uniq" | samtools view -uT %s - | samtools sort -l 0 -T %s - | samtools calmd - %s > %s'},
                   $sam, # zcat
                   $self->{ref}, # view
                   $tmp, # sort

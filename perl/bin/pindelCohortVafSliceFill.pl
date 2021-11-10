@@ -118,8 +118,8 @@ pindelCohortVafSliceFill.pl [options]
   Required parameters:
     -ref       -r   File path to the reference file used to provide the coordinate system.
     -input     -i   VCF file to read in.
-    -output    -o   Directory for VCF output (gz compressed) and colocated sample bams
-    -data      -d   File containing list of BWA mappingfiles for all samples used in "-input"
+    -output    -o   Directory for VCF output (gz compressed) and collocated sample bams
+    -data      -d   File containing list of BWA mapping files for all samples used in "-input"
                     - format: one BWA bam/cram file per line, expects co-located *.bai
 
   Other:
