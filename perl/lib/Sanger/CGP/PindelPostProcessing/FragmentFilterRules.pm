@@ -91,6 +91,10 @@ my %RULE_DESCS = ('FF001' => { 'tag' =>'INFO/LEN',
                               'name' => 'FF019',
                               'desc' => 'Fail when tumour supporting fragments < 3 or tumour fraction of supporting fragments < 0.05',
                               'test' => \&flag_019},
+                    'FF020' => { 'tag'  => 'INFO/LEN',
+                              'name' => 'FF020',
+                              'desc' => 'Allow some contamination in matched normal due to FFPR block acquired samples and allow for low level sequencing/PCR artefacts',
+                              'test' => \&flag_020},
 );
 
 our $previous_format_hash;
@@ -467,24 +471,40 @@ sub flag_019 {
   return $PASS;
 }
 
-# sub flag_020 {
-#   my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
-#   use_prev($$RECORD[8]);
+sub flag_020 {
+  my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
+  use_prev($$RECORD[8]);
 
-#   my @nor_geno = split(':',$$RECORD[9]);
-#   my @tum_geno = split(':',$$RECORD[10]);
-#   if(($nor_geno[$previous_format_hash->{'FD'}] + $tum_geno[$previous_format_hash->{'FD'}] < 200 && (
-#     $nor_geno[$previous_format_hash->{'FC'}] <= 1 && 
-#     $nor_geno[$previous_format_hash->{'FD'}] && 
-#     $nor_geno[$previous_format_hash->{'FC'}] < ($tum_geno[$previous_format_hash->{'FC'}] * 0.1))
-#     ||
-#     (
-      
-#     ))){
-#     return $FAIL;
-#   }
+  my @nor_geno = split(':',$$RECORD[9]);
+  my @tum_geno = split(':',$$RECORD[10]);
 
-#   return $PASS;
-# }
+  my $fd_total = $nor_geno[$previous_format_hash->{'FD'}] + $tum_geno[$previous_format_hash->{'FD'}];
+  my $fc_total = $nor_geno[$previous_format_hash->{'FC'}] + $tum_geno[$previous_format_hash->{'FC'}];
+
+  my $norfc_over_norfd = $nor_geno[$previous_format_hash->{'FC'}] / $nor_geno[$previous_format_hash->{'FD'}];
+  my $tumfc_over_tumfd = $tum_geno[$previous_format_hash->{'FC'}] / $tum_geno[$previous_format_hash->{'FD'}];
+
+  if(
+    ($fd_total < 200 && (
+    $nor_geno[$previous_format_hash->{'FC'}] <= 1 && 
+    $nor_geno[$previous_format_hash->{'FD'}] >= 10 && 
+    $nor_geno[$previous_format_hash->{'FC'}] < ($tum_geno[$previous_format_hash->{'FC'}] * 0.1)
+  )) || (
+    ($nor_geno[$previous_format_hash->{'FC'}] == 1 || $nor_geno[$previous_format_hash->{'FC'}] == 2) &&
+    $norfc_over_norfd <= 0.05 &&
+    $tumfc_over_tumfd >= 0.2
+  )){
+    return $FAIL;
+  }
+
+  if(($fd_total >= 200 &&
+    $norfc_over_norfd > 0.02 &&
+    $fc_total / $fd_total < 0.2
+  )){
+    return $FAIL;
+  }
+
+  return $PASS;
+}
 
 1;

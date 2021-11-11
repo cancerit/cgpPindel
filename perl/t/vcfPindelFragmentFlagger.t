@@ -11,7 +11,7 @@ use Test::More;
 use Data::Dumper;
 use Const::Fast qw(const);
 
-const my @AVAILABLE_RULES => qw(FF001 FF002 FF003 FF004 FF005 FF006 FF007 FF008 FF009 FF010 FF012 FF015 FF016 FF017 FF018 FF019);
+const my @AVAILABLE_RULES => qw(FF001 FF002 FF003 FF004 FF005 FF006 FF007 FF008 FF009 FF010 FF012 FF015 FF016 FF017 FF018 FF019 FF020);
 
 my %rule_test_dispatch = ('FF001' => \&_test_FF001,
                           'FF002' => \&_test_FF002,
@@ -29,6 +29,7 @@ my %rule_test_dispatch = ('FF001' => \&_test_FF001,
                           'FF017' => \&_test_FF017,
                           'FF018' => \&_test_FF018,
                           'FF019' => \&_test_FF019,
+                          'FF020' => \&_test_FF020,
                         );
 
 use_ok('Sanger::CGP::PindelPostProcessing::VcfSoftFlagger');
@@ -110,7 +111,7 @@ sub _test_FF003{
 	my ($filter_hash) = @_;
   subtest "Test rule FF003" => sub {
     my $test1 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PU:NU	0:0	3:0';
-    my $test2 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PU:NU 0:0 0:3';
+    my $test2 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PU:NU	0:0	0:3';
     my $test3 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PU:NU	0:0	4:0';
     my $test4 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PU:NU	0:0	0:4';
     my $test5 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PU:NU	0:0	3:4';
@@ -428,26 +429,17 @@ sub _test_FF011{
 sub _test_FF012{
 	my ($filter_hash) = @_;
   subtest "Test rule FF0012" => sub {
-    my $test1 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	2:0:0:0:9:0:0:0:0:0	2:0:0:0:9:0:0:0:0:0';
-    my $test2 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	2:0:0:0:0:9:0:0:0:0	2:0:0:0:0:9:0:0:0:0';
-    my $test3 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	2:0:0:0:0:10:0:0:0:0	2:0:0:0:10:0:0:0:0:0';
-    my $test4 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	2:0:0:0:10:0:0:0:0:0	2:0:0:0:0:10:0:0:0:0';
-    my $test5 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	3:0:0:0:0:11:0:0:0:0	3:0:0:0:11:0:0:0:0:0';
-    my $test6 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	2:0:0:0:0:10:0:0:0:0	2:0:0:0:9:0:0:0:0:0';
-    my $test7 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	20:0:0:0:50:50:0:0:0:0	20:0:0:0:50:50:0:0:0:0';
-    my $test8 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	10:10:0:0:50:50:0:0:0:0	10:10:0:0:50:50:0:0:0:0';
-    my $test9 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	19:0:0:0:50:50:0:0:0:0	19:0:0:0:50:50:0:0:0:0';
-    my $test10 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	18:1:0:0:50:50:0:0:0:0	18:1:0:0:50:50:0:0:0:0';
-    my $test11 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	20:0:0:0:50:50:0:0:0:0	19:0:0:0:50:50:0:0:0:0';
-    my $test12 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	19:0:0:0:50:50:0:0:0:0	20:0:0:0:50:50:0:0:0:0';
-    my $test13 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	21:0:0:0:50:50:0:0:0:0	21:0:0:0:50:50:0:0:0:0';
-    my $test14 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:20:0:50:50:0:0:0:0	0:0:20:0:50:50:0:0:0:0';
-    my $test15 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:10:10:50:50:0:0:0:0	0:0:10:10:50:50:0:0:0:0';
-    my $test16 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:19:0:50:50:0:0:0:0	0:0:19:0:50:50:0:0:0:0';
-    my $test17 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:18:1:50:50:0:0:0:0	0:0:18:1:50:50:0:0:0:0';
-    my $test18 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:20:0:50:50:0:0:0:0	0:0:19:0:50:50:0:0:0:0';
-    my $test19 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:19:0:50:50:0:0:0:0	0:0:20:0:50:50:0:0:0:0';
-    my $test20 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:21:0:50:50:0:0:0:0	0:0:21:0:50:50:0:0:0:0';
+    my $test1 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD:PD:ND	0:0:9:0	0:0:9:0';
+    my $test2 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD:PD:ND	0:0:0:9	0:0:0:9';
+    my $test3 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD:PD:ND	0:0:10:0	0:0:10:0';
+    my $test4 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD:PD:ND	0:0:0:10	0:0:0:10';
+    my $test5 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD:PD:ND	0:0:9:0	0:0:10:0';
+    my $test6 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD:PD:ND	0:0:10:0	0:0:9:0';
+    my $test7 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD:PD:ND	2:10:10:0	2:10:10:0';
+    my $test8 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD:PD:ND	1:10:10:0	1:10:10:0';
+    my $test9 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD:PD:ND	3:10:10:0	3:10:10:0';
+    my $test10 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD:PD:ND	2:10:10:0	1:10:10:0';
+    my $test11 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD:PD:ND	1:10:10:0	2:10:10:0';
 
     my $sub = $filter_hash->{test};
 
@@ -459,46 +451,38 @@ sub _test_FF012{
     $PASS   = 0;
     #$VCF    = $$opts{vcf};
 
-    is($filter_hash->{tag}, 'INFO/LEN',"_test_FF012 check the correct info tag has been set for the rule");
+    is($filter_hash->{tag}, 'INFO/LEN',"_test_F012 check the correct info tag has been set for the rule");
 
     $RECORD = [split("\t",$test1)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF012 dWt == 9 dMt == 9");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_F012 dWt == 9 dMt == 9");
     $RECORD = [split("\t",$test2)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF012 dWt == 10 dMt == 10");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_F012 dWt == 9 dMt == 9 with different pos/neg ratios");
     $RECORD = [split("\t",$test3)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF012 dWt > 10 dMt == 10");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_F012 dWt == 10 dMt == 10");
     $RECORD = [split("\t",$test4)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF012 dWt > 10 dMt == 9");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_F012 dWt == 10 dMt == 10 with different pos/neg ratios");
     $RECORD = [split("\t",$test5)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF012 dWt == 100 pWt == 20");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_F012 dWt == 9 dMt == 10");
     $RECORD = [split("\t",$test6)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF012 dWt == 100 pWt == 19");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_F012 dWt == 10 dMt == 9");
     $RECORD = [split("\t",$test7)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF012 dWt == 100 pWt == 20 pMt == 19");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_F012 WtFC == 2 WtFD == 10 MtFC == 2 MtFD == 10");
     $RECORD = [split("\t",$test8)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF012 dWt == 100 pWt == 19 pMt == 20");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_F012 WtFC == 1 WtFD == 10 MtFC == 1 MtFD == 10");
     $RECORD = [split("\t",$test9)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF012 dWt == 100 pWt == 21 pMt == 21");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_F012 WtFC == 3 WtFD == 10 MtFC == 3 MtFD == 10");
     $RECORD = [split("\t",$test10)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF012 dWt == 100 bWt == 20");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_F012 WtFC == 2 WtFD == 10 MtFC == 1 MtFD == 10");
     $RECORD = [split("\t",$test11)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF012 dWt == 100 bWt == 19");
-    $RECORD = [split("\t",$test12)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF012 dWt == 100 bWt == 20 bMt == 19");
-    $RECORD = [split("\t",$test13)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF012 dWt == 100 bWt == 19 bMt == 20");
-    $RECORD = [split("\t",$test14)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF012 dWt == 100 bWt == 21 bMt == 21");
-	};
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_F012 WtFC == 1 WtFD == 10 MtFC == 2 MtFD == 10");
+  }
 }
 
 sub _test_FF015{
 	my ($filter_hash) = @_;
   subtest "Test rule FF015" => sub {
-    my $test1 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:0:0	0:0:0:0:0:0:0:0:0:0';
-    my $test2 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:1:0	0:0:0:0:0:0:0:0:0:0';
-    my $test3 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:0:1	0:0:0:0:0:0:0:0:0:0';
-    my $test4 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:1:1	0:0:0:0:0:0:0:0:0:0';
+    my $test1 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC	0	0';
+    my $test2 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC	1	0';
 
     my $sub = $filter_hash->{test};
 
@@ -513,33 +497,29 @@ sub _test_FF015{
     $RECORD = [split("\t",$test1)];
     is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF0015 no wild type at all");
     $RECORD = [split("\t",$test2)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF0015 pWtPos == 1");
-    $RECORD = [split("\t",$test3)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF0015 pWtNeg == 1");
-    $RECORD = [split("\t",$test4)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF0015 pWtPos == 1 bWtPos == 1");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF0015 pWtFC == 1");
   };
 }
 
 sub _test_FF016{
 	my ($filter_hash) = @_;
   subtest "Test rule FF016" => sub {
-    my $test1 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:0:0	2:3:1:0:0:0:0:0:0:0';
-    my $test2 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:0:0	5:0:1:0:0:0:0:0:0:0';
-    my $test3 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:0:0	0:5:1:0:0:0:0:0:0:0';
-    my $test4 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:0:0	6:0:1:0:0:0:0:0:0:0';
-    my $test5 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:0:0	4:0:0:0:0:0:0:0:0:0';
-    my $test6 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:0:0	0:4:0:0:0:0:0:0:0:0';
-    my $test7 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:0:0	5:1:1:0:0:0:0:0:0:0';
-     my $test8 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:0:0	0:5:0:0:0:0:0:0:0:0';
-     my $test9 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:0:0	4:1:0:0:0:0:0:0:0:0';
-    my $test10 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:0:0	1:4:0:0:0:0:0:0:0:0';
-    my $test11 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=2	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:0:0	0:5:0:0:0:0:0:0:0:0';
-    my $test12 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=2	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:0:0	4:1:0:0:0:0:0:0:0:0';
-    my $test13 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=2	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:0:0	1:4:0:0:0:0:0:0:0:0';
+    my $test1 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB	0:0:0:0	2:3:1:0';
+    my $test2 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB	0:0:0:0	5:0:1:0';
+    my $test3 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB	0:0:0:0	0:5:1:0';
+    my $test4 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB	0:0:0:0	6:0:1:0';
+    my $test5 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB	0:0:0:0	4:0:0:0';
+    my $test6 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB	0:0:0:0	0:4:0:0';
+    my $test7 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB	0:0:0:0	5:1:1:0';
+     my $test8 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB	0:0:0:0	0:5:0:0';
+     my $test9 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB	0:0:0:0	4:1:0:0';
+    my $test10 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB	0:0:0:0	1:4:0:0';
+    my $test11 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=2	PP:NP:PB:NB	0:0:0:0	0:5:0:0';
+    my $test12 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=2	PP:NP:PB:NB	0:0:0:0	4:1:0:0';
+    my $test13 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=2	PP:NP:PB:NB	0:0:0:0	1:4:0:0';
 
-    my $test14 = '22	16404839	.	G	GA	.	.	PC=I;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=0	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:0:0	1:4:0:0:0:0:0:0:0:0';
-    my $test15 = '22	16404839	.	G	GA	.	.	PC=I;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:0:0	1:4:0:0:0:0:0:0:0:0';
+    my $test14 = '22	16404839	.	G	GA	.	.	PC=I;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=0	PP:NP:PB:NB	0:0:0:0	1:4:0:0';
+    my $test15 = '22	16404839	.	G	GA	.	.	PC=I;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=1	PP:NP:PB:NB	0:0:0:0	1:4:0:0';
 
 
     my $sub = $filter_hash->{test};
@@ -604,13 +584,13 @@ sub _test_FF017{
 sub _test_FF018{
 	my ($filter_hash) = @_;
   subtest "Test rule FF018" => sub {
-    my $test1 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:5:5:0:0	0:0:0:0:0:0:5:5:0:0';
-    my $test2 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:6:4:0:0	0:0:0:0:0:0:5:5:0:0';
-    my $test3 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:5:5:0:0	0:0:0:0:0:0:6:4:0:0';
-    my $test4 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:5:4:0:0	0:0:0:0:0:0:5:5:0:0';
-    my $test5 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:5:5:0:0	0:0:0:0:0:0:5:4:0:0';
-    my $test6 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:5:6:0:0	0:0:0:0:0:0:5:5:0:0';
-    my $test7 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:5:5:0:0	0:0:0:0:0:0:5:6:0:0';
+    my $test1 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PR:NR	5:5	5:5';
+    my $test2 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PR:NR	6:4	5:5';
+    my $test3 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PR:NR	5:5	6:4';
+    my $test4 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PR:NR	5:4	5:5';
+    my $test5 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PR:NR	5:5	5:4';
+    my $test6 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PR:NR	5:6	5:5';
+    my $test7 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	PR:NR	5:5	5:6';
 
     my $sub = $filter_hash->{test};
 
@@ -643,12 +623,12 @@ sub _test_FF018{
 sub _test_FF019{
 	my ($filter_hash) = @_;
   subtest "Test rule FF019" => sub {
-    my $test1 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:5:5:0:0	5:20:0:0:0:0:0:0:5:5:0:0';
-    my $test2 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:5:5:0:0	3:60:0:0:0:0:0:0:5:5:0:0';
-    my $test3 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:5:5:0:0	3:59:0:0:0:0:0:0:5:5:0:0';
-    my $test4 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:5:5:0:0	1:20:0:0:0:0:0:0:5:5:0:0';
-    my $test5 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:5:5:0:0	3:100:0:0:0:0:0:0:5:5:0:0';
-    my $test6 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	3:59:0:0:0:0:0:0:5:5:0:0	3:60:0:0:0:0:0:0:5:5:0:0';
+    my $test1 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	0:0	5:20';
+    my $test2 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	0:0	3:60';
+    my $test3 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	0:0	3:59';
+    my $test4 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	0:0	1:20';
+    my $test5 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	0:0	3:100';
+    my $test6 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	3:59	3:60';
 
     my $sub = $filter_hash->{test};
 
@@ -676,23 +656,68 @@ sub _test_FF019{
   };
 }
 
-# sub _test_FF020{
-# 	my ($filter_hash) = @_;
-#   subtest "Test rule FF019" => sub {
-#     my $test1 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD:PP:NP:PB:NB:PD:ND:PR:NR:PU:NU	0:0:0:0:0:0:0:0:5:5:0:0	1:20:0:0:0:0:0:0:5:5:0:0';
+sub _test_FF020{
+	my ($filter_hash) = @_;
+  subtest "Test rule FF020" => sub {
+    my $test1 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	20:100	0:100';
+    my $test2 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	1:100	0:100';
+    my $test3 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	20:100	20:100';
+    my $test4 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	1:10	20:99';
+    my $test5 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	0:10	20:101';
+    my $test6 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	1:11	20:111';
+    my $test7 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	1:9	20:91';
+    my $test8 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	2:40	20:100';
+    my $test9 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	2:40	19:100';
+    my $test10 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	2:41	20:100';
+    my $test11 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	2:41	20:99';
+    my $test12 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	2:40	20:99';
+    my $test13 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	2:39	20:99';
+    my $test14 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	1:11	9:111';
+    my $test15 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	1:11	10:111';
+    my $test16 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	3:10	10:100';
 
-#     my $sub = $filter_hash->{test};
+    my $sub = $filter_hash->{test};
 
-#     my($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF);
-#     $CHROM  = [split("\t",$test1)]->[0];
-#     $POS    = [split("\t",$test1)]->[1];
-#     $FAIL   = 1;
-#     $PASS   = 0;
-#     #$VCF    = $$opts{vcf};
+    my($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF);
+    $CHROM  = [split("\t",$test1)]->[0];
+    $POS    = [split("\t",$test1)]->[1];
+    $FAIL   = 1;
+    $PASS   = 0;
+    #$VCF    = $$opts{vcf};
 
-#     is($filter_hash->{tag}, 'INFO/LEN',"_test_FF019 check the correct info tag has been set for the rule");
+    is($filter_hash->{tag}, 'INFO/LEN',"_test_FF019 check the correct info tag has been set for the rule");
 
-#     $RECORD = [split("\t",$test1)];
-#     is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF019 pWtFC == 0 pMtFC == 5 pMtFD == 20 pMtFC/pMtFD > 0.05");
-#   };
-# }
+    $RECORD = [split("\t",$test1)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 totalFD == 200 WtFC / WtFD > 0.02 totalFC / totalFD < 0.2");
+    $RECORD = [split("\t",$test2)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 totalFD == 200 WtFC / WtFD < 0.02 totalFC");
+    $RECORD = [split("\t",$test3)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 totalFD == 200 WtFC / WtFD > 0.02 totalFC totalFC / totalFD > 0.2");
+    $RECORD = [split("\t",$test4)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 totalFD < 200 WtFC == 1 WtFD == 10 WtFC < MtFC * 0.1);");
+    $RECORD = [split("\t",$test5)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 totalFD < 200 WtFC == 0 WtFD == 10 WtFC < MtFC * 0.1);");
+    $RECORD = [split("\t",$test6)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 totalFD < 200 WtFC == 1 WtFD == 11 WtFC < MtFC * 0.1);");
+    $RECORD = [split("\t",$test7)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 totalFD < 200 WtFC == 1 WtFD == 9 WtFC / WtFD > 0.05);");
+    $RECORD = [split("\t",$test8)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 totalFD < 200 WtFC == 2 WtFC / WtFD == 0.05 MtFC / MtFD == 0.2);");
+    $RECORD = [split("\t",$test9)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 totalFD < 200 WtFC == 2 WtFC / WtFD == 0.05 MtFC / MtFD < 0.2);");
+    $RECORD = [split("\t",$test10)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 totalFD < 200 WtFC == 2 WtFC / WtFD < 0.05 MtFC / MtFD == 0.2);");
+    $RECORD = [split("\t",$test11)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 totalFD < 200 WtFC == 2 WtFC / WtFD < 0.05 MtFC / MtFD > 0.2);");
+    $RECORD = [split("\t",$test12)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 totalFD < 200 WtFC == 2 WtFC / WtFD == 0.05 MtFC / MtFD > 0.2);");
+    $RECORD = [split("\t",$test13)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 totalFD < 200 WtFC == 2 WtFC / WtFD > 0.05 MtFC / MtFD > 0.2);");
+    $RECORD = [split("\t",$test14)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 totalFD < 200 WtFC == 1 WtFD == 11 WtFC > MtFC * 0.1);");
+    $RECORD = [split("\t",$test15)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 totalFD < 200 WtFC == 1 WtFD == 11 WtFC == MtFC * 0.1);");
+    $RECORD = [split("\t",$test16)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 totalFD < 200 WtFC == 3");
+  };
+}
