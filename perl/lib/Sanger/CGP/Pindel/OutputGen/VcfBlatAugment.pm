@@ -53,7 +53,7 @@ use Sanger::CGP::Vcf::VcfUtil;
 const my $SD_MULT => 2;
 const my $V_FMT => 8;
 const my $V_GT_START => 9;
-const my $READS_ONLY => q{bash -c 'set -o pipefail; samtools view -uF 3840 %s %s | samtools fasta - > %s'};
+const my $READS_ONLY => q{bash -c 'set -o pipefail; (samtools view -H %s && samtools view -F 3840 %s %s | sort | uniq) | samtools fasta - > %s'};
 const my $BLAT_ONLY => q{bash -c 'blat -t=dna -q=dna -noTrimA -minIdentity=95 -noHead -out=psl %s %s %s && pslPretty -long -axt %s %s %s /dev/stdout'};
 # returns +ve and then -ve results
 const my $LOCI_FMT => '%s:%d-%d';
@@ -202,7 +202,7 @@ sub _buffer_sizes {
   }
   $self->{min_rl} = $min_rl;
   $self->{max_insert} = $max_ins;
-  #$self->{target_pad} = $max_rl;
+  $self->{max_rl} = $max_rl;
   $self->{target_pad} = $max_ins; # as expanded search space we need to expan the match space
   return 1;
 }
@@ -361,6 +361,12 @@ sub read_ranges {
   my ($self, $v_h, $sample) = @_;
   # return a string of chr:s-e... if approprate.
   my $read_buffer = $self->{max_insert};
+  # but need to handle very large deletions
+  if($v_h->{q_end} - $v_h->{q_start} > $read_buffer) {
+    my $low = sprintf $LOCI_FMT, $v_h->{CHROM}, $v_h->{q_start} - $read_buffer, $v_h->{q_start} + $read_buffer;
+    my $high = sprintf $LOCI_FMT, $v_h->{CHROM}, $v_h->{q_end} - $read_buffer, $v_h->{q_end} + $read_buffer;
+    return "$low $high";
+  }
   return sprintf $LOCI_FMT, $v_h->{CHROM}, $v_h->{q_start} - $read_buffer, $v_h->{q_end} + $read_buffer;
 }
 
@@ -371,7 +377,7 @@ sub blat_reads {
   my ($fh_psl, $file_psl) = tempfile( SUFFIX => '.psl', UNLINK => 1);
   close $fh_psl or die "Failed to close $file_psl (psl output)";
 
-  my $c_reads = sprintf $READS_ONLY, $self->{hts}->{$sample}->hts_path, $self->read_ranges($v_h, $sample), $file_query;
+  my $c_reads = sprintf $READS_ONLY, $self->{hts}->{$sample}->hts_path, $self->{hts}->{$sample}->hts_path, $self->read_ranges($v_h, $sample), $file_query;
   if(! -e $file_query) {
     my ($r_out, $r_err, $r_exit) = capture { system([0], $c_reads); };
   }
