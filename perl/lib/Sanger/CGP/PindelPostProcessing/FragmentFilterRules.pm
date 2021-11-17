@@ -133,6 +133,18 @@ sub reuse_repeats_tabix {
   }
 }
 
+sub division {
+  my ($numerator, $denominator) = @_;
+  if ((
+    $numerator > 0
+  )){
+    my $decimal = $numerator / $denominator
+    return $decimal;
+  }else{
+    return 0;
+  }
+}
+
 sub flag_001 {
   my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
   use_prev($$RECORD[8]);
@@ -462,9 +474,11 @@ sub flag_019 {
   my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
   use_prev($$RECORD[8]);
 
+  my $tumfc_over_tumfd = $division($tum_geno[$previous_format_hash->{'FC'}], $tum_geno[$previous_format_hash->{'FD'}])
+
   my @tum_geno = split(':',$$RECORD[10]);
   if(($tum_geno[$previous_format_hash->{'FC'}] < 3) ||
-    ($tum_geno[$previous_format_hash->{'FC'}] / $tum_geno[$previous_format_hash->{'FD'}] < 0.05)){
+    ($tumfc_over_tumfd < 0.05)){
     return $FAIL;
   }
 
@@ -480,9 +494,11 @@ sub flag_020 {
 
   my $fd_total = $nor_geno[$previous_format_hash->{'FD'}] + $tum_geno[$previous_format_hash->{'FD'}];
   my $fc_total = $nor_geno[$previous_format_hash->{'FC'}] + $tum_geno[$previous_format_hash->{'FC'}];
+  my $total_div = $division($fc_total, $fd_total);
 
-  my $norfc_over_norfd = $nor_geno[$previous_format_hash->{'FC'}] / $nor_geno[$previous_format_hash->{'FD'}];
-  my $tumfc_over_tumfd = $tum_geno[$previous_format_hash->{'FC'}] / $tum_geno[$previous_format_hash->{'FD'}];
+  my $norfc_over_norfd = $division($nor_geno[$previous_format_hash->{'FC'}], $nor_geno[$previous_format_hash->{'FD'}]);
+
+  my $tumfc_over_tumfd = $division($tum_geno[$previous_format_hash->{'FC'}], $tum_geno[$previous_format_hash->{'FD'}]);
 
   if(
     ($fd_total < 200 && (
@@ -499,7 +515,7 @@ sub flag_020 {
 
   if(($fd_total >= 200 &&
     $norfc_over_norfd > 0.02 &&
-    $fc_total / $fd_total < 0.2
+    $total_div < 0.2
   )){
     return $FAIL;
   }
