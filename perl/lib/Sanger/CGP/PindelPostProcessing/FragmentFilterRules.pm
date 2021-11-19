@@ -133,15 +133,6 @@ sub reuse_repeats_tabix {
   }
 }
 
-sub divide {
-  my ($num,$den) = @_;
-  my $decimal = 0;
-  if ($num > 0){
-    $decimal = $num / $den;
-  }
-  $decimal;
-}
-
 sub flag_001 {
   my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
   use_prev($$RECORD[8]);
@@ -472,10 +463,12 @@ sub flag_019 {
   use_prev($$RECORD[8]);
 
   my @tum_geno = split(':',$$RECORD[10]);
-  my $tumfc_over_tumfd = &divide($tum_geno[$previous_format_hash->{'FC'}], $tum_geno[$previous_format_hash->{'FD'}]);
 
-  if(($tum_geno[$previous_format_hash->{'FC'}] < 3) ||
-    ($tumfc_over_tumfd < 0.05)){
+  if($tum_geno[$previous_format_hash->{'FC'}] < 3){
+    return $FAIL;
+  }
+  # previous test confirms FC/FD can't be 0, so no div0 check required
+  if ($tum_geno[$previous_format_hash->{'FC'} / $tum_geno[$previous_format_hash->{'FD'} < 0.05){
     return $FAIL;
   }
 
@@ -490,28 +483,30 @@ sub flag_020 {
   my @tum_geno = split(':',$$RECORD[10]);
 
   my $fd_total = $nor_geno[$previous_format_hash->{'FD'}] + $tum_geno[$previous_format_hash->{'FD'}];
-  my $fc_total = $nor_geno[$previous_format_hash->{'FC'}] + $tum_geno[$previous_format_hash->{'FC'}];
-  my $total_div = &divide($fc_total, $fd_total);
 
-  my $norfc_over_norfd = &divide($nor_geno[$previous_format_hash->{'FC'}], $nor_geno[$previous_format_hash->{'FD'}]);
-
-  my $tumfc_over_tumfd = &divide($tum_geno[$previous_format_hash->{'FC'}], $tum_geno[$previous_format_hash->{'FD'}]);
-
-  if(
-    ($fd_total < 200 && (
+  if($fd_total < 200 &&
     $nor_geno[$previous_format_hash->{'FC'}] <= 1 && 
     $nor_geno[$previous_format_hash->{'FD'}] >= 10 && 
     $nor_geno[$previous_format_hash->{'FC'}] < ($tum_geno[$previous_format_hash->{'FC'}] * 0.1)
-  )) || (
-    $norfc_over_norfd <= 0.05 &&
-    $tumfc_over_tumfd >= 0.2 &&
-    ($nor_geno[$previous_format_hash->{'FC'}] == 1 || $nor_geno[$previous_format_hash->{'FC'}] == 2)
-  )){
+  ){
     return $FAIL;
   }
+  
+  my $tumfc_over_tumfd = $tum_geno[$previous_format_hash->{'FD'}] > 0 ? $tum_geno[$previous_format_hash->{'FC'}] / $tum_geno[$previous_format_hash->{'FD'}] : undef;
+  my $norfc_over_norfd = $nor_geno[$previous_format_hash->{'FD'}] > 0 ? $nor_geno[$previous_format_hash->{'FC'}] / $nor_geno[$previous_format_hash->{'FD'}] : undef;
 
-  if($fd_total >= 200 && $norfc_over_norfd > 0.02 && $total_div < 0.2){
+  if($fd_total < 200){
+    if(($nor_geno[$previous_format_hash->{'FC'}] == 1 || $nor_geno[$previous_format_hash->{'FC'}] == 2) &&
+      $norfc_over_norfd <= 0.05 &&
+      $tumfc_over_tumfd >= 0.2
+    ){
     return $FAIL;
+    }
+    
+  }else{
+    if($norfc_over_norfd > 0.02 && $tumfc_over_tumfd < 0.2){
+      return $FAIL;
+    }
   }
 
   return $PASS;
