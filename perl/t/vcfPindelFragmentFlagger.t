@@ -369,7 +369,7 @@ sub _test_FF007{
     is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF007 rdMt < 6");
     $RECORD = [split("\t",$test2)];
     is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF007 rdMt < 6 and rdWt > 8pc");
-    
+
     $RECORD = [split("\t",$test3)];
     is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF007 rdMt == 6 and rdWt < 8pc");
     $RECORD = [split("\t",$test4)];

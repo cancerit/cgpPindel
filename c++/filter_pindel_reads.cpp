@@ -937,4 +937,3 @@ void CleanUniquePoints (vector <UniquePoint> & Input_UP) {
    Input_UP.clear();
 	Input_UP = TempUP;
 }
-
