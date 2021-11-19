@@ -468,7 +468,7 @@ sub flag_019 {
     return $FAIL;
   }
   # previous test confirms FC/FD can't be 0, so no div0 check required
-  if ($tum_geno[$previous_format_hash->{'FC'} / $tum_geno[$previous_format_hash->{'FD'} < 0.05){
+  if ($tum_geno[$previous_format_hash->{'FC'}] / $tum_geno[$previous_format_hash->{'FD'}] < 0.05){
     return $FAIL;
   }
 
