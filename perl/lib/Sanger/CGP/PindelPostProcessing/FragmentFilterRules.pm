@@ -490,34 +490,34 @@ sub flag_020 {
   my @nor_geno = split(':',$$RECORD[9]);
   my @tum_geno = split(':',$$RECORD[10]);
 
-  my $fd_total = $nor_geno[$previous_format_hash->{'FD'}] + $tum_geno[$previous_format_hash->{'FD'}];
+  my $nor_fd = $nor_geno[$previous_format_hash->{'FD'}];
 
-  if($fd_total < 200 &&
+  if($nor_fd < 200 &&
     $nor_geno[$previous_format_hash->{'FC'}] <= 1 &&
     $nor_geno[$previous_format_hash->{'FD'}] >= 10 &&
-    $nor_geno[$previous_format_hash->{'FC'}] < ($tum_geno[$previous_format_hash->{'FC'}] * 0.1)
+    $nor_geno[$previous_format_hash->{'FC'}] <= ($tum_geno[$previous_format_hash->{'FC'}] * 0.1)
   ){
-    return $FAIL;
+    return $PASS;
   }
 
   my $tumfc_over_tumfd = $tum_geno[$previous_format_hash->{'FD'}] > 0 ? $tum_geno[$previous_format_hash->{'FC'}] / $tum_geno[$previous_format_hash->{'FD'}] : undef;
   my $norfc_over_norfd = $nor_geno[$previous_format_hash->{'FD'}] > 0 ? $nor_geno[$previous_format_hash->{'FC'}] / $nor_geno[$previous_format_hash->{'FD'}] : undef;
 
-  if($fd_total < 200){
+  if($nor_fd < 200){
     if(($nor_geno[$previous_format_hash->{'FC'}] == 1 || $nor_geno[$previous_format_hash->{'FC'}] == 2) &&
       $norfc_over_norfd <= 0.05 &&
       $tumfc_over_tumfd >= 0.2
     ){
-    return $FAIL;
+    return $PASS;
     }
 
   }else{
-    if($norfc_over_norfd > 0.02 && $tumfc_over_tumfd < 0.2){
-      return $FAIL;
+    if($norfc_over_norfd <= 0.02 && $tumfc_over_tumfd >= 0.2){
+      return $PASS;
     }
   }
 
-  return $PASS;
+  return $FAIL;
 }
 
 1;

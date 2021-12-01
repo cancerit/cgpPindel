@@ -659,9 +659,9 @@ sub _test_FF019{
 sub _test_FF020{
 	my ($filter_hash) = @_;
   subtest "Test rule FF020" => sub {
-    my $test1 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	20:100	0:100';
-    my $test2 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	1:100	0:100';
-    my $test3 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	20:100	20:100';
+    my $test1 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	5:200	19:100';
+    my $test2 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	3:200	19:100';
+    my $test3 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	5:200	21:100';
     my $test4 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	1:10	20:99';
     my $test5 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	0:10	20:101';
     my $test6 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	1:11	20:111';
@@ -673,8 +673,12 @@ sub _test_FF020{
     my $test12 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	2:40	20:99';
     my $test13 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	2:39	20:99';
     my $test14 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	1:11	9:111';
-    my $test15 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	1:11	10:111';
+    my $test15 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	2:100	20:101';
     my $test16 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	3:10	10:100';
+    my $test17 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	0:0	0:0';
+    my $test18 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	4:200	1:100';
+    my $test19 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	3:200	20:100';
+    my $test20 = '22	16404839	.	GA	G	.	.	PC=D;RS=16404838;RE=16404857;LEN=1;SM=138;S1=10;S2=203.791;REP=18	FC:FD	5:201	19:100';
 
     my $sub = $filter_hash->{test};
 
@@ -688,36 +692,44 @@ sub _test_FF020{
     is($filter_hash->{tag}, 'INFO/LEN',"_test_FF019 check the correct info tag has been set for the rule");
 
     $RECORD = [split("\t",$test1)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 totalFD == 200 WtFC / WtFD > 0.02 totalFC / totalFD < 0.2");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 WtFD == 200 WtFC / WtFD > 0.02 tumFC / tumFD < 0.2");
     $RECORD = [split("\t",$test2)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 totalFD == 200 WtFC / WtFD < 0.02 totalFC");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 WtFD == 200 WtFC / WtFD < 0.02 tumFC / tumFD < 0.2");
     $RECORD = [split("\t",$test3)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 totalFD == 200 WtFC / WtFD > 0.02 totalFC totalFC / totalFD > 0.2");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 WtFD == 200 WtFC / WtFD > 0.02 tumFC / tumFD > 0.2");
     $RECORD = [split("\t",$test4)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 totalFD < 200 WtFC == 1 WtFD == 10 WtFC < MtFC * 0.1);");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 WtFD < 200 WtFC == 1 WtFD == 10 WtFC < MtFC * 0.1);");
     $RECORD = [split("\t",$test5)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 totalFD < 200 WtFC == 0 WtFD == 10 WtFC < MtFC * 0.1);");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 WtFD < 200 WtFC == 0 WtFD == 10 WtFC < MtFC * 0.1);");
     $RECORD = [split("\t",$test6)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 totalFD < 200 WtFC == 1 WtFD == 11 WtFC < MtFC * 0.1);");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 WtFD < 200 WtFC == 1 WtFD == 11 WtFC < MtFC * 0.1);");
     $RECORD = [split("\t",$test7)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 totalFD < 200 WtFC == 1 WtFD == 9 WtFC / WtFD > 0.05);");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 WtFD < 200 WtFC == 1 WtFD == 9 WtFC / WtFD > 0.05);");
     $RECORD = [split("\t",$test8)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 totalFD < 200 WtFC == 2 WtFC / WtFD == 0.05 MtFC / MtFD == 0.2);");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 WtFD < 200 WtFC == 2 WtFC / WtFD == 0.05 MtFC / MtFD == 0.2);");
     $RECORD = [split("\t",$test9)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 totalFD < 200 WtFC == 2 WtFC / WtFD == 0.05 MtFC / MtFD < 0.2);");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 WtFD < 200 WtFC == 2 WtFC / WtFD == 0.05 MtFC / MtFD < 0.2);");
     $RECORD = [split("\t",$test10)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 totalFD < 200 WtFC == 2 WtFC / WtFD < 0.05 MtFC / MtFD == 0.2);");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 WtFD < 200 WtFC == 2 WtFC / WtFD < 0.05 MtFC / MtFD == 0.2);");
     $RECORD = [split("\t",$test11)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 totalFD < 200 WtFC == 2 WtFC / WtFD < 0.05 MtFC / MtFD > 0.2);");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 WtFD < 200 WtFC == 2 WtFC / WtFD < 0.05 MtFC / MtFD > 0.2);");
     $RECORD = [split("\t",$test12)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 totalFD < 200 WtFC == 2 WtFC / WtFD == 0.05 MtFC / MtFD > 0.2);");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 WtFD < 200 WtFC == 2 WtFC / WtFD == 0.05 MtFC / MtFD > 0.2);");
     $RECORD = [split("\t",$test13)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 totalFD < 200 WtFC == 2 WtFC / WtFD > 0.05 MtFC / MtFD > 0.2);");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 WtFD < 200 WtFC == 2 WtFC / WtFD > 0.05 MtFC / MtFD > 0.2);");
     $RECORD = [split("\t",$test14)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 totalFD < 200 WtFC == 1 WtFD == 11 WtFC > MtFC * 0.1);");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 WtFD < 200 WtFC == 1 WtFD == 11 WtFC > MtFC * 0.1 MtFC / MtFD < 0.2);");
     $RECORD = [split("\t",$test15)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 totalFD < 200 WtFC == 1 WtFD == 11 WtFC == MtFC * 0.1);");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 WtFD < 200 WtFC == 1 WtFD == 100 WtFC == MtFC * 0.1 MtFC / MtFD < 0.2);");
     $RECORD = [split("\t",$test16)];
-    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 totalFD < 200 WtFC == 3");
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 WtFD < 200 WtFC == 3");
+    $RECORD = [split("\t",$test17)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 divid by 0");
+    $RECORD = [split("\t",$test18)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 WtFD == 200 WtFC / WtFD == 0.02 tumFC / tumFD < 0.2");
+    $RECORD = [split("\t",$test19)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 WtFD == 200 WtFC / WtFD < 0.02 tumFC / tumFD == 0.2");
+    $RECORD = [split("\t",$test20)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 WtFD > 200 WtFC / WtFD > 0.02 tumFC / tumFD < 0.2");
   };
 }
