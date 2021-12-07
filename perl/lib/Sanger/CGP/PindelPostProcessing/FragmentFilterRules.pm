@@ -512,7 +512,7 @@ sub flag_020 {
     }
 
   }else{
-    if($norfc_over_norfd <= 0.02 && $tumfc_over_tumfd >= 0.2){
+    if($norfc_over_norfd <= 0.02 && $tumfc_over_tumfd >= 0.1){
       return $PASS;
     }
   }
