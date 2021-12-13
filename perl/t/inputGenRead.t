@@ -45,4 +45,3 @@ $obj = new_ok($MODULE, [\$cleaned, 2]);
 is($obj->frac_pbq_poor, $EXP_FRAC_PBQ, 'Check poor qual PBQ fraction');
 
 done_testing();
-
