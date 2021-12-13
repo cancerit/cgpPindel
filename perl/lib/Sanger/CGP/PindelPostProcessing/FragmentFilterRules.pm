@@ -1,25 +1,33 @@
-package Sanger::CGP::PindelPostProcessing::FragmentFilterRules;
-
-########## LICENCE ##########
-# Copyright (c) 2014-2021 Genome Research Ltd.
+# Copyright (c) 2014-2021 Genome Research Ltd
 #
 # Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
 # This file is part of cgpPindel.
 #
-# cgpPindel is free software: you can redistribute it and/or modify it under
-# the terms of the GNU Affero General Public License as published by the Free
-# Software Foundation; either version 3 of the License, or (at your option) any
-# later version.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
 #
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
-# details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
-# along with this program. If not, see <http://www.gnu.org/licenses/>.
-########## LICENCE ##########
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+# 1. The usage of a range of years within a copyright statement contained within
+# this distribution should be interpreted as being equivalent to a list of years
+# including the first and last year specified and all consecutive years between
+# them. For example, a copyright statement that reads ‘Copyright (c) 2005, 2007-
+# 2009, 2011-2012’ should be interpreted as being identical to a statement that
+# reads ‘Copyright (c) 2005, 2007, 2008, 2009, 2011, 2012’ and a copyright
+# statement that reads ‘Copyright (c) 2005-2012’ should be interpreted as being
+# identical to a statement that reads ‘Copyright (c) 2005, 2006, 2007, 2008,
+# 2009, 2010, 2011, 2012’.
+#
+package Sanger::CGP::PindelPostProcessing::FragmentFilterRules;
 
 use strict;
 use Bio::DB::HTS::Tabix;
@@ -87,6 +95,14 @@ my %RULE_DESCS = ('FF001' => { 'tag' =>'INFO/LEN',
                               'name' => 'FF018',
                               'desc' => 'Sufficient Depth: Pass if depth > 10',
                               'test' => \&flag_018},
+                  'FF019' => { 'tag'  => 'INFO/LEN',
+                              'name' => 'FF019',
+                              'desc' => 'Fail when tumour supporting fragments < 3 or tumour fraction of supporting fragments < 0.05',
+                              'test' => \&flag_019},
+                    'FF020' => { 'tag'  => 'INFO/LEN',
+                              'name' => 'FF020',
+                              'desc' => 'Allow some contamination in matched normal due to FFPR block acquired samples and allow for low level sequencing/PCR artefacts',
+                              'test' => \&flag_020},
 );
 
 our $previous_format_hash;
@@ -445,6 +461,60 @@ sub flag_018 {
   if(($nor_geno[$previous_format_hash->{'PR'}] + $nor_geno[$previous_format_hash->{'NR'}] >= 10) &&
     ($tum_geno[$previous_format_hash->{'PR'}] + $tum_geno[$previous_format_hash->{'NR'}] >= 10)){
     return $PASS;
+  }
+
+  return $FAIL;
+}
+
+sub flag_019 {
+  my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
+  use_prev($$RECORD[8]);
+
+  my @tum_geno = split(':',$$RECORD[10]);
+
+  if($tum_geno[$previous_format_hash->{'FC'}] < 3){
+    return $FAIL;
+  }
+  # previous test confirms FC/FD can't be 0, so no div0 check required
+  if ($tum_geno[$previous_format_hash->{'FC'}] / $tum_geno[$previous_format_hash->{'FD'}] < 0.05){
+    return $FAIL;
+  }
+
+  return $PASS;
+}
+
+sub flag_020 {
+  my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
+  use_prev($$RECORD[8]);
+
+  my @nor_geno = split(':',$$RECORD[9]);
+  my @tum_geno = split(':',$$RECORD[10]);
+
+  my $nor_fd = $nor_geno[$previous_format_hash->{'FD'}];
+
+  if($nor_fd < 200 &&
+    $nor_geno[$previous_format_hash->{'FC'}] <= 1 &&
+    $nor_geno[$previous_format_hash->{'FD'}] >= 10 &&
+    $nor_geno[$previous_format_hash->{'FC'}] <= ($tum_geno[$previous_format_hash->{'FC'}] * 0.1)
+  ){
+    return $PASS;
+  }
+
+  my $tumfc_over_tumfd = $tum_geno[$previous_format_hash->{'FD'}] > 0 ? $tum_geno[$previous_format_hash->{'FC'}] / $tum_geno[$previous_format_hash->{'FD'}] : undef;
+  my $norfc_over_norfd = $nor_geno[$previous_format_hash->{'FD'}] > 0 ? $nor_geno[$previous_format_hash->{'FC'}] / $nor_geno[$previous_format_hash->{'FD'}] : undef;
+
+  if($nor_fd < 200){
+    if(($nor_geno[$previous_format_hash->{'FC'}] == 1 || $nor_geno[$previous_format_hash->{'FC'}] == 2) &&
+      $norfc_over_norfd <= 0.05 &&
+      $tumfc_over_tumfd >= 0.2
+    ){
+    return $PASS;
+    }
+
+  }else{
+    if($norfc_over_norfd <= 0.02 && $tumfc_over_tumfd >= 0.1){
+      return $PASS;
+    }
   }
 
   return $FAIL;

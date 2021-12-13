@@ -1,103 +1,109 @@
 # CHANGES
 
+## 3.6.0
+- Addition of `FF019` and `FF020` flags
+- New flag rule set `pulldownFfpeRulesFragment.lst` including FF019 and FF020 made
+
+## 3.5.0
+
+- Update to core pindel algorithm to allow complex DI events to have longer inserted sequence than deleted
+  - Masking real events
+
 ## 3.4.1
 
-* Updated Dockerfile to use pcap-core 5.4.0 - htslib/samtools 1.11
+- Updated Dockerfile to use pcap-core 5.4.0 - htslib/samtools 1.11
 
 ## 3.4.0
 
-* Updated Dockerfile to use pcap-core 5.2.2
-* Modified setup script to use build/*.sh
+- Updated Dockerfile to use pcap-core 5.2.2
+- Modified setup script to use build/\*.sh
 
 ## 3.3.0
 
-* I/O hardening, see [milestone 3](https://github.com/cancerit/cgpPindel/milestone/3)
+- I/O hardening, see [milestone 3](https://github.com/cancerit/cgpPindel/milestone/3)
 
 ## 3.2.2
 
-* Handle Input files that may have no reads at all, specifically an issue when generating a normal panel.
+- Handle Input files that may have no reads at all, specifically an issue when generating a normal panel.
 
 ## 3.2.1
 
-* Added Dockerfile and docker documentation
+- Added Dockerfile and docker documentation
 
 ## 3.2.0
 
-* Tabix search for high depth/excluded regions now performed in memory using IntervalTrees
-  * Reduces runtime of input step by ~50%
-  * Improved disk access profile
-  * Zero impact on results
+- Tabix search for high depth/excluded regions now performed in memory using IntervalTrees
+  - Reduces runtime of input step by ~50%
+  - Improved disk access profile
+  - Zero impact on results
 
 ## 3.1.2
 
-* 3.0.5 introduced species parsing bug causing single word species names to be invalid.
+- 3.0.5 introduced species parsing bug causing single word species names to be invalid.
 
 ## 3.1.1
 
-* Fix regression - ability to cope with chromosomes with no events.
+- Fix regression - ability to cope with chromosomes with no events.
 
 ## 3.1.0
 
-* Incorporates updated pindel which improves sensitivity
-* Internally interpret QCFAIL to determine if whole pair fails
+- Incorporates updated pindel which improves sensitivity
+- Internally interpret QCFAIL to determine if whole pair fails
 
 ## 3.0.6
 
-* Fixed version tag
+- Fixed version tag
 
 ## 3.0.5
 
-* Handles species names with spaces in it
-* modified checks for species,assembly and checksum
+- Handles species names with spaces in it
+- modified checks for species,assembly and checksum
 
 ## 3.0.4
 
-* Output bug for pindel BAM/CRAM corrected.  When more than 1 chr in output files had no reads.
+- Output bug for pindel BAM/CRAM corrected.  When more than 1 chr in output files had no reads.
 
 ## 3.0.3
 
-* Changes to how germline filter determined resulted in dummy germline bed file not being generated as previously.
-* This release reinstates the old behaviour.
+- Changes to how germline filter determined resulted in dummy germline bed file not being generated as previously.
+- This release reinstates the old behaviour.
 
 ## 3.0.2
 
-* Correct example rule files for *Fragment.lst files to use FFnnn filter types
+- Correct example rule files for \*Fragment.lst files to use FFnnn filter types
 
 ## 3.0.1
 
-* Update tabix calls to directly use query_full (solves GRCh38 contig name issues).
+- Update tabix calls to directly use query_full (solves GRCh38 contig name issues).
 
 ## 3.0.0
 
-* Germline bed file is now merged for adjacent regions (#31)
-* More compressed intermediate files (#55)
-* Change to `Const::Fast` where appropriate (#41)
-* Removed TG VG from genotype.
-  * Readgroups are always variable, often 1 in data from last few years
-  * Not used by our filters.
-* Supports BAM/CRAM inputs
-* Output will be aligned with inputs
-  * bam vs cram
-  * bai vs csi
-* Although ground work for csi input/output has been done `Bio::DB::HTS` doesn't support csi indexed input yet.
-  * Created our own fork at [`cancerit/Bio::DB::HTS`][cancerit-biodbhts] so that this could be enabled.
-  * You will need to install this manually or use one of our images for this functionallity.
-    * [dockstore-cgpwxs][ds-cgpwxs-git]
-    * [dockstore-cgpwxs][ds-cgpwgs-git]
+- Germline bed file is now merged for adjacent regions (#31)
+- More compressed intermediate files (#55)
+- Change to `Const::Fast` where appropriate (#41)
+- Removed TG VG from genotype.
+  - Readgroups are always variable, often 1 in data from last few years
+  - Not used by our filters.
+- Supports BAM/CRAM inputs
+- Output will be aligned with inputs
+  - bam vs cram
+  - bai vs csi
+- Although ground work for csi input/output has been done `Bio::DB::HTS` doesn't support csi indexed input yet.
+  - Created our own fork at [`cancerit/Bio::DB::HTS`][cancerit-biodbhts] so that this could be enabled.
+  - You will need to install this manually or use one of our images for this functionallity.
+    - [dockstore-cgpwxs][ds-cgpwxs-git]
+    - [dockstore-cgpwxs][ds-cgpwgs-git]
 
 <!-- -->
-[cancerit-biodbhts]: https://github.com/cancerit/Bio-DB-HTS/releases/tag/v2.10-rc1
-[ds-cgpwxs-git]: https://github.com/cancerit/dockstore-cgpwxs
-[ds-cgpwgs-git]: https://github.com/cancerit/dockstore-cgpwgs
 
 ## 2.2.5
 
-* Update tabix->query to tabix->query_full
+- Update tabix->query to tabix->query_full
 
 ## 2.2.4
 
-* Force sorting of FILTER field to make records easier to diff.
-* Fix sorting of final VCF to handle events with same start better when using comparison tools
+- Force sorting of FILTER field to make records easier to diff.
+- Fix sorting of final VCF to handle events with same start better when using comparison tools
 
 ## 2.2.3
 
@@ -175,3 +181,8 @@ Found 15321 SNPs common to both files.
 Found 0 SNPs only in main file.
 Found 0 SNPs only in second file.
 After
+```
+
+[cancerit-biodbhts]: https://github.com/cancerit/Bio-DB-HTS/releases/tag/v2.10-rc1
+[ds-cgpwgs-git]: https://github.com/cancerit/dockstore-cgpwgs
+[ds-cgpwxs-git]: https://github.com/cancerit/dockstore-cgpwxs
