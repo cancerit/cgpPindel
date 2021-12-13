@@ -1,7 +1,8 @@
 # CHANGES
 
 ## 3.6.0
-- Addition of `FF019` and `FF020` flags, new flag rule set `pulldownFfpeRulesFragment.lst` including FF019 and FF020 made
+- Addition of `FF019` and `FF020` flags
+- New flag rule set `pulldownFfpeRulesFragment.lst` including FF019 and FF020 made
 
 ## 3.5.0
 
