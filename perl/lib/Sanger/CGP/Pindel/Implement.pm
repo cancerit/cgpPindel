@@ -754,6 +754,9 @@ sub fill_split_vaf {
     my $fill_dir = catdir($options->{fill_dir}, $fill_basename);
     my $command = $^X.' '._which('pindelCohortVafSliceFill.pl');
     $command .= sprintf ' -r %s -i %s -o %s -d %s', $options->{ref}, $split_file, $fill_dir, $options->{bwa_file_list};
+    if(defined $options->{'simple'}) {
+      $command .= sprintf ' -sr %s', $options->{'simple'};
+    }
 
     PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), $command, $index);
     PCAP::Threaded::touch_success(catdir($tmp, 'progress'), $index);

@@ -54,6 +54,7 @@ use Sanger::CGP::Pindel::OutputGen::VcfBlatAugment;
     hts_files => $options->{hts_files},
     outpath => $options->{outpath},
     fill_in => 1,
+    simple_rpt => $options->{simple},
   );
 
   $augment->output_header;
@@ -71,6 +72,7 @@ sub setup {
               'r|ref=s' => \$opts{ref},
               'o|output=s' => \$opts{output},
               'd|data=s' => \$opts{data},
+              's|simple:s' => \$opts{simple},
   );
 
   if(defined $opts{v}) {
@@ -82,6 +84,7 @@ sub setup {
 
   PCAP::Cli::file_for_reading('input', $opts{input});
   PCAP::Cli::file_for_reading('ref', $opts{ref});
+  PCAP::Cli::file_for_reading('somple', $opts{simple}) if(defined $opts{simple});
 
   $opts{align} = $opts{output}.'.fill.sam' unless(defined $opts{align});
 
@@ -121,6 +124,7 @@ pindelCohortVafSliceFill.pl [options]
     -output    -o   Directory for VCF output (gz compressed) and collocated sample bams
     -data      -d   File containing list of BWA mapping files for all samples used in "-input"
                     - format: one BWA bam/cram file per line, expects co-located *.bai
+    -simple    -s   Simple repeats file - only applies when complete search space within a single repeat.
 
   Other:
     -help      -h   Brief help message.

@@ -39,6 +39,8 @@ use File::Spec::Functions;
 use File::Temp qw(tempfile tempdir);
 use IO::Compress::Gzip qw(:constants gzip $GzipError);
 use List::Util qw(min max);
+use Set::IntervalTree;
+use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
 
 use Bio::DB::HTS;
 use Bio::DB::HTS::Faidx;
@@ -51,6 +53,7 @@ use Sanger::CGP::Vcf::VcfProcessLog;
 use Sanger::CGP::Vcf::VcfUtil;
 
 const my $SD_MULT => 2;
+const my $V_INFO => 7;
 const my $V_FMT => 8;
 const my $V_GT_START => 9;
 const my $READS_ONLY => q{bash -c 'set -o pipefail; (samtools view -H %s && samtools view -F 3840 %s %s | sort | uniq) | samtools fasta - > %s'};
@@ -75,6 +78,7 @@ sub new{
     hts_files => $args{hts_files},
     fill_in => $args{fill_in},
     debug => $args{debug} || 0,
+    rpts => $args{simple_rpt},
   };
   bless $self, $class;
 
@@ -92,11 +96,73 @@ sub _init {
   $self->_align_output($outpath);
   $self->_add_headers unless($self->{fill_in});
   $self->_hts; # has to go before _buffer_sizes
-  $self->_buffer_sizes; # has to go before _validate_sample
+  $self->_buffer_sizes; # has to go before _validate_sample and _pop_interval_tree
   $self->_validate_samples;
+  if($self->{fill_in}) {
+    $self->_pop_interval_tree;  # adds a header item to VCF
+  }
   # load the fai
   $self->{fai} = Bio::DB::HTS::Faidx->new($self->{ref});
   return 1;
+}
+
+sub _pop_interval_tree {
+  my $self = shift;
+  # even if we don't have a file we should add the header for consistency
+  $self->{vcf}->add_header_line({key => 'INFO', ID => 'PSRPT', Description => q{BLAT search space is >50% simple repeat}}, 'append' => 1);
+
+  my %tree;
+  if(defined $self->{rpts}) {
+    my $z = IO::Uncompress::Gunzip->new($self->{rpts}, MultiStream => 1) or die "gunzip failed: $GunzipError\n";
+    while(my $line = <$z>) {
+      next if ($line =~ m/^#/);
+      chomp $line;
+      my ($chr, $s, $e) = split /\t/, $line;
+      my $dist = ($e - $s) + 1;
+      next if($dist < $self->{target_pad} * 2);
+      $tree{$chr} = Set::IntervalTree->new() unless(exists $tree{$chr});
+      $tree{$chr}->insert([$s, $e, ($e - $s) + 1], $s, $e);
+    }
+    close $z;
+  }
+  $self->{repeat_tree} = \%tree;
+}
+
+sub _padded_interval_hit {
+  my ($self, $chr, $l_pos, $h_pos) = @_;
+  return 0 unless (exists $self->{repeat_tree}->{$chr});
+  my $l_pad = ($l_pos - $self->{target_pad}) - 1; # as completely 0-based
+  $l_pad = 0 if($l_pad < 0);
+  my $h_pad = $h_pos + $self->{target_pad};
+  #warn sprintf "%s:%d-%d\n", $chr, $l_pad, $h_pad;
+  for my $hit(@{$self->{repeat_tree}->{$chr}->fetch($l_pad, $h_pad)}) {
+    #warn sprintf "\t%s:%d-%d (%d)\n", $chr, $hit->[0], $hit->[1], $hit->[2];
+    my ($numer, $denom);
+    if($l_pad > $hit->[0] && $h_pad < $hit->[1]) {
+      # contained,  as completely repeat
+      $numer = 1;
+      $denom = 1; # as completely repeat
+    }
+    elsif($l_pad <= $hit->[0]) {
+      # low overhang
+      $numer = ($h_pad - $hit->[0]) + 1;
+      $denom = ($h_pad - $l_pad) + 1
+    }
+    elsif($h_pad >= $hit->[1]) {
+      # high overhang
+      $numer = ($hit->[1] - $l_pad) + 1;
+      $denom = ($h_pad - $l_pad) + 1
+    }
+    else {
+      # search is larger than the repeat, but could still be huge component
+      $numer = $hit->[2];
+      $denom = ($h_pad - $l_pad) + 1;
+    }
+    my $result = $numer/$denom;
+    #warn "\t\t$result\n";
+    return 1 if($result > 0.5);
+  }
+  return 0;
 }
 
 sub _close_sams {
@@ -326,34 +392,41 @@ sub blat_record {
   my ($self, $v_d, $readtmp_dir) = @_;
   my $v_h = $self->to_data_hash($v_d);
 
-  # now attempt the blat stuff
-  my ($fh_target, $file_target) = tempfile( SUFFIX => '.fa', UNLINK => 1 );
-  $self->blat_ref_alt($fh_target, $v_h);
-  close $fh_target or die "Failed to close blat ref temp file";
+  # assess if this is completely embedded in a large simple repeat
+  my $simp_rep = $self->_padded_interval_hit($v_h->{CHROM}, $v_h->{RS}, $v_h->{RE});
 
-  my $change_pos_low = $v_h->{change_pos};
-  $change_pos_low++ if($v_h->{PC} eq 'I');
-  my $range_l = ($v_h->{RE} - $v_h->{RS}) + 1;
-  my $change_pos_high = $change_pos_low + $range_l; # REF based range, adjusted in func
-  $v_h->{change_pos_low} = $change_pos_low;
-  $v_h->{change_pos_high} = $change_pos_high;
-
-  my $gt_pos = $V_GT_START-1;
-  for my $sample(@{$self->{vcf_sample_order}}) {
-    $gt_pos++;
-    if($self->{fill_in} && $v_d->[$gt_pos] ne q{.}) {
-      next;
-    }
-    my $gt_set = $self->blat_reads($v_h, $file_target, $readtmp_dir, $sample);
-    if($v_d->[$gt_pos] eq q{.}) {
-      $v_d->[$gt_pos] = join q{:}, './.:.:.:.:.', @{$gt_set};
-    }
-    else {
-      $v_d->[$gt_pos] = join q{:}, $v_d->[$gt_pos], @{$gt_set};
-    }
+  if($simp_rep == 1) {
+    $v_d->[$V_INFO] .= ';PSRPT'
   }
-  # tempfile unlink only does it on shutdown when used in this way
-  unlink $file_target;
+  else {
+    # now attempt the blat stuff
+    my ($fh_target, $file_target) = tempfile( SUFFIX => '.fa', UNLINK => 1 );
+    $self->blat_ref_alt($fh_target, $v_h);
+    close $fh_target or die "Failed to close blat ref temp file";
+
+    my $change_pos_low = $v_h->{change_pos};
+    $change_pos_low++ if($v_h->{PC} eq 'I');
+    my $range_l = ($v_h->{RE} - $v_h->{RS}) + 1;
+    my $change_pos_high = $change_pos_low + $range_l; # REF based range, adjusted in func
+    $v_h->{change_pos_low} = $change_pos_low;
+    $v_h->{change_pos_high} = $change_pos_high;
+    my $gt_pos = $V_GT_START-1;
+    for my $sample(@{$self->{vcf_sample_order}}) {
+      $gt_pos++;
+      if($self->{fill_in} && $v_d->[$gt_pos] ne q{.}) {
+        next;
+      }
+      my $gt_set = $self->blat_reads($v_h, $file_target, $readtmp_dir, $sample);
+      if($v_d->[$gt_pos] eq q{.}) {
+        $v_d->[$gt_pos] = join q{:}, './.:.:.:.:.', @{$gt_set};
+      }
+      else {
+        $v_d->[$gt_pos] = join q{:}, $v_d->[$gt_pos], @{$gt_set};
+      }
+    }
+    # tempfile unlink only does it on shutdown when used in this way
+    unlink $file_target;
+  }
   return 1;
 }
 

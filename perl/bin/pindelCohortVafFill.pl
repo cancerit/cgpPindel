@@ -120,7 +120,8 @@ sub setup {
               'l|limit:i' => \$opts{limit},
               'a|abort' => \$opts{abort},
               'd|data=s' => \$opts{data},
-              'debug' => \$opts{debug}
+              'debug' => \$opts{debug},
+              'sr|simple:s' => \$opts{simple},
   );
 
   if(defined $opts{v}) {
@@ -153,6 +154,7 @@ sub setup {
   PCAP::Cli::file_for_reading('input', $opts{input});
   PCAP::Cli::file_for_reading('data', $opts{data});
   PCAP::Cli::file_for_reading('ref', $opts{ref});
+  PCAP::Cli::file_for_reading('simple', $opts{simple}) if(defined $opts{simple});
 
   if(@ARGV) {
     die "ERROR: No positional arguments expected."
@@ -220,6 +222,7 @@ pindelCohortVafFill.pl [options] -i ... -o ... -r ... -d ...
                      - Automatically increased to a minimum of 5x number of samples (for efficiency).
     -abort     -a   Abort noisily if data appears to have been processed (silent exit otherwise)
     -cpus      -c   Number of cores to use. [1]
+    -simple    -sr  Simple repeats file - only applies when complete search space within a single repeat.
 
 
   Targeted processing (further detail under OPTIONS):
