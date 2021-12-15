@@ -29,7 +29,6 @@
 # 2009, 2010, 2011, 2012’.
 #
 
-
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
@@ -42,7 +41,16 @@ WriteMakefile(
                         bin/FlagVcf.pl
                         bin/pindel_merge_vcf_bam.pl
                         bin/pindel_np_from_vcf.pl
-                        bin/pindel_germ_bed.pl)],
+                        bin/pindel_germ_bed.pl
+                        bin/pindelCohort.pl
+                        bin/pindelCohort_to_vcf.pl
+                        bin/pindel_vcfSortNsplit.pl
+                        bin/pindel_blat_vaf.pl
+                        bin/pindelCohortMerge.pl
+                        bin/pindelCohortVafFill.pl
+                        bin/pindelCohortVafSplit.pl
+                        bin/pindelCohortVafSliceFill.pl
+                        )],
   PREREQ_PM     => {
                      'Const::Fast' => 0.014,
                      'Try::Tiny' => 0.19,

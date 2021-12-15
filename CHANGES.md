@@ -1,6 +1,23 @@
 # CHANGES
 
+## NEXT
+
+- Adds code to allow single sample processing with more accurate VAF calculations (via BLAT)
+- Status of new scripts, "pre-release" indicates defaults and CLI may change:
+  - stable
+    - pindelCohort.pl
+    - pindel_blat_vaf.pl
+  - pre-release
+    - pindelCohort_to_vcf.pl
+    - pindel_vcfSortNsplit.pl
+    - pindelCohortMerge.pl
+    - pindelCohortVafFill.pl
+    - pindelCohortVafSplit.pl
+    - pindelCohortVafSliceFill.pl
+- Switch license management to skywalking-eyes.
+
 ## 3.6.0
+
 - Addition of `FF019` and `FF020` flags
 - New flag rule set `pulldownFfpeRulesFragment.lst` including FF019 and FF020 made
 

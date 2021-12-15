@@ -64,6 +64,7 @@ sub init{
 
 	$self->{_fh} = $fh;
 	$self->{_fai} = $args{-fai};
+	$self->{_noreads} = $args{-noreads} || 0;
 
 	## clear the first line of ##+....
 
@@ -133,6 +134,8 @@ sub _process_record{
 		_parse_header_v02($record,$record_header);
 	}
 
+
+
 	my $alignments = [];
 
 	# Collect all the reads...
@@ -144,6 +147,30 @@ sub _process_record{
 	}
 
 	$self->_parse_alignment($record, $alignments, \$ref_line);
+
+	# this is where we can add additional information about GC content
+	my $chr = $record->chro;
+	my $lhs_end = $record->range_start;
+	my $rhs_start = $record->range_end;
+	my $fai = $self->{_fai};
+	my $r_type = $record->type;
+
+	my $seq = $fai->fetch(sprintf '%s:%d-%d', $chr, $lhs_end - 199, $lhs_end);
+	my $lhs_gc = ($seq =~ tr/GCgc//)/200;
+
+	$seq = $fai->fetch(sprintf '%s:%d-%d', $chr, $rhs_start, $rhs_start + 199);
+	my $rhs_gc = ($seq =~ tr/GCgc//)/200;
+	my $ref_tmp;
+	if($record->type eq 'D'){
+		$ref_tmp = $record->ref_seq;
+	}
+	else {
+		$ref_tmp = $record->alt_seq;
+	}
+	my $rng_gc = ($ref_tmp =~ tr/GCgc//) / length $ref_tmp;
+	$record->gc_5p($lhs_gc);
+	$record->gc_3p($rhs_gc);
+	$record->gc_rng($rng_gc);
 
 	return $record;
 }
@@ -307,6 +334,9 @@ sub _parse_alignment {
 
 	my ($ref_left, $ref_change, $ref_right) = ($$ref_line =~ m/([A-Z]+)(\s+|[a-z]+|[a-z]+.*[a-z]+)([A-Z]+)/);
 
+	$record->ref_left($ref_left);
+	$record->ref_right($ref_right);
+
 	my $change_ref_offset = length $ref_left;
 	my $change_ref_offset_end = $change_ref_offset + length $ref_change;
 	my $record_type = $record->type();
@@ -360,7 +390,7 @@ sub _parse_alignment {
 
 	foreach my $read(@{$alignment}) {
 		$read =~ s/ ([+-])/\t$1/ if($record_type eq 'D'); ## correction for a bug in the pindel output layout.... this is done here to allow use to pass a ref of the read into _parse_read
-		_parse_read($record, $chr, $start_pos, \$read, $ref_seq_length, ($read_num++.$record_idx), $change_ref_offset, $change_ref_offset_end,\$_buffer_region,$_buffer_region_start);
+		_parse_read($record, $chr, $start_pos, \$read, $ref_seq_length, ($read_num++.$record_idx), $change_ref_offset, $change_ref_offset_end,\$_buffer_region,$_buffer_region_start, $self->{_noreads});
 	}
 
 	## This is not strictly read from the pindel input but is useful for woring out the number of repeats within the repeat-range.
@@ -518,82 +548,81 @@ between bwa and pindel.
                            is used to grab variant sequence from the read string.
 =cut
 sub _parse_read {
-	my ($record, $chr, $start_pos, $read, $ref_seq_length, $read_idx, $change_ref_start, $change_ref_end, $_buffer_region, $_buffer_region_start) = @_;
+	my ($record, $chr, $start_pos, $read, $ref_seq_length, $read_idx, $change_ref_start, $change_ref_end, $_buffer_region, $_buffer_region_start, $no_read_data) = @_;
+	$no_read_data ||= 0;
 
 	my @bits = split /\t+/, ${$read};
-
-	## This is a custom read name component added to the read name when it is put into Pindel.
-	## As pindel currently does not preserve the read group, if we want to identify read group
-	## specific errors we need to track the read groups from the reads....
-	my ($read_group) = $bits[-1] =~ /\/[12]_RG(.+)$/;
-	$read_group = '' unless $read_group;
-
-	my ($name, $rg_pair) = split /\//, $bits[-1];
-	$name = substr($name,1) if substr($name,0,1) eq '@';
-
-	# need this to force uniqness in reads that have multiple events
-	# and make display in gbrowse work for overlapping reads
-	$name .= '_r'.$read_idx;
-
 	my $sample = $bits[-2];
-	my $mapq = $bits[-3]; # mapq of anchor read, sensible to use this in the output
-	my $strand = $bits[-5]; # will need to be inverted as is the strand of the anchor
+	my $strand = $bits[-5];
+	$strand =~ tr/\+\-/\-\+/; # need to invert as is strand of anchor
 
-	# locate the left and right parts of the read string
-	my $read_seq = $bits[0];
-	my $read_left = substr($read_seq, 0, $change_ref_start);
-	my $read_right = substr($read_seq, $change_ref_end);
-	my $event = substr($read_seq, $change_ref_start,$change_ref_end - $change_ref_start);
+	my $read_data;
+	if($no_read_data == 0) {
+		## This is a custom read name component added to the read name when it is put into Pindel.
+		## As pindel currently does not preserve the read group, if we want to identify read group
+		## specific errors we need to track the read groups from the reads....
+		my ($read_group) = $bits[-1] =~ /\/[12]_RG(.+)$/;
+		$read_group = '' unless $read_group;
 
-	## we do this so that we can efficiently strip the space characters from the read components...
-	my $left_seq_length = $read_left =~ tr/ATCGN/ATCGN/;## the tr simply counts the number of atcgs in the string... v-efficient
-	my $right_seq_length = $read_right =~ tr/ATCGN/ATCGN/;## the tr simply counts the number of atcgs in the string... v-efficient
-	my $event_seq_length = $event =~ tr/ATCGN/ATCGN/;
-	my $event_length = length $event;
+		my ($name, $rg_pair) = split /\//, $bits[-1];
+		$name = substr($name,1) if substr($name,0,1) eq '@';
 
-	## create a read sequence without any spaces. This is MUCH MUCH faster than using s///.
-	my $space_stripped_read_seq = substr($read_left, (length($read_left) - $left_seq_length), $change_ref_start);
-	$space_stripped_read_seq .= $event if $event_seq_length;
-	$space_stripped_read_seq .= substr($read_right, 0,$right_seq_length);
+		# need this to force uniqness in reads that have multiple events
+		# and make display in gbrowse work for overlapping reads
+		$name .= '_r'.$read_idx;
 
-	#$read_left =~ s/^ +//;
-	#$read_right =~ s/ //g;
-	#$read_seq =~ s/ //g;
+		my $mapq = $bits[-3]; # mapq of anchor read, sensible to use this in the output
 
-	$start_pos -= $left_seq_length ;
+		# locate the left and right parts of the read string
+		my $read_seq = $bits[0];
+		my $read_left = substr($read_seq, 0, $change_ref_start);
+		my $read_right = substr($read_seq, $change_ref_end);
+		my $event = substr($read_seq, $change_ref_start,$change_ref_end - $change_ref_start);
 
-	# Some data have -ve position starts so need to be corrected. i.e. the position starts before the beginning of the reference.
-	# This occurs with species like Devil that map to shattered contig sequences.
-	if($start_pos < 1) {
-		my $corr_size = (abs $start_pos)+1;
-		#$read_seq = substr($read_seq, $corr_size);
-		#$read_left = substr($read_left, $corr_size);
-		$read_seq = substr($space_stripped_read_seq, $corr_size);
-		$read_left = substr(substr($read_left, (length($read_left) - $left_seq_length),$change_ref_start), $corr_size);
+		## we do this so that we can efficiently strip the space characters from the read components...
+		my $left_seq_length = $read_left =~ tr/ATCGN/ATCGN/;## the tr simply counts the number of atcgs in the string... v-efficient
+		my $right_seq_length = $read_right =~ tr/ATCGN/ATCGN/;## the tr simply counts the number of atcgs in the string... v-efficient
+		my $event_seq_length = $event =~ tr/ATCGN/ATCGN/;
+		my $event_length = length $event;
 
-		$left_seq_length = $read_left =~ tr/ATCGN/ATCGN/;
-		$start_pos = 1;
+		## create a read sequence without any spaces. This is MUCH MUCH faster than using s///.
+		my $space_stripped_read_seq = substr($read_left, (length($read_left) - $left_seq_length), $change_ref_start);
+		$space_stripped_read_seq .= $event if $event_seq_length;
+		$space_stripped_read_seq .= substr($read_right, 0,$right_seq_length);
+
+		$start_pos -= $left_seq_length ;
+
+		# Some data have -ve position starts so need to be corrected. i.e. the position starts before the beginning of the reference.
+		# This occurs with species like Devil that map to shattered contig sequences.
+		if($start_pos < 1) {
+			my $corr_size = (abs $start_pos)+1;
+			$read_seq = substr($space_stripped_read_seq, $corr_size);
+			$read_left = substr(substr($read_left, (length($read_left) - $left_seq_length),$change_ref_start), $corr_size);
+
+			$left_seq_length = $read_left =~ tr/ATCGN/ATCGN/;
+			$start_pos = 1;
+		}
+
+	## Keep track of all the reads associated with a variant.
+	## These bits are for pindel_bam creation.
+	## These bam files only contain the reads identified from within pindel as having a variant
+	## These bam files are used in things like gbrowse/jbrowse for display
+
+		my @cig_list = ($left_seq_length, 'M');
+		push @cig_list, $ref_seq_length, 'D' if $ref_seq_length;
+		push @cig_list, $event_seq_length, 'I' if $event_seq_length;
+		push @cig_list, $right_seq_length, 'M';
+
+		my $flag = $strand eq '-' ? 16 : 0; # previously 1+8 but as not really paired anymore
+		my @tags = calmd($chr, $start_pos, \@cig_list, \$space_stripped_read_seq, $_buffer_region, $_buffer_region_start);
+
+		pop @tags; # we dont need the last value.. at the moment...
+		unshift @tags, "RG:Z:$read_group" if($read_group);
+		$read_data = [$name,$flag,$chr,$start_pos,$mapq,join(q{},@cig_list),'*','0','0',$space_stripped_read_seq,'*',@tags];
 	}
 
-## Keep track of all the reads associated with a variant.
-## These bits are for pindel_bam creation.
-## These bam files only contain the reads identified from within pindel as having a variant
-## These bam files are used in things like gbrowse/jbrowse for display
-
-	my @cig_list = ($left_seq_length, 'M');
-	push @cig_list, $ref_seq_length, 'D' if $ref_seq_length;
-	push @cig_list, $event_seq_length, 'I' if $event_seq_length;
-	push @cig_list, $right_seq_length, 'M';
-
-	$strand =~ tr/\+\-/\-\+/; # need to invert as is strand of anchor
-	my $flag = $strand eq '-' ? 16 : 0; # previously 1+8 but as not really paired anymore
-	my @tags = calmd($chr, $start_pos, \@cig_list, \$space_stripped_read_seq, $_buffer_region, $_buffer_region_start);
-
-	pop @tags; # we dont need the last value.. at the moment...
-	unshift @tags, "RG:Z:$read_group" if($read_group);
-
     # Create a basic sam line for the read and add it to the record.
-    $record->add_read($sample,$strand,[$name,$flag,$chr,$start_pos,$mapq,join(q{},@cig_list),'*','0','0',$space_stripped_read_seq,'*',@tags]);
+    $record->add_read($sample,$strand,$read_data);
 
 	return 1;
 }

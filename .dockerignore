@@ -6,7 +6,12 @@
 /CHANGES.md
 /.gitignore
 /.git
+/perl/blib
+/pm_to_blib
 /perl/docs
 /perl/docs.tar.gz
 /python/env
 /install_tmp
+/.circleci
+/*.code-workspace
+/tmp

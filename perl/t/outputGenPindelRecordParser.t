@@ -1,23 +1,4 @@
-########## LICENCE ##########
-# Copyright (c) 2014-2021 Genome Research Ltd.
-#
-# Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
-#
-# This file is part of cgpPindel.
-#
-# cgpPindel is free software: you can redistribute it and/or modify it under
-# the terms of the GNU Affero General Public License as published by the Free
-# Software Foundation; either version 3 of the License, or (at your option) any
-# later version.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
-# details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program. If not, see <http://www.gnu.org/licenses/>.
-########## LICENCE ##########
+
 
 use strict;
 use Test::More;
@@ -470,7 +451,9 @@ subtest 'Object funcions' => sub {
       	                        ['EAS139_64:1:55:1728:1427_r2_D0',16,22,16060468,29,'12M6D63M','*',0,0,'AGTTAACTCTCTTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTCTTTCTTTCTTTCTTTCTTTCTTT','*','MD:Z:1A10^TTTTTC63','NM:i:7']]}},
       -lub => 'T',
       -min_change => lc'TTTTTC',
-      -repeats => 7
+      -repeats => 7,
+      -ref_left => 'GAGACCTCCCCAGAAATGGATGCCAGCATTATGCTTCCTATACAGCCTGCAGAACCATGAGCCAATTAACTCTCT',
+      -ref_right => 'TTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTCTTTCTTTCTTTCTTTCTTTCTTTCTTTCT',
     );
 
     $obj->_parse_alignment($record_1,$alignments_1,\$header_string_1);
@@ -514,7 +497,9 @@ subtest 'Object funcions' => sub {
       	                        ['EAS131_6:8:80:742:1825_r2_D0',16,22,16060477,60,'45M30D30M','*',0,0,'TCTTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTCTTTCTTTCTTTCTTTCTTTCTTTCTTTC','*','MD:Z:45^TTTCTTTCTTTCTTTCTTTCTTTCTTTCTT29T0','NM:i:31']]}},
       -lub => 'C',
       -min_change => 'TTTCTTTCTTTCTTTCTTTCTTTCTTTCTT',
-      -repeats => 1 # The minimum repeat is not actually repeated within the local vicinity of the event, despite the region being a repeat-region.
+      -repeats => 1, # The minimum repeat is not actually repeated within the local vicinity of the event, despite the region being a repeat-region.
+      -ref_left => 'CAGCCTGCAGAACCATGAGCCAATTAACTCTCTTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTTTCTTTTTC',
+      -ref_right => 'TCTTTCTTTCTTTCTTTCTTTCTTTCTTTTTGTTTTCTTTCATCTTTCCTTCTTCTTTTTT',
     );
 
     $obj->_parse_alignment($record_2,$alignments_2,\$header_string_2);
