@@ -1,5 +1,6 @@
 FROM quay.io/wtsicgp/pcap-core:5.6.1 as builder
 
+# hadolint ignore=DL3002
 USER  root
 
 # ALL tool versions used by opt-build.sh
@@ -8,6 +9,7 @@ ENV VER_CGPVCF="v2.2.1"\
     VER_VCFTOOLS="0.1.16"\
     VER_BLAT="v385"
 
+# hadolint ignore=DL3008
 RUN apt-get -yq update \
 && apt-get install -yq --no-install-recommends locales g++ make gcc pkg-config zlib1g-dev \
 && locale-gen en_US.UTF-8 \
@@ -19,6 +21,8 @@ ENV PATH=$OPT/bin:$OPT/biobambam2/bin:$PATH \
     LD_LIBRARY_PATH=$OPT/lib \
     LC_ALL=en_US.UTF-8 \
     LANG=en_US.UTF-8
+
+WORKDIR /tmp/build
 
 # build tools from other repos
 COPY build/opt-build.sh build/
@@ -37,6 +41,7 @@ LABEL maintainer="cgphelp@sanger.ac.uk" \
       uk.ac.sanger.cgp="Cancer, Ageing and Somatic Mutation, Wellcome Trust Sanger Institute" \
       description="cgpPindel docker"
 
+# hadolint ignore=DL3008
 RUN apt-get -yq update \
 && apt-get install -yq --no-install-recommends \
 apt-transport-https \
@@ -59,6 +64,7 @@ unattended-upgrades && \
 unattended-upgrade -d -v && \
 apt-get remove -yq unattended-upgrades && \
 apt-get autoremove -yq \
+&& rm -rf /var/lib/apt/lists/* \
 && locale-gen en_US.UTF-8 \
 && update-locale LANG=en_US.UTF-8
 

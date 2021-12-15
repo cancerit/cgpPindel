@@ -28,6 +28,7 @@
 # 2009, 2010, 2011, 2012’.
 #
 package Sanger::CGP::PindelPostProcessing::FragmentFilterRules;
+
 use strict;
 use Bio::DB::HTS::Tabix;
 use Sanger::CGP::Pindel;
@@ -94,6 +95,14 @@ my %RULE_DESCS = ('FF001' => { 'tag' =>'INFO/LEN',
                               'name' => 'FF018',
                               'desc' => 'Sufficient Depth: Pass if depth > 10',
                               'test' => \&flag_018},
+                  'FF019' => { 'tag'  => 'INFO/LEN',
+                              'name' => 'FF019',
+                              'desc' => 'Fail when tumour supporting fragments < 3 or tumour fraction of supporting fragments < 0.05',
+                              'test' => \&flag_019},
+                    'FF020' => { 'tag'  => 'INFO/LEN',
+                              'name' => 'FF020',
+                              'desc' => 'Allow some contamination in matched normal due to FFPR block acquired samples and allow for low level sequencing/PCR artefacts',
+                              'test' => \&flag_020},
 );
 
 our $previous_format_hash;
@@ -452,6 +461,60 @@ sub flag_018 {
   if(($nor_geno[$previous_format_hash->{'PR'}] + $nor_geno[$previous_format_hash->{'NR'}] >= 10) &&
     ($tum_geno[$previous_format_hash->{'PR'}] + $tum_geno[$previous_format_hash->{'NR'}] >= 10)){
     return $PASS;
+  }
+
+  return $FAIL;
+}
+
+sub flag_019 {
+  my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
+  use_prev($$RECORD[8]);
+
+  my @tum_geno = split(':',$$RECORD[10]);
+
+  if($tum_geno[$previous_format_hash->{'FC'}] < 3){
+    return $FAIL;
+  }
+  # previous test confirms FC/FD can't be 0, so no div0 check required
+  if ($tum_geno[$previous_format_hash->{'FC'}] / $tum_geno[$previous_format_hash->{'FD'}] < 0.05){
+    return $FAIL;
+  }
+
+  return $PASS;
+}
+
+sub flag_020 {
+  my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
+  use_prev($$RECORD[8]);
+
+  my @nor_geno = split(':',$$RECORD[9]);
+  my @tum_geno = split(':',$$RECORD[10]);
+
+  my $nor_fd = $nor_geno[$previous_format_hash->{'FD'}];
+
+  if($nor_fd < 200 &&
+    $nor_geno[$previous_format_hash->{'FC'}] <= 1 &&
+    $nor_geno[$previous_format_hash->{'FD'}] >= 10 &&
+    $nor_geno[$previous_format_hash->{'FC'}] <= ($tum_geno[$previous_format_hash->{'FC'}] * 0.1)
+  ){
+    return $PASS;
+  }
+
+  my $tumfc_over_tumfd = $tum_geno[$previous_format_hash->{'FD'}] > 0 ? $tum_geno[$previous_format_hash->{'FC'}] / $tum_geno[$previous_format_hash->{'FD'}] : undef;
+  my $norfc_over_norfd = $nor_geno[$previous_format_hash->{'FD'}] > 0 ? $nor_geno[$previous_format_hash->{'FC'}] / $nor_geno[$previous_format_hash->{'FD'}] : undef;
+
+  if($nor_fd < 200){
+    if(($nor_geno[$previous_format_hash->{'FC'}] == 1 || $nor_geno[$previous_format_hash->{'FC'}] == 2) &&
+      $norfc_over_norfd <= 0.05 &&
+      $tumfc_over_tumfd >= 0.2
+    ){
+    return $PASS;
+    }
+
+  }else{
+    if($norfc_over_norfd <= 0.02 && $tumfc_over_tumfd >= 0.1){
+      return $PASS;
+    }
   }
 
   return $FAIL;

@@ -28,6 +28,7 @@
 # 2009, 2010, 2011, 2012’.
 #
 package Sanger::CGP::PindelPostProcessing::AbstractExe;
+
 use FindBin;
 use Sanger::CGP::Pindel;
 use Exporter 'import';

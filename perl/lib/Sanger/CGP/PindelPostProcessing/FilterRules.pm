@@ -28,6 +28,7 @@
 # 2009, 2010, 2011, 2012’.
 #
 package Sanger::CGP::PindelPostProcessing::FilterRules;
+
 use strict;
 use Bio::DB::HTS::Tabix;
 use Sanger::CGP::Pindel;

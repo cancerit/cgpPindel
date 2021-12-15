@@ -88,8 +88,6 @@ Please use [skywalking-eyes](https://github.com/apache/skywalking-eyes).
 
 Expected workflow:
 
-Expected workflow:
-
 ```bash
 # recent build, change to apache/skywalking-eyes:0.2.0 once released
 export DOCKER_IMG=ghcr.io/apache/skywalking-eyes/license-eye

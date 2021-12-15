@@ -28,6 +28,7 @@
 # 2009, 2010, 2011, 2012’.
 #
 package Sanger::CGP::PindelPostProcessing::VcfSoftFlagger;
+
 use strict;
 use Carp;
 use English qw( -no_match_vars );
