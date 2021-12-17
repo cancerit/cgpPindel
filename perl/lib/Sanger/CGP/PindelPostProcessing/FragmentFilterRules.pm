@@ -475,8 +475,10 @@ sub flag_019 {
   if($tum_geno[$previous_format_hash->{'FC'}] < 3){
     return $FAIL;
   }
-  # previous test confirms FC/FD can't be 0, so no div0 check required
-  if ($tum_geno[$previous_format_hash->{'FC'}] / $tum_geno[$previous_format_hash->{'FD'}] < 0.05){
+
+  my $tumfc_over_tumfd = $tum_geno[$previous_format_hash->{'FD'}] > 0 ? $tum_geno[$previous_format_hash->{'FC'}] / $tum_geno[$previous_format_hash->{'FD'}] : undef;
+  
+  if ($tumfc_over_tumfd < 0.05){
     return $FAIL;
   }
 
