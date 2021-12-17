@@ -476,7 +476,7 @@ sub flag_019 {
     return $FAIL;
   }
 
-  my $tumfc_over_tumfd = $tum_geno[$previous_format_hash->{'FD'}] > 0 ? $tum_geno[$previous_format_hash->{'FC'}] / $tum_geno[$previous_format_hash->{'FD'}] : -1;
+  my $tumfc_over_tumfd = $tum_geno[$previous_format_hash->{'FD'}] > 0 && $tum_geno[$previous_format_hash->{'FD'}] >= $tum_geno[$previous_format_hash->{'FC'}] ? $tum_geno[$previous_format_hash->{'FC'}] / $tum_geno[$previous_format_hash->{'FD'}] : -1;
   
   if ($tumfc_over_tumfd < 0.05){
     return $FAIL;
