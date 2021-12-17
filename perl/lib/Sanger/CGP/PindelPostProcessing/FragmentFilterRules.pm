@@ -502,8 +502,8 @@ sub flag_020 {
     return $PASS;
   }
 
-  my $tumfc_over_tumfd = $tum_geno[$previous_format_hash->{'FD'}] > 0 ? $tum_geno[$previous_format_hash->{'FC'}] / $tum_geno[$previous_format_hash->{'FD'}] : -1;
-  my $norfc_over_norfd = $nor_geno[$previous_format_hash->{'FD'}] > 0 ? $nor_geno[$previous_format_hash->{'FC'}] / $nor_geno[$previous_format_hash->{'FD'}] : -1;
+  my $tumfc_over_tumfd = $tum_geno[$previous_format_hash->{'FD'}] > 0 && $tum_geno[$previous_format_hash->{'FD'}] >= $tum_geno[$previous_format_hash->{'FC'}] ? $tum_geno[$previous_format_hash->{'FC'}] / $tum_geno[$previous_format_hash->{'FD'}] : -1;
+  my $norfc_over_norfd = $nor_geno[$previous_format_hash->{'FD'}] > 0 && $nor_geno[$previous_format_hash->{'FD'}] >= $nor_geno[$previous_format_hash->{'FC'}] ? $nor_geno[$previous_format_hash->{'FC'}] / $nor_geno[$previous_format_hash->{'FD'}] : 0.06;
 
   if($nor_fd < 200){
     if(($nor_geno[$previous_format_hash->{'FC'}] == 1 || $nor_geno[$previous_format_hash->{'FC'}] == 2) &&
