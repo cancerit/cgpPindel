@@ -41,6 +41,7 @@ use base qw(Sanger::CGP::Pindel::OutputGen::PindelRecordParser);
 
 use Const::Fast qw(const);
 
+const my $F_PROPERPAIR  => 2;
 const my $F_UNMAPPED    => 4;
 const my $F_NOT_PRIMARY => 256;
 const my $F_QC_FAIL     => 512;
@@ -262,6 +263,7 @@ sub _read_depth {
 
 sub _read_filter {
   my $flag = shift->flag;
+	return 0 if(($flag | $F_PROPERPAIR) != $flag); # not properly paired
   for my $test(@FILTER_READS_IF_FLAG) {
     return 0 if(($flag | $test) == $flag);
   }
