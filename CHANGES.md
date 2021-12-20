@@ -1,5 +1,8 @@
 # CHANGES
 
+## 3.6.1
+- Corrected logic of `FF019` and `FF020` to account for cases where FC > FD
+
 ## 3.6.0
 - Addition of `FF019` and `FF020` flags
 - New flag rule set `pulldownFfpeRulesFragment.lst` including FF019 and FF020 made
