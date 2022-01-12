@@ -1,9 +1,16 @@
 # CHANGES
 
+## 3.7.0
+
+- Corrects counting of BWA reads supporting a pindel call
+- Long standing issue, impact low unless FFPE data (1/~1m WGS variants moved to PASS in internal test set)
+
 ## 3.6.1
+
 - Corrected logic of `FF019` and `FF020` to account for cases where FC > FD
 
 ## 3.6.0
+
 - Addition of `FF019` and `FF020` flags
 - New flag rule set `pulldownFfpeRulesFragment.lst` including FF019 and FF020 made
 
