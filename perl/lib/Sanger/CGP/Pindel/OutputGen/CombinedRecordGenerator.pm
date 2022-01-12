@@ -295,10 +295,15 @@ sub _count_sam_event_reads{
 
 	# These will be used by the pileup callback.
 	my $g_r_start = $record->range_start;
-	my $g_r_end = $record->range_end-1; # as indels are always attached to the base before in Bio::DB::HTS
-	my $g_chg_len = $record->type eq 'D' ? length $record->ref_seq : length $record->alt_seq;
-	my $g_min_chg_len = length $record->min_change;
-	$g_min_chg_len = 0 unless(defined $g_min_chg_len);
+	my ($g_r_end, $g_chg_len);
+	if($record->type eq 'D') {
+		$g_chg_len = length $record->ref_seq;
+		$g_r_end = $record->range_end - $g_chg_len;
+	}
+	else {
+		$g_r_end = $record->range_end-1; # as indels are always attached to the base before in Bio::DB::HTS
+		$g_chg_len = length $record->alt_seq;
+	}
 
 	my $chr = $record->chro;
 
@@ -325,7 +330,7 @@ sub _count_sam_event_reads{
 					$abs = abs $value;
 
 					##TODO WE SHOULD LOOK AT MATCHING ON CHANGE rather than length????????????? jwh
-					if($abs == $g_chg_len || $abs == $g_min_chg_len) {
+					if($abs == $g_chg_len) {
 						$strand_index = $a->reversed == 1 ? 0 : 1;
 
 						if($value > 0) {
