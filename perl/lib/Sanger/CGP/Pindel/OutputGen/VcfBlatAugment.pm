@@ -66,6 +66,24 @@ const my $MAPPED_RL_MULT => 0.9;
 
 1;
 
+=head new
+
+Basic code template for use:
+
+  $augment = Sanger::CGP::Pindel::OutputGen::VcfBlatAugment->new(
+    input => $options->{input},
+    ref => $options->{ref},
+    ofh => $options->{output},
+    sam => $options->{align},
+    hts_files => $options->{hts},
+    outpath => $options->{outpath},
+    debug => $options->{debug},
+  );
+  $augment->output_header;
+  $augment->process_records;
+
+=cut
+
 sub new{
   my $proto = shift;
   my (%args) = @_;
@@ -96,17 +114,17 @@ sub _init {
   $self->_align_output($outpath);
   $self->_add_headers unless($self->{fill_in});
   $self->_hts; # has to go before _buffer_sizes
-  $self->_buffer_sizes; # has to go before _validate_sample and _pop_interval_tree
+  $self->_buffer_sizes; # has to go before _validate_sample and _populate_interval_tree
   $self->_validate_samples;
   if($self->{fill_in}) {
-    $self->_pop_interval_tree;  # adds a header item to VCF
+    $self->_populate_interval_tree;  # adds a header item to VCF
   }
   # load the fai
   $self->{fai} = Bio::DB::HTS::Faidx->new($self->{ref});
   return 1;
 }
 
-sub _pop_interval_tree {
+sub _populate_interval_tree {
   my $self = shift;
   # even if we don't have a file we should add the header for consistency
   $self->{vcf}->add_header_line({key => 'INFO', ID => 'PSRPT', Description => q{BLAT search space is >50% simple repeat}}, 'append' => 1);
@@ -366,6 +384,12 @@ sub to_data_hash {
   return \%out;
 }
 
+=head process_records
+
+Primary entry point for action following new()
+
+=cut
+
 sub process_records {
   my $self = shift;
   my $fh = $self->{ofh};
@@ -380,6 +404,7 @@ sub process_records {
     }
     $v_d->[$V_FMT] .= $self->{fmt_ext} unless($self->{fill_in});
     $self->blat_record($v_d, $readtmp_dir);
+    # output the updated record
     printf $fh "%s\n", join "\t", @{$v_d};
   }
   if(-d $readtmp_dir) {
