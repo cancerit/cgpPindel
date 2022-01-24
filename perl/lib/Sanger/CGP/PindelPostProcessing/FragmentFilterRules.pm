@@ -142,7 +142,8 @@ sub reuse_unmatched_normals_tabix {
       if($s != $e) {
         die "Normal panel should have equal start/stop coords";
       }
-      $vcf_flagging_unmatched_normals_tabix->{$chr}->{$s} = \$value;
+      # $s-1, see https://github.com/cancerit/cgpPindel/blob/da155439b931177184c1e3ee3d19a838dbfcdf62/perl/bin/pindel_np_from_vcf.pl#L111
+      $vcf_flagging_unmatched_normals_tabix->{$chr}->{$s-1} = \$value;
     }
     close $z;
   }
