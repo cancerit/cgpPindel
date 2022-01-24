@@ -356,7 +356,7 @@ sub flag_009 {
 
 sub flag_010 {
   my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
-  if(exists $$vcf_flagging_unmatched_normals_tabix->{$CHROM}->{$POS}) {
+  if(exists $vcf_flagging_unmatched_normals_tabix->{$CHROM}->{$POS}) {
     return $FAIL;
   }
   return $PASS
