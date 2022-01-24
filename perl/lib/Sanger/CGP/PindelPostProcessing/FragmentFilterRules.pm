@@ -32,6 +32,7 @@ package Sanger::CGP::PindelPostProcessing::FragmentFilterRules;
 use strict;
 use Bio::DB::HTS::Tabix;
 use Sanger::CGP::Pindel;
+use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
 
 my %RULE_DESCS = ('FF001' => { 'tag' =>'INFO/LEN',
                               'name' => 'FF001',
@@ -131,9 +132,27 @@ sub use_prev {
 
 sub reuse_unmatched_normals_tabix {
   unless(defined $vcf_flagging_unmatched_normals_tabix){
-    $vcf_flagging_unmatched_normals_tabix = new Bio::DB::HTS::Tabix(filename=> $ENV{VCF_FLAGGING_UNMATCHED_NORMALS});
+    $vcf_flagging_unmatched_normals_tabix = {};
+    my $z = IO::Uncompress::Gunzip->new($ENV{VCF_FLAGGING_UNMATCHED_NORMALS}, MultiStream => 1) or die "gunzip failed: $GunzipError\n";
+    my $value = 1;
+    while(my $line = <$z>) {
+      next if ($line =~ m/^#/);
+      chomp $line;
+      my ($chr, undef, undef, $s, $e) = split /\t/, $line;
+      if($s != $e) {
+        die "Normal panel should have equal start/stop coords";
+      }
+      $vcf_flagging_unmatched_normals_tabix->{$chr}->{$s} = \$value;
+    }
+    close $z;
   }
 }
+
+# sub reuse_unmatched_normals_tabix {
+#   unless(defined $vcf_flagging_unmatched_normals_tabix){
+#     $vcf_flagging_unmatched_normals_tabix = new Bio::DB::HTS::Tabix(filename=> $ENV{VCF_FLAGGING_UNMATCHED_NORMALS});
+#   }
+# }
 
 sub reuse_repeats_tabix {
   unless(defined $vcf_flagging_repeats_tabix) {
@@ -336,6 +355,14 @@ sub flag_009 {
 
 sub flag_010 {
   my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
+  if(exists $$vcf_flagging_unmatched_normals_tabix->{$CHR}->{$POS}) {
+    return $FAIL;
+  }
+  return $PASS
+}
+
+sub flag_010_old {
+  my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
   reuse_unmatched_normals_tabix();
 
   my $length_off = ($MATCH <= 2) ? 1 : 20;
@@ -477,7 +504,7 @@ sub flag_019 {
   }
 
   my $tumfc_over_tumfd = $tum_geno[$previous_format_hash->{'FD'}] > 0 && $tum_geno[$previous_format_hash->{'FD'}] >= $tum_geno[$previous_format_hash->{'FC'}] ? $tum_geno[$previous_format_hash->{'FC'}] / $tum_geno[$previous_format_hash->{'FD'}] : -1;
-  
+
   if ($tumfc_over_tumfd < 0.05){
     return $FAIL;
   }
