@@ -130,7 +130,14 @@ sub use_prev {
   }
 }
 
+# sub reuse_unmatched_normals_tabix {
+#   unless(defined $vcf_flagging_unmatched_normals_tabix){
+#     $vcf_flagging_unmatched_normals_tabix = new Bio::DB::HTS::Tabix(filename=> $ENV{VCF_FLAGGING_UNMATCHED_NORMALS});
+#   }
+# }
+
 sub reuse_unmatched_normals_tabix {
+  # this is only suitable if matching on first position change
   unless(defined $vcf_flagging_unmatched_normals_tabix){
     $vcf_flagging_unmatched_normals_tabix = {};
     my $z = IO::Uncompress::Gunzip->new($ENV{VCF_FLAGGING_UNMATCHED_NORMALS}, MultiStream => 1) or die "gunzip failed: $GunzipError\n";
@@ -148,12 +155,6 @@ sub reuse_unmatched_normals_tabix {
     close $z;
   }
 }
-
-# sub reuse_unmatched_normals_tabix {
-#   unless(defined $vcf_flagging_unmatched_normals_tabix){
-#     $vcf_flagging_unmatched_normals_tabix = new Bio::DB::HTS::Tabix(filename=> $ENV{VCF_FLAGGING_UNMATCHED_NORMALS});
-#   }
-# }
 
 sub reuse_repeats_tabix {
   unless(defined $vcf_flagging_repeats_tabix) {
@@ -354,15 +355,6 @@ sub flag_009 {
   return $ret;
 }
 
-sub flag_010 {
-  my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
-  reuse_unmatched_normals_tabix();
-  if(exists $vcf_flagging_unmatched_normals_tabix->{$CHROM}->{$POS}) {
-    return $FAIL;
-  }
-  return $PASS
-}
-
 sub flag_010_old {
   my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
   reuse_unmatched_normals_tabix();
@@ -393,6 +385,15 @@ sub flag_010_old {
     die $@;
   }
   return $ret;
+}
+
+sub flag_010 {
+  my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
+  reuse_unmatched_normals_tabix();
+  if(exists $vcf_flagging_unmatched_normals_tabix->{$CHROM}->{$POS}) {
+    return $FAIL;
+  }
+  return $PASS
 }
 
 sub flag_012 {
