@@ -254,8 +254,10 @@ pindel.pl [options]
     -simrep    -s   Full path to tabix indexed simple/satellite repeats.
     -filter    -f   VCF filter rules file (see FlagVcf.pl for details)
     -genes     -g   Full path to tabix indexed coding gene footprints.
-    -unmatched -u   Full path to tabix indexed gff3 of unmatched normal panel
-                      - see pindel_np_from_vcf.pl
+    -unmatched -u   Full path to tabix indexed gff3 or bed of unmatched normal panel
+                      - gff3 = F010 & FF010
+                      -  bed = FF021
+                      - see also pindel_np_from_vcf.pl
     -softfil   -sf  Optional: Filter rules to be indicated in INFO field as soft flags
     -apid      -a   Optional: Analysis process ID (numeric)
                      - not necessary for external use

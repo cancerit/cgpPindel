@@ -146,8 +146,8 @@ sub reuse_unmatched_normals_tabix {
   }
   unless(defined $vcf_flagging_unmatched_normals_tabix){
     if($vcf_flagging_unmatched_normals_filetype eq 'gff') {
-      if($ENV{VCF_FLAGGING_UNMATCHED_NORMALS} !~ m/gff.gz$/) {
-        die 'This normal panel flagging method expects the "gff" version of normal panel - start positions only';
+      if($ENV{VCF_FLAGGING_UNMATCHED_NORMALS} !~ m/gff3.gz$/) {
+        die 'This normal panel flagging method expects the "gff3" version of normal panel - start positions only';
       }
     }
     elsif($vcf_flagging_unmatched_normals_filetype eq 'bed') {
@@ -360,7 +360,7 @@ sub flag_009 {
 
 sub flag_010 {
   my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
-  reuse_unmatched_normals_tabix('gff');
+  reuse_unmatched_normals_tabix('gff3');
 
   my $length_off = ($MATCH <= 2) ? 1 : 20;
 

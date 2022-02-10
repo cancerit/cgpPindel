@@ -283,7 +283,7 @@ pindel_np_from_vcf.pl [options] *.vcf[.gz]
                    - output from pindel.pl tags all data
                      as TUMOUR or NORMAL
     -range    -r  Generate range based normal panel
-                   - without a gff.gz file is generated (change start only, original)
+                   - without a gff3.gz file is generated (change start only, original)
                    - with a bed.gz file is generated (range start/end based)
 
   Other:

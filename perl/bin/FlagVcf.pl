@@ -189,8 +189,9 @@ FlagVcf.pl - Takes a Pindel VCF file and applies a set of flags through a system
     --rules       (-r)       Full path to a rules file.
     --annot       (-a)       Full path to an indexed tabix annotation file.
     --unmatched   (-u)       Full path to an indexed tabix unmatched normal file.
-                              - F010/FF010 requires gff.gz (start position only, overlaps considered)
+                              - F010/FF010 requires gff3.gz (start position only, overlaps considered)
                               - FF021 requires bed.gz (range-start/stop, exact match only)
+															- These flags are exclusive and cannot be used together
     --simrep      (-s)       Full path to an indexed tabix simple repeat file.
 
     --input       (-i)       Full path to input file. Will handle decompression of *.gz automatically using bgzip.
