@@ -113,6 +113,7 @@ our $previous_format_hash;
 our $previous_format_string = q{};
 our $vcf_flagging_repeats_tabix;
 our $vcf_flagging_unmatched_normals_tabix;
+our $vcf_flagging_unmatched_normals_filetype;
 
 sub rule {
   my (undef, $rule) = @_; # being called like an object function so throw away first varaible
@@ -134,14 +135,22 @@ sub use_prev {
 }
 
 sub reuse_unmatched_normals_tabix {
+  my $mode = shift;
+  if(defined $vcf_flagging_unmatched_normals_filetype) {
+    if($mode ne $vcf_flagging_unmatched_normals_filetype) {
+      die "Unmatched normal panel has aleady been setup expecting a '$vcf_flagging_unmatched_normals_filetype' file, check you do not have both FF010 and FF021 flags requested";
+    }
+  }
+  else {
+    $vcf_flagging_unmatched_normals_filetype = $mode;
+  }
   unless(defined $vcf_flagging_unmatched_normals_tabix){
-    my $mode = shift;
-    if($mode eq 'gff') {
+    if($vcf_flagging_unmatched_normals_filetype eq 'gff') {
       if($ENV{VCF_FLAGGING_UNMATCHED_NORMALS} !~ m/gff.gz$/) {
         die 'This normal panel flagging method expects the "gff" version of normal panel - start positions only';
       }
     }
-    elsif($mode eq 'bed') {
+    elsif($vcf_flagging_unmatched_normals_filetype eq 'bed') {
       if($ENV{VCF_FLAGGING_UNMATCHED_NORMALS} !~ m/bed.gz$/) {
         die 'This normal panel flagging method expects the "bed" version of normal panel - pindel call range';
       }
