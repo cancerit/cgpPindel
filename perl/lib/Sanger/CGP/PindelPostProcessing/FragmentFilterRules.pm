@@ -103,6 +103,10 @@ my %RULE_DESCS = ('FF001' => { 'tag' =>'INFO/LEN',
                               'name' => 'FF020',
                               'desc' => 'Allow some contamination in matched normal due to FFPR block acquired samples and allow for low level sequencing/PCR artefacts',
                               'test' => \&flag_020},
+                    'FF021' => { 'tag'  => 'INFO/LEN',
+                              'name' => 'FF021',
+                              'desc' => 'Variant must not exist within the range based, correlated PC, Unmatched Normal Panel',
+                              'test' => \&flag_021},
 );
 
 our $previous_format_hash;
@@ -131,6 +135,17 @@ sub use_prev {
 
 sub reuse_unmatched_normals_tabix {
   unless(defined $vcf_flagging_unmatched_normals_tabix){
+    my $mode = shift;
+    if($mode eq 'gff') {
+      if($ENV{VCF_FLAGGING_UNMATCHED_NORMALS} !~ m/gff.gz$/) {
+        die 'This normal panel flagging method expects the "gff" version of normal panel - start positions only';
+      }
+    }
+    elsif($mode eq 'bed') {
+      if($ENV{VCF_FLAGGING_UNMATCHED_NORMALS} !~ m/bed.gz$/) {
+        die 'This normal panel flagging method expects the "bed" version of normal panel - pindel call range';
+      }
+    }
     $vcf_flagging_unmatched_normals_tabix = new Bio::DB::HTS::Tabix(filename=> $ENV{VCF_FLAGGING_UNMATCHED_NORMALS});
   }
 }
@@ -336,7 +351,7 @@ sub flag_009 {
 
 sub flag_010 {
   my ($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF) = @_;
-  reuse_unmatched_normals_tabix();
+  reuse_unmatched_normals_tabix('gff');
 
   my $length_off = ($MATCH <= 2) ? 1 : 20;
 
@@ -477,7 +492,7 @@ sub flag_019 {
   }
 
   my $tumfc_over_tumfd = $tum_geno[$previous_format_hash->{'FD'}] > 0 && $tum_geno[$previous_format_hash->{'FD'}] >= $tum_geno[$previous_format_hash->{'FC'}] ? $tum_geno[$previous_format_hash->{'FC'}] / $tum_geno[$previous_format_hash->{'FD'}] : -1;
-  
+
   if ($tumfc_over_tumfd < 0.05){
     return $FAIL;
   }
@@ -520,6 +535,43 @@ sub flag_020 {
   }
 
   return $FAIL;
+}
+
+sub flag_021 {
+  my (undef,$CHROM,undef,$FAIL,$PASS,$RECORD,undef) = @_;
+  reuse_unmatched_normals_tabix('bed');
+
+  my ($this_rs) = ";$$RECORD[7]" =~ m/;RS=([^;]+)/;
+  my ($this_re) = ";$$RECORD[7]" =~ m/;RE=([^;]+)/;
+  my ($this_pc) = ";$$RECORD[7]" =~ m/;PC=([^;]+)/;
+
+  my $ret = eval{
+    my $iter = $vcf_flagging_unmatched_normals_tabix->query_full($CHROM,$this_rs,$this_re);
+    return $PASS if(!defined $iter); # no valid entries (chromosome not in index) so must pass
+    # Now we have the iterator deduct 1 from range-start
+    # Takes into account that a bed line has -1 on start and means only applied once if multiple records need to be scanned.
+    $this_rs--;
+    while(my $r = $iter->next){
+      # need to check for matching positions, taking into account that a bed line has -1 on start
+      my (undef, $start, $end, $type) = split /\t/, $r;
+      if($start > $this_rs) {
+        # as soon as start is higher we can exit, overlap, not exact
+        last;
+      }
+      if($type ne $this_pc) {
+        # only use matching types
+        next;
+      }
+      if($start == $this_rs && $end == $this_re) {
+        return $FAIL;
+      }
+    }
+    return $PASS;
+  };
+  if($@) {
+    die $@;
+  }
+  return $ret;
 }
 
 1;

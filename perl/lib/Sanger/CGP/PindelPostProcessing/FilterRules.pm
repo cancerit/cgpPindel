@@ -123,6 +123,9 @@ sub use_prev {
 
 sub reuse_unmatched_normals_tabix {
   unless(defined $vcf_flagging_unmatched_normals_tabix){
+    if($ENV{VCF_FLAGGING_UNMATCHED_NORMALS} !~ m/gff.gz$/) {
+      die 'This normal panel flagging method expects the "gff" version of normal panel - start positions only';
+    }
     $vcf_flagging_unmatched_normals_tabix = new Bio::DB::HTS::Tabix(filename=> $ENV{VCF_FLAGGING_UNMATCHED_NORMALS});
   }
 }

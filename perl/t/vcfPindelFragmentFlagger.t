@@ -10,8 +10,10 @@ use Cwd 'abs_path';
 use Test::More;
 use Data::Dumper;
 use Const::Fast qw(const);
+use FindBin qw($Bin);
 
-const my @AVAILABLE_RULES => qw(FF001 FF002 FF003 FF004 FF005 FF006 FF007 FF008 FF009 FF010 FF012 FF015 FF016 FF017 FF018 FF019 FF020);
+const my @AVAILABLE_RULES => qw(FF001 FF002 FF003 FF004 FF005 FF006 FF007 FF008 FF009 FF010 FF012 FF015 FF016 FF017 FF018 FF019 FF020 FF021);
+const my $DATA => "$Bin/data";
 
 my %rule_test_dispatch = ('FF001' => \&_test_FF001,
                           'FF002' => \&_test_FF002,
@@ -30,6 +32,7 @@ my %rule_test_dispatch = ('FF001' => \&_test_FF001,
                           'FF018' => \&_test_FF018,
                           'FF019' => \&_test_FF019,
                           'FF020' => \&_test_FF020,
+                          'FF021' => \&_test_FF021,
                         );
 
 use_ok('Sanger::CGP::PindelPostProcessing::VcfSoftFlagger');
@@ -38,8 +41,10 @@ use_ok('Sanger::CGP::PindelPostProcessing::FragmentFilterRules');
 my @rules_found = Sanger::CGP::PindelPostProcessing::FragmentFilterRules::available_rules();
 is_deeply(\@rules_found, \@AVAILABLE_RULES, 'Expected set of rules are implemented');
 for my $flag(@AVAILABLE_RULES) {
-  $rule_test_dispatch{$flag}(Sanger::CGP::PindelPostProcessing::FragmentFilterRules->rule($flag));
+ $rule_test_dispatch{$flag}(Sanger::CGP::PindelPostProcessing::FragmentFilterRules->rule($flag));
 }
+#my $flag = 'FF021';
+#$rule_test_dispatch{$flag}(Sanger::CGP::PindelPostProcessing::FragmentFilterRules->rule($flag));
 
 done_testing();
 
@@ -731,5 +736,39 @@ sub _test_FF020{
     is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 WtFD > 200 WtFC / WtFD < 0.02 tumFC / tumFD == 0.1");
     $RECORD = [split("\t",$test20)];
     is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 WtFD > 200 WtFC / WtFD > 0.02 tumFC / tumFD < 0.1");
+  };
+}
+
+sub _test_FF021{
+  my ($filter_hash) = @_;
+  subtest "Test rule FF021" => sub {
+
+    $ENV{VCF_FLAGGING_UNMATCHED_NORMALS} = "$DATA/range_np.bed.gz";
+
+    my $sub = $filter_hash->{test};
+
+    my($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF);
+    $CHROM  = '1';
+    $FAIL   = undef;
+    $PASS   = 0;
+
+    $RECORD = [qw(1 10236 . GA G . . PC=D;RS=10236;RE=10243;LEN=1 FC:FD 5:200 9:100)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $FAIL,"_test_FF020 exact range hit, matching type");
+
+    $RECORD = [qw(1 10236 . GA G . . PC=DI;RS=10236;RE=10243;LEN=1 FC:FD 5:200 9:100)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 exact range hit, mismatch D vs DI");
+
+    $RECORD = [qw(1 10236 . GA G . . PC=I;RS=10236;RE=10243;LEN=1 FC:FD 5:200 9:100)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 exact range hit, mismatch D vs I");
+
+    $RECORD = [qw(1 10233 . GA G . . PC=D;RS=10233;RE=10243;LEN=1 FC:FD 5:200 9:100)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 bed start greater than range_s");
+
+    $RECORD = [qw(1 11111 . GA G . . PC=D;RS=11111;RE=11112;LEN=1 FC:FD 5:200 9:100)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 no overlap");
+
+    $RECORD = [qw(X 11111 . GA G . . PC=D;RS=11111;RE=11112;LEN=1 FC:FD 5:200 9:100)];
+    is($sub->($MATCH,$CHROM,$POS,$FAIL,$PASS,$RECORD,$VCF), $PASS,"_test_FF020 no overlap and chr not in index");
+
   };
 }
