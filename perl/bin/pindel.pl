@@ -82,7 +82,7 @@ my %index_max = ( 'input'   => 2,
   Sanger::CGP::Pindel::Implement::merge_and_bam($options) if(!exists $options->{'process'} || $options->{'process'} eq 'merge');
 
   if(!exists $options->{'process'} || $options->{'process'} eq 'flag') {
-    Sanger::CGP::Pindel::Implement::flag($options);
+    Sanger::CGP::Pindel::Implement::flag($options) unless($options->{'noflag'});
     cleanup($options) unless($options->{'debug'});
   }
 }
@@ -93,8 +93,10 @@ sub cleanup {
   move(File::Spec->catdir($tmpdir, 'logs'), File::Spec->catdir($options->{'outdir'}, 'logs')) || die $!;
   remove_tree $tmpdir if(-e $tmpdir);
   opendir(my $dh, $options->{'outdir'});
-  while(readdir $dh) {
-    unlink File::Spec->catfile($options->{'outdir'}, $_) if($_ =~ /\.vcf\.gz(\.tbi)?$/ && $_ !~ /\.flagged\.vcf\.gz(\.tbi)?$/);
+  unless($options->{'noflag'}) {
+    while(readdir $dh) {
+      unlink File::Spec->catfile($options->{'outdir'}, $_) if($_ =~ /\.vcf\.gz(\.tbi)?$/ && $_ !~ /\.flagged\.vcf\.gz(\.tbi)?$/);
+    }
   }
   closedir $dh;
 	return 0;
@@ -104,18 +106,13 @@ sub setup {
   my %opts;
   pod2usage(-msg  => "\nERROR: Option must be defined.\n", -verbose => 1,  -output => \*STDERR) if(scalar @ARGV == 0);
   $opts{'cmd'} = join " ", $0, @ARGV;
-  GetOptions( 'h|help' => \$opts{'h'},
-              'm|man' => \$opts{'m'},
-              'c|cpus=i' => \$opts{'threads'},
+  GetOptions(
               'r|reference=s' => \$opts{'reference'},
               'o|outdir=s' => \$opts{'outdir'},
               't|tumour=s' => \$opts{'tumour'},
               'n|normal=s' => \$opts{'normal'},
               'e|exclude=s' => \$opts{'exclude'},
               'b|badloci=s' => \$opts{'badloci'},
-              'p|process=s' => \$opts{'process'},
-              'i|index=i' => \$opts{'index'},
-              'v|version' => \$opts{'version'},
               # these are specifically for pin2vcf
               'sp|species=s{0,}' => \@{$opts{'species'}},
               'as|assembly=s' => \$opts{'assembly'},
@@ -127,9 +124,19 @@ sub setup {
               'g|genes=s' => \$opts{'genes'},
               'u|unmatched=s' => \$opts{'unmatched'},
               'sf|softfil=s' => \$opts{'softfil'},
+              'a|apid:s' => \$opts{'apid'},
+              # process management
+              'c|cpus=i' => \$opts{'threads'},
               'l|limit=i' => \$opts{'limit'},
               'd|debug' => \$opts{'debug'},
-              'a|apid:s' => \$opts{'apid'},
+              'p|process=s' => \$opts{'process'},
+              'i|index=i' => \$opts{'index'},
+              'noflag' => \$opts{'noflag'},
+              # other
+              'h|help' => \$opts{'h'},
+              'm|man' => \$opts{'m'},
+              'v|version' => \$opts{'version'},
+
   ) or pod2usage(2);
 
   pod2usage(-verbose => 1) if(defined $opts{'h'});
@@ -143,11 +150,13 @@ sub setup {
   PCAP::Cli::file_for_reading('reference', $opts{'reference'});
   PCAP::Cli::file_for_reading('tumour', $opts{'tumour'});
   PCAP::Cli::file_for_reading('normal', $opts{'normal'});
-  PCAP::Cli::file_for_reading('simrep', $opts{'simrep'});
-  PCAP::Cli::file_for_reading('filters', $opts{'filters'});
-  PCAP::Cli::file_for_reading('genes', $opts{'genes'});
-  PCAP::Cli::file_for_reading('unmatched', $opts{'unmatched'});
-  PCAP::Cli::file_for_reading('softfil', $opts{'softfil'}) if(defined $opts{'softfil'});
+  unless($opts{'noflag'}) {
+    PCAP::Cli::file_for_reading('simrep', $opts{'simrep'});
+    PCAP::Cli::file_for_reading('filters', $opts{'filters'});
+    PCAP::Cli::file_for_reading('genes', $opts{'genes'});
+    PCAP::Cli::file_for_reading('unmatched', $opts{'unmatched'});
+    PCAP::Cli::file_for_reading('softfil', $opts{'softfil'}) if(defined $opts{'softfil'});
+  }
   PCAP::Cli::out_dir_check('outdir', $opts{'outdir'});
   my $final_logs = File::Spec->catdir($opts{'outdir'}, 'logs');
   if(-e $final_logs) {
@@ -238,11 +247,18 @@ pindel.pl [options]
     -reference -r   Path to reference genome file *.fa[.gz]
     -tumour    -t   Tumour BAM/CRAM file (co-located index and bas files)
     -normal    -n   Normal BAM/CRAM file (co-located index and bas files)
+
+
+  Flagging parameters:
+    -noflag         Skip flagging
     -simrep    -s   Full path to tabix indexed simple/satellite repeats.
     -filter    -f   VCF filter rules file (see FlagVcf.pl for details)
     -genes     -g   Full path to tabix indexed coding gene footprints.
     -unmatched -u   Full path to tabix indexed gff3 of unmatched normal panel
                       - see pindel_np_from_vcf.pl
+    -softfil   -sf  Optional: Filter rules to be indicated in INFO field as soft flags
+    -apid      -a   Optional: Analysis process ID (numeric)
+                     - not necessary for external use
 
   Optional
     -seqtype   -st  Sequencing protocol, expect all input to match [WGS]
@@ -257,12 +273,10 @@ pindel.pl [options]
     -skipgerm  -sg  Don't output events with more evidence in normal BAM.
     -cpus      -c   Number of cores to use. [1]
                      - recommend max 4 during 'input' process.
-    -softfil   -sf  VCF filter rules to be indicated in INFO field as soft flags
     -limit     -l   When defined with '-cpus' internally thread concurrent processes.
                      - requires '-p', specifically for pindel/pin2vcf steps
     -debug     -d   Don't cleanup workarea on completion.
-    -apid      -a   Analysis process ID (numeric) - for cgpAnalysisProc header info
-                     - not necessary for external use
+
 
   Targeted processing (further detail under OPTIONS):
     -process   -p   Only process this step then exit, optionally set -index
