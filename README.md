@@ -121,7 +121,7 @@ For example to run on a LSF farm with singularity the profile would be:
 While native install with lsf would be:
 
 ```
-... -profile lsf,singularity ...
+... -profile lsf ...
 ```
 
 ### Workflow entry points
