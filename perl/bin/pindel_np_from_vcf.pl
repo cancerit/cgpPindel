@@ -139,6 +139,7 @@ sub parse_vcf {
   my ($total, $kept, $new) = (0,0, 0);
   while(my $d = $vcf->next_data_hash) {
     $total++;
+    next if($d->{'REF'} eq $d->{'ALT'});
     my $gtypes = $d->{'gtypes'}->{$samp_id};
 
     next if(($gtypes->{'PP'} + $gtypes->{'NP'}) < $PINDEL_RAW_MIN);
