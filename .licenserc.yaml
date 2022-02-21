@@ -80,6 +80,7 @@ header:
     - 'tests/htmlcov/'
     - '.eggs/'
     - 'c++/*.cpp' # not ours, distributed via agreement
+    - 'nextflow.config'
     - 'perl/t/'
     - 'perl/rules/'
     - 'perl/pm_to_blib'
