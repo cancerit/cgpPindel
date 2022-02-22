@@ -1,5 +1,19 @@
 # CHANGES
 
+## 3.8.0
+
+- Adds `-noflag` option to `pindel.pl` for use cases where flagging needs to be executed separately or not at all.
+- Add `-range` option to `pindel_np_from_vcf.pl`
+  - Creates `bed.gz` using pindel call range instead of legacy `gff3.gz`
+- Adds new flag FF021, normal panel filtering using pindel call range
+  - Legacy normal panel filtering remove variants with any overlap with normal panel, looses larger events that we have more confidence in with longer reads.
+  - This is not included by default in any flag set
+  - A different normal panel needs to be constructed to use this (`bed.gz`)
+- Nextflow DSL2 worflows
+  - `pindel_pl` - wraps `pindel.pl`, subworkflow included for later use.
+  - `np_generation` - Generate a normal panel from a list of input BAMs
+    - Handles the complete data generation and conversion to bed/gff3.
+
 ## 3.7.0
 
 - Corrects counting of BWA reads supporting a pindel call

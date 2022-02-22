@@ -22,6 +22,13 @@ Contents:
 
 - [Docker, Singularity and Dockstore](#docker-singularity-and-dockstore)
 - [Dependencies/Install](#dependenciesinstall)
+- [Nextflow](#nextflow)
+  - [Setup personal nextflow](#setup-personal-nextflow)
+  - [Profiles](#profiles)
+  - [Workflow entry points](#workflow-entry-points)
+    - [`pindel_pl`](#pindel_pl)
+    - [`np_generation`](#np_generation)
+  - [Sub-workflows](#sub-workflows)
 - [Developers](#developers)
   - [Updating licence headers](#updating-licence-headers)
   - [Code changes](#code-changes)
@@ -67,6 +74,98 @@ Please use `setup.sh` to install any other dependencies.  Setting the environmen
 are installed into the target area.
 
 Please be aware that this expects basic C compilation libraries and tools to be available.
+
+## Nextflow
+
+Initial Nextflow bindings for cgpPindel.
+
+### Setup personal nextflow
+
+If you don't have a central nextflow install this will get you running with a limited environment:
+
+```bash
+# seems silly but a python venv is a nice way to handle this during dev
+python3 -m venv .venv
+source .venv/bin/activate
+# compute head nodes may need you to limit Java accessing all memory
+export NXF_OPTS="-Xms500M -Xmx2G"
+curl get.nextflow.io | bash
+mv nextflow .venv/bin/.
+```
+
+If you have any issues installing refer to Nextflow documentation, not the issue tracker for this repo.
+
+### Profiles
+
+Refer to nextflow for an explanation of profiles.  The following are available:
+
+- Job management
+  - local
+    - spawned jobs use execution host
+  - lsf
+    - spawned jobs are submitted via `bsub`
+- Execution method
+  - `<none>`
+    - Expects to find programs in `PATH`
+  - singularity
+    - Provide image file via `-with-singularity [singularity image]`
+  - docker
+    - Provide image via `-with-docker [docker image]`
+
+For example to run on a LSF farm with singularity the profile would be:
+
+```
+... -profile lsf,singularity ...
+```
+
+While native install with lsf would be:
+
+```
+... -profile lsf ...
+```
+
+### Workflow entry points
+
+There are 2 top level entry points:
+
+```
+... -entry pindel_pl ...
+# or
+... -entry np_generation ...
+```
+
+#### `pindel_pl`
+
+Executes a tumour/normal paired analysis.
+
+CPU and memory are controlled via `nextflow.config`, configs are additive, see nextflow documentation.
+
+For the workflow options run:
+
+```
+nextflow -entry pindel_pl --help
+```
+
+#### `np_generation`
+
+Executes pindel with a "dummy" tumour for a file listing of input BAMs.
+
+CPU and memory are controlled via `nextflow.config`, configs are additive, see nextflow documentation.
+
+For the workflow options run:
+
+```
+nextflow -entry np_generation --help
+```
+
+### Sub-workflows
+
+The nextflow code has been implemented with DSL2 so that the workflows can be composed into larger components.
+
+The items above can be addressed for this purpose via:
+
+- `subwf_pindel_pl`
+- `subwf_np_gen`
 
 ## Developers
 
