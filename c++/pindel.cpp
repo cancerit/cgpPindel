@@ -4420,7 +4420,7 @@ void GetRealStart4Insertion(const string & TheInput,
     unsigned int IndelSize = InsertedStr.size();
     unsigned int PosIndex = RealStart + SpacerBeforeAfter;
     unsigned int original_RealStart = RealStart;
-
+    unsigned int Index = InsertedStr.size() - 1;
     for (int i = IndelSize - 1; i >= 0; i--) {
         if (TheInput[PosIndex] == InsertedStr[i]) {
             PosIndex--;
@@ -4429,6 +4429,15 @@ void GetRealStart4Insertion(const string & TheInput,
             break;
         }
     }
+	// modification
+	if (PosIndex == RealStart + SpacerBeforeAfter - IndelSize) {
+		while ((Index >= 1) && (InsertedStr[Index] == InsertedStr[Index - 1])) {
+			Index--;
+		}
+		if (Index == 0){
+			PosIndex = RealStart + SpacerBeforeAfter;
+		}
+	}
     if (PosIndex == RealStart + SpacerBeforeAfter - IndelSize) {
         while (TheInput[PosIndex] == TheInput[PosIndex + IndelSize]) {
             PosIndex--;

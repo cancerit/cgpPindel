@@ -1,5 +1,8 @@
 # CHANGES
 
+## 3.9.0
+- Update to core pindel where complex insertion/ deletion events were being called incorrectly.
+
 ## 3.8.0
 
 - Adds `-noflag` option to `pindel.pl` for use cases where flagging needs to be executed separately or not at all.
