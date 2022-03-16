@@ -195,6 +195,11 @@ sub _process_fh{
   my ($active_sam_fh, $sample, $strand);
   while(my $record = $record_generator->next_record){
 
+    if($record->ref_seq eq $record->alt_seq) {
+      warn "SKIP: Dirty record due to issue in pindel core";
+      next;
+    }
+
     next if($opts->{'s'} && ($record->p_mt_pos + $record->p_mt_neg) < 3);
 
     $record->id($id_gen->next);
