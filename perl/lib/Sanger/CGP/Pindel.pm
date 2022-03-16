@@ -33,7 +33,7 @@ use strict;
 use Const::Fast qw(const);
 
 use base 'Exporter';
-our $VERSION = '3.8.0';
+our $VERSION = '3.9.0';
 our @EXPORT = qw($VERSION);
 
 1;

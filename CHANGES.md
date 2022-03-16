@@ -1,5 +1,9 @@
 # CHANGES
 
+## 3.9.0
+- Masking of pindel calls where ref == alt implemented to remove invalid calls from pindel output
+  - Core pindel fix required to resolve the underlying problem
+
 ## 3.8.0
 
 - Adds `-noflag` option to `pindel.pl` for use cases where flagging needs to be executed separately or not at all.
