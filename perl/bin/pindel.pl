@@ -112,6 +112,7 @@ sub setup {
               't|tumour=s' => \$opts{'tumour'},
               'n|normal=s' => \$opts{'normal'},
               'e|exclude=s' => \$opts{'exclude'},
+              'ef|exclude-file=s' => \$opts{'excludef'},
               'b|badloci=s' => \$opts{'badloci'},
               # these are specifically for pin2vcf
               'sp|species=s{0,}' => \@{$opts{'species'}},
@@ -150,6 +151,7 @@ sub setup {
   PCAP::Cli::file_for_reading('reference', $opts{'reference'});
   PCAP::Cli::file_for_reading('tumour', $opts{'tumour'});
   PCAP::Cli::file_for_reading('normal', $opts{'normal'});
+  PCAP::Cli::file_for_reading('exclude file', $opts{'excludef'}) if(defined $opts{'excludef'});
   unless($opts{'noflag'}) {
     PCAP::Cli::file_for_reading('simrep', $opts{'simrep'});
     PCAP::Cli::file_for_reading('filters', $opts{'filters'});
@@ -170,6 +172,7 @@ sub setup {
   delete $opts{'limit'} unless(defined $opts{'limit'});
 
   delete $opts{'exclude'} unless(defined $opts{'exclude'});
+  delete $opts{'excludef'} unless(defined $opts{'excludef'});
   delete $opts{'badloci'} unless(defined $opts{'badloci'});
   delete $opts{'apid'} unless(defined $opts{'apid'});
 
