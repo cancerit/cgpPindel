@@ -339,7 +339,7 @@ sub valid_seqs {
     @exclude = split /,/, $options->{'exclude'};
     @exclude_patt;
   }elsif(exists $options->{'excludef'}){
-    open (my $READ, '<', $options->{'excludef'}) or croak("Error opening exclue contigs file '".$options->{'excludef'}."' for reading: "$!);
+    open (my $READ, '<', $options->{'excludef'}) or croak("Error opening exclue contigs file '".$options->{'excludef'}."' for reading: ".$!);
       while(<$READ>){
         my $line = $_;
         chomp($line);
