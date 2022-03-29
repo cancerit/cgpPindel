@@ -41,11 +41,11 @@ subtest 'Test valid_seqs' => sub {
                  'exclude' => $exclude_str);
 
   my @good_seqs = Sanger::CGP::Pindel::Implement::valid_seqs(\%options);
-  is_deeply(@good_seqs,@exp_seqs,'Exclude string');
-  
+  is_deeply(\@good_seqs,\@exp_seqs,'Exclude string');
+
   %options = ('reference' => $reference,
                'excludef' => $exclude_file_regex,);
   @good_seqs = Sanger::CGP::Pindel::Implement::valid_seqs(\%options);
-  is_deeply(@good_seqs,@exp_seqs,'Exclude file');
+  is_deeply(\@good_seqs,\@exp_seqs,'Exclude file');
   done_testing();
 };
