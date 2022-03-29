@@ -261,13 +261,15 @@ pindel.pl [options]
                      - not necessary for external use
 
   Optional
-    -seqtype   -st  Sequencing protocol, expect all input to match [WGS]
-    -assembly  -as  Name of assembly in use
-                     -  when not available in BAM header SQ line.
-    -species   -sp  Species
-                     -  when not available in BAM header SQ line.
-    -exclude   -e   Exclude this list of ref sequences from processing, wildcard '%'
-                     - comma separated, e.g. NC_007605,hs37d5,GL%
+    -seqtype        -st  Sequencing protocol, expect all input to match [WGS]
+    -assembly       -as  Name of assembly in use
+                           -  when not available in BAM header SQ line.
+    -species        -sp  Species
+                           -  when not available in BAM header SQ line.
+    -exclude         -e  Exclude this list of ref sequences from processing, wildcard '%'
+                           - comma separated, e.g. NC_007605,hs37d5,GL%
+    -exclude-file    -ef File containing a list of ref sequences to exclude from processing, wildcard '%'
+                           - can be used in place of the -e|-exclude option
     -badloci   -b   Tabix indexed BED file of locations to not accept as anchors
                      - e.g. hi-seq depth from UCSC
     -skipgerm  -sg  Don't output events with more evidence in normal BAM.
