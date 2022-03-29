@@ -52,6 +52,7 @@ use PCAP::Cli;
 use Sanger::CGP::Pindel::Implement;
 
 const my @VALID_PROCESS => qw(input pindel pin2vcf merge flag);
+const my @RM_PROCESS => qw(  process index limit exclude excludef badloci apid);
 my %index_max = ( 'input'   => 2,
                   'pindel'  => -1,
                   'pin2vcf' => -1,
@@ -166,15 +167,9 @@ sub setup {
     exit 0;
   }
 
-
-  delete $opts{'process'} unless(defined $opts{'process'});
-  delete $opts{'index'} unless(defined $opts{'index'});
-  delete $opts{'limit'} unless(defined $opts{'limit'});
-
-  delete $opts{'exclude'} unless(defined $opts{'exclude'});
-  delete $opts{'excludef'} unless(defined $opts{'excludef'});
-  delete $opts{'badloci'} unless(defined $opts{'badloci'});
-  delete $opts{'apid'} unless(defined $opts{'apid'});
+  for my $title (@RM_PROCESS){
+    delete $opts{$title} unless(defined $opts{$title});
+  }
 
   if(exists $opts{'process'}) {
     PCAP::Cli::valid_process('process', $opts{'process'}, \@VALID_PROCESS);
