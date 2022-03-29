@@ -333,20 +333,25 @@ sub valid_seqs {
   while(<$FAI_IN>) { push @all_seqs, (split /\t/, $_)[0]; }
   close $FAI_IN;
 
+  my @exclude = ();
+  my @exclude_patt = ();
   if(exists $options->{'exclude'}) {
-    my @exclude = split /,/, $options->{'exclude'};
-    my @exclude_patt;
-    for my $ex(@exclude) {
-      $ex =~ s/%/.+/;
-      push @exclude_patt, $ex;
-    }
-
-    for my $sq(@all_seqs) {
-      push @good_seqs, $sq unless(first { $sq =~ m/^$_$/ } @exclude_patt);
-    }
+    @exclude = split /,/, $options->{'exclude'};
+  }elsif(exists $options->{'excludef'}){
+    open (my $READ, '<', $options->{'excludef'}) or croak("Error opening exclue contigs file '".$options->{'excludef'}."' for reading: ".$!);
+      while(<$READ>){
+        my $line = $_;
+        chomp($line);
+        push(@exclude, $line);
+      }
+    close($READ);
   }
-  else {
-    push @good_seqs, @all_seqs;
+  for my $ex(@exclude) {
+    $ex =~ s/%/.+/;
+    push @exclude_patt, $ex;
+  }
+  for my $sq(@all_seqs) {
+    push @good_seqs, $sq unless(first { $sq =~ m/^$_$/ } @exclude_patt);
   }
   return @good_seqs;
 }

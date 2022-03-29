@@ -52,6 +52,7 @@ use PCAP::Cli;
 use Sanger::CGP::Pindel::Implement;
 
 const my @VALID_PROCESS => qw(input pindel pin2vcf merge flag);
+const my @RM_PROCESS => qw(  process index limit exclude excludef badloci apid);
 my %index_max = ( 'input'   => 2,
                   'pindel'  => -1,
                   'pin2vcf' => -1,
@@ -112,6 +113,7 @@ sub setup {
               't|tumour=s' => \$opts{'tumour'},
               'n|normal=s' => \$opts{'normal'},
               'e|exclude=s' => \$opts{'exclude'},
+              'ef|exclude-file=s' => \$opts{'excludef'},
               'b|badloci=s' => \$opts{'badloci'},
               # these are specifically for pin2vcf
               'sp|species=s{0,}' => \@{$opts{'species'}},
@@ -150,6 +152,7 @@ sub setup {
   PCAP::Cli::file_for_reading('reference', $opts{'reference'});
   PCAP::Cli::file_for_reading('tumour', $opts{'tumour'});
   PCAP::Cli::file_for_reading('normal', $opts{'normal'});
+  PCAP::Cli::file_for_reading('exclude file', $opts{'excludef'}) if(defined $opts{'excludef'});
   unless($opts{'noflag'}) {
     PCAP::Cli::file_for_reading('simrep', $opts{'simrep'});
     PCAP::Cli::file_for_reading('filters', $opts{'filters'});
@@ -164,14 +167,9 @@ sub setup {
     exit 0;
   }
 
-
-  delete $opts{'process'} unless(defined $opts{'process'});
-  delete $opts{'index'} unless(defined $opts{'index'});
-  delete $opts{'limit'} unless(defined $opts{'limit'});
-
-  delete $opts{'exclude'} unless(defined $opts{'exclude'});
-  delete $opts{'badloci'} unless(defined $opts{'badloci'});
-  delete $opts{'apid'} unless(defined $opts{'apid'});
+  for my $title (@RM_PROCESS){
+    delete $opts{$title} unless(defined $opts{$title});
+  }
 
   if(exists $opts{'process'}) {
     PCAP::Cli::valid_process('process', $opts{'process'}, \@VALID_PROCESS);
@@ -263,13 +261,15 @@ pindel.pl [options]
                      - not necessary for external use
 
   Optional
-    -seqtype   -st  Sequencing protocol, expect all input to match [WGS]
-    -assembly  -as  Name of assembly in use
-                     -  when not available in BAM header SQ line.
-    -species   -sp  Species
-                     -  when not available in BAM header SQ line.
-    -exclude   -e   Exclude this list of ref sequences from processing, wildcard '%'
-                     - comma separated, e.g. NC_007605,hs37d5,GL%
+    -seqtype        -st  Sequencing protocol, expect all input to match [WGS]
+    -assembly       -as  Name of assembly in use
+                           -  when not available in BAM header SQ line.
+    -species        -sp  Species
+                           -  when not available in BAM header SQ line.
+    -exclude         -e  Exclude this list of ref sequences from processing, wildcard '%'
+                           - comma separated, e.g. NC_007605,hs37d5,GL%
+    -exclude-file    -ef File containing a list of ref sequences to exclude from processing, wildcard '%'
+                           - can be used in place of the -e|-exclude option
     -badloci   -b   Tabix indexed BED file of locations to not accept as anchors
                      - e.g. hi-seq depth from UCSC
     -skipgerm  -sg  Don't output events with more evidence in normal BAM.
