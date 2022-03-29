@@ -333,8 +333,8 @@ sub valid_seqs {
   while(<$FAI_IN>) { push @all_seqs, (split /\t/, $_)[0]; }
   close $FAI_IN;
 
-  my @exclude;
-  my @exclude_patt = [];
+  my @exclude = ();
+  my @exclude_patt = ();
   if(exists $options->{'exclude'}) {
     @exclude = split /,/, $options->{'exclude'};
   }elsif(exists $options->{'excludef'}){
