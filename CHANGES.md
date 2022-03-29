@@ -1,6 +1,11 @@
 # CHANGES
 
+## 3.10.0
+
+- Add commandline option for file containing exclude contigs
+
 ## 3.9.0
+
 - Masking of pindel calls where ref == alt implemented to remove invalid calls from pindel output
   - Core pindel fix required to resolve the underlying problem
 
