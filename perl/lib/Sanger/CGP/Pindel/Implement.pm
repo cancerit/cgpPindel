@@ -143,6 +143,7 @@ sub pindel {
 
     my @command_set;
 
+    push @command_set, "set -o pipefail";
     # was split
     my $refs = catdir($tmp, 'refs');
     make_path($refs) unless(-e $refs);
