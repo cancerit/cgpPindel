@@ -72,7 +72,7 @@ sub setup {
               'r|ref=s' => \$opts{ref},
               'o|output=s' => \$opts{output},
               'd|data=s' => \$opts{data},
-              's|simple:s' => \$opts{simple},
+              'sr|simple:s' => \$opts{simple},
   );
 
   if(defined $opts{v}) {
@@ -124,7 +124,7 @@ pindelCohortVafSliceFill.pl [options]
     -output    -o   Directory for VCF output (gz compressed) and collocated sample bams
     -data      -d   File containing list of BWA mapping files for all samples used in "-input"
                     - format: one BWA bam/cram file per line, expects co-located *.bai
-    -simple    -s   Simple repeats file - only applies when complete search space within a single repeat.
+    -simple    -sr  Simple repeats file - only applies when complete search space within a single repeat.
 
   Other:
     -help      -h   Brief help message.
