@@ -84,7 +84,7 @@ sub setup {
 
   PCAP::Cli::file_for_reading('input', $opts{input});
   PCAP::Cli::file_for_reading('ref', $opts{ref});
-  PCAP::Cli::file_for_reading('somple', $opts{simple}) if(defined $opts{simple});
+  PCAP::Cli::file_for_reading('simple', $opts{simple}) if(defined $opts{simple});
 
   $opts{align} = $opts{output}.'.fill.sam' unless(defined $opts{align});
 
