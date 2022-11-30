@@ -639,7 +639,8 @@ sub shared_setup {
   pod2usage(-verbose => 2) if(defined $opts{'m'});
 
   if($opts{'version'}) {
-    print 'Version: ',Sanger::CGP::Pindel::Implement->VERSION,"\n";
+    print 'pindel version: ',Sanger::CGP::Pindel::Implement->VERSION,"\n";
+    print 'cpindel version: ', Sanger::CGP::Pindel::Implement->COHORT_VERSION,"\n";
     exit 0;
   }
 
