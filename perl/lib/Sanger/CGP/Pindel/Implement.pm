@@ -640,7 +640,7 @@ sub shared_setup {
 
   if($opts{'version'}) {
     print 'pindel version: ',Sanger::CGP::Pindel::Implement->VERSION,"\n";
-    print 'cpindel version: ', Sanger::CGP::Pindel::Implement->COHORT_VERSION,"\n";
+    print 'cpindel version: ',$COHORT_VERSION,"\n";
     exit 0;
   }
 
