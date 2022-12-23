@@ -316,7 +316,7 @@ sub blat {
                         $options->{hts_files}->[0],
                         $split_file,
                         catfile($tmp, $blat_file);
-
+    $command .= sprintf("gzip -t %s/*.gz", catfile($tmp, $blat_file));
     PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), $command, $index);
     PCAP::Threaded::touch_success(catdir($tmp, 'progress'), $index);
   }
