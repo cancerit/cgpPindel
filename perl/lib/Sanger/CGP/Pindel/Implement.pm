@@ -311,12 +311,12 @@ sub blat {
     my $blat_file = fileparse($split_file, '.vcf');
     $blat_file =~ s/split_([a-z]+)/blat_$1/;
     my $command = $^X.' '._which('pindel_blat_vaf.pl');
-    $command .= sprintf q{ -r %s -hts %s -i %s -o %s},
+    $command .= sprintf q{ -r %s -hts %s -i %s -o %s ; gzip -t %s/*.gz },
                         $options->{reference},
                         $options->{hts_files}->[0],
                         $split_file,
+                        catfile($tmp, $blat_file),
                         catfile($tmp, $blat_file);
-    $command .= sprintf("gzip -t %s/*.gz", catfile($tmp, $blat_file));
     PCAP::Threaded::external_process_handler(catdir($tmp, 'logs'), $command, $index);
     PCAP::Threaded::touch_success(catdir($tmp, 'progress'), $index);
   }
