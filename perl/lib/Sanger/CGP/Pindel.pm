@@ -34,7 +34,7 @@ use Const::Fast qw(const);
 
 use base 'Exporter';
 our $VERSION = '3.6.0';
-our $COHORT_VERSION = '1.0.0';
+our $COHORT_VERSION = '1.0.1';
 our @EXPORT = qw($VERSION $COHORT_VERSION);
 
 1;

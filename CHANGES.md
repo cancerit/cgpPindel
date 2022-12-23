@@ -1,5 +1,8 @@
 # CHANGES
 
+## 1.0.1
+- Added a file check after blat step
+
 ## 1.0.0
 - Added filters to FlagVcf.pl to allow flagging of per-sample vcf outputs
 - Fixed bugs in Implement.pm and pindelCohortVafSliceFill.pl
