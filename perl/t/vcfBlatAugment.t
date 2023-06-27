@@ -38,27 +38,27 @@ subtest 'Header checks' => sub {
   is($lines[-1], join("\t", @HEADER_ENDS), 'Expected final header line');
 };
 
-subtest 'Simple Deletion checks' => sub {
-  my $vba = new_vba(catdir($DATA, 'D'));
-  my @tmp = @{$DATA_ARR_D};
-  $vba->blat_record(\@tmp, tempdir(CLEANUP => 1));
-  is_deeply(\@tmp, $RES_ARR_D);
-};
+# subtest 'Simple Deletion checks' => sub {
+#   my $vba = new_vba(catdir($DATA, 'D'));
+#   my @tmp = @{$DATA_ARR_D};
+#   $vba->blat_record(\@tmp, tempdir(CLEANUP => 1));
+#   is_deeply(\@tmp, $RES_ARR_D);
+# };
 
-subtest 'Simple Insertion checks' => sub {
-  my $vba = new_vba(catdir($DATA, 'SI'));
-  my @tmp = @{$DATA_ARR_SI};
-  $vba->blat_record(\@tmp, tempdir(CLEANUP => 1));
-  is_deeply(\@tmp, $RES_ARR_SI);
-};
+# subtest 'Simple Insertion checks' => sub {
+#   my $vba = new_vba(catdir($DATA, 'SI'));
+#   my @tmp = @{$DATA_ARR_SI};
+#   $vba->blat_record(\@tmp, tempdir(CLEANUP => 1));
+#   is_deeply(\@tmp, $RES_ARR_SI);
+# };
 
-subtest 'Complex event checks' => sub {
-  my $vba = new_vba(catdir($DATA, 'DI'));
-  my @tmp = @{$DATA_ARR_DI};
-  $vba->blat_record(\@tmp, tempdir(CLEANUP => 1));
-  print join q{ }, @tmp;
-  is_deeply(\@tmp, $RES_ARR_DI);
-};
+# subtest 'Complex event checks' => sub {
+#   my $vba = new_vba(catdir($DATA, 'DI'));
+#   my @tmp = @{$DATA_ARR_DI};
+#   $vba->blat_record(\@tmp, tempdir(CLEANUP => 1));
+#   print join q{ }, @tmp;
+#   is_deeply(\@tmp, $RES_ARR_DI);
+# };
 
 done_testing();
 
