@@ -99,7 +99,7 @@ sub records {
             $mtn = 0 if($mtn eq q{.});
             $samples_with_min_vaf++ if($vaf >= $min_vaf);
             # $samples_with_min_blat++ if($mtp >= $min_blat && $mtn >= $min_blat);
-            $samples_with_min_blat++ if($mtp >= 1 && $mtn >= 1 && $mtp + $mtn >= $min_blat);
+            $samples_with_min_blat++ if($mtp + $mtn >= $min_blat);
           }
           else {
             $row .= "\t.";
