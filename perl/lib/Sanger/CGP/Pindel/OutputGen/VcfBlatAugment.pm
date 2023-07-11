@@ -746,7 +746,7 @@ sub flanking_ref {
 }
 
 sub rev_comp {
-  my $seq = @_;
+  my $seq = $_[0];
   my $rev_seq = reverse $seq;
   $rev_seq =~ tr/ATGCatgc/TACGtacg/;
 
