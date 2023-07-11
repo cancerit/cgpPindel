@@ -62,6 +62,8 @@ sub new{
 		_repeats => $args{'-repeats'},
 		_num_samples => $args{'-num_samples'},
 		_sample_contrib => $args{'-sample_contrib'},
+		_ref_left => $args{'-ref_left'},
+		_ref_right => $args{'-ref_right'},
 	};
     bless $self, $class;
     return $self;
@@ -134,6 +136,14 @@ sub get_reads{
 	return $self->{_reads}->{$sample_name}->{$strand};
 }
 
+sub get_read_counts{
+	my($self,$sample_name,$strand) = @_;
+	if(exists $self->{_reads}->{$sample_name}->{$strand}) {
+		return scalar @{$self->{_reads}->{$sample_name}->{$strand}};
+	}
+	return 0;
+}
+
 =head samples
 Returns an array of UNORDERED sample names asscociated with the record.
 
@@ -183,6 +193,18 @@ sub min_change{
 	my($self,$value) = @_;
 	$self->{_min_change} = $value if defined $value;
 	return $self->{_min_change};
+}
+
+sub ref_left {
+	my($self,$value) = @_;
+	$self->{_ref_left} = $value if defined $value;
+	return $self->{_ref_left};
+}
+
+sub ref_right {
+	my($self,$value) = @_;
+	$self->{_ref_right} = $value if defined $value;
+	return $self->{_ref_right};
 }
 
 sub lub{
@@ -243,4 +265,22 @@ sub repeats{
 	my($self,$value) = @_;
 	$self->{_repeats} = $value if defined $value;
 	return $self->{_repeats};
+}
+
+sub gc_5p{
+	my($self,$value) = @_;
+	$self->{_gc_5p} = $value if defined $value;
+	return $self->{_gc_5p};
+}
+
+sub gc_3p{
+	my($self,$value) = @_;
+	$self->{_gc_3p} = $value if defined $value;
+	return $self->{_gc_3p};
+}
+
+sub gc_rng{
+	my($self,$value) = @_;
+	$self->{_gc_rng} = $value if defined $value;
+	return $self->{_gc_rng};
 }

@@ -6,7 +6,8 @@ USER  root
 # ALL tool versions used by opt-build.sh
 # need to keep in sync with setup.sh
 ENV VER_CGPVCF="v2.2.1"\
-    VER_VCFTOOLS="0.1.16"
+    VER_VCFTOOLS="0.1.16"\
+    VER_BLAT="v385"
 
 # hadolint ignore=DL3008
 RUN apt-get -yq update \

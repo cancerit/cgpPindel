@@ -33,6 +33,7 @@
 # need to keep in sync with Dockerfile
 export VER_CGPVCF="v2.2.1"
 export VER_VCFTOOLS="0.1.16"
+export VER_BLAT="v385"
 
 get_file () {
 # output, source
@@ -42,7 +43,6 @@ get_file () {
     wget -nv -O $1 $2
   fi
 }
-
 
 if [[ ($# -ne 1 && $# -ne 2) ]] ; then
   echo "Please provide an installation path and optionally perl lib paths to allow, e.g."
@@ -57,6 +57,7 @@ INST_PATH=$1
 if [[ $# -eq 2 ]] ; then
   CGP_PERLLIBS=$2
 fi
+
 
 # get current directory
 INIT_DIR=`pwd`

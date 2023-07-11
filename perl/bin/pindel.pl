@@ -29,7 +29,6 @@
 # 2009, 2010, 2011, 2012’.
 #
 
-
 BEGIN {
   use Cwd qw(abs_path cwd);
   use File::Basename;
@@ -41,9 +40,7 @@ use warnings FATAL => 'all';
 use autodie qw(:all);
 
 use File::Path qw(remove_tree make_path);
-use Getopt::Long;
 use File::Spec;
-use Pod::Usage qw(pod2usage);
 use List::Util qw(first);
 use Const::Fast qw(const);
 use File::Copy;
@@ -104,129 +101,42 @@ sub cleanup {
 }
 
 sub setup {
-  my %opts;
-  pod2usage(-msg  => "\nERROR: Option must be defined.\n", -verbose => 1,  -output => \*STDERR) if(scalar @ARGV == 0);
-  $opts{'cmd'} = join " ", $0, @ARGV;
-  GetOptions(
-              'r|reference=s' => \$opts{'reference'},
-              'o|outdir=s' => \$opts{'outdir'},
-              't|tumour=s' => \$opts{'tumour'},
-              'n|normal=s' => \$opts{'normal'},
-              'e|exclude=s' => \$opts{'exclude'},
-              'ef|exclude-file=s' => \$opts{'excludef'},
-              'b|badloci=s' => \$opts{'badloci'},
-              # these are specifically for pin2vcf
-              'sp|species=s{0,}' => \@{$opts{'species'}},
-              'as|assembly=s' => \$opts{'assembly'},
-              'st|seqtype=s' => \$opts{'seqtype'},
-              'sg|skipgerm' => \$opts{'skipgerm'},
-              # specifically for FlagVCF
-              's|simrep=s' => \$opts{'simrep'},
-              'f|filters=s' => \$opts{'filters'},
-              'g|genes=s' => \$opts{'genes'},
-              'u|unmatched=s' => \$opts{'unmatched'},
-              'sf|softfil=s' => \$opts{'softfil'},
-              'a|apid:s' => \$opts{'apid'},
-              # process management
-              'c|cpus=i' => \$opts{'threads'},
-              'l|limit=i' => \$opts{'limit'},
-              'd|debug' => \$opts{'debug'},
-              'p|process=s' => \$opts{'process'},
-              'i|index=i' => \$opts{'index'},
-              'noflag' => \$opts{'noflag'},
-              # other
-              'h|help' => \$opts{'h'},
-              'm|man' => \$opts{'m'},
-              'v|version' => \$opts{'version'},
+  my $opts = Sanger::CGP::Pindel::Implement::shared_setup(
+    ['tumour', 'normal'],
+    {'t|tumour=s' => 'tumour', 'n|normal=s' => 'normal'}
+  );
+  PCAP::Cli::file_for_reading('tumour', $opts->{'tumour'});
+  PCAP::Cli::file_for_reading('normal', $opts->{'normal'});
 
-  ) or pod2usage(2);
-
-  pod2usage(-verbose => 1) if(defined $opts{'h'});
-  pod2usage(-verbose => 2) if(defined $opts{'m'});
-
-  if($opts{'version'}) {
-    print 'Version: ',Sanger::CGP::Pindel::Implement->VERSION,"\n";
-    exit 0;
-  }
-
-  PCAP::Cli::file_for_reading('reference', $opts{'reference'});
-  PCAP::Cli::file_for_reading('tumour', $opts{'tumour'});
-  PCAP::Cli::file_for_reading('normal', $opts{'normal'});
-  PCAP::Cli::file_for_reading('exclude file', $opts{'excludef'}) if(defined $opts{'excludef'});
-  unless($opts{'noflag'}) {
-    PCAP::Cli::file_for_reading('simrep', $opts{'simrep'});
-    PCAP::Cli::file_for_reading('filters', $opts{'filters'});
-    PCAP::Cli::file_for_reading('genes', $opts{'genes'});
-    PCAP::Cli::file_for_reading('unmatched', $opts{'unmatched'});
-    PCAP::Cli::file_for_reading('softfil', $opts{'softfil'}) if(defined $opts{'softfil'});
-  }
-  PCAP::Cli::out_dir_check('outdir', $opts{'outdir'});
-  my $final_logs = File::Spec->catdir($opts{'outdir'}, 'logs');
-  if(-e $final_logs) {
-    warn "NOTE: Presence of '$final_logs' directory suggests successful complete analysis, please delete to rerun\n";
-    exit 0;
-  }
-
-  for my $title (@RM_PROCESS){
-    delete $opts{$title} unless(defined $opts{$title});
-  }
-
-  if(exists $opts{'process'}) {
-    PCAP::Cli::valid_process('process', $opts{'process'}, \@VALID_PROCESS);
-    if(exists $opts{'index'}) {
-      my @valid_seqs = Sanger::CGP::Pindel::Implement::valid_seqs(\%opts);
+  if(exists $opts->{'process'}) {
+    PCAP::Cli::valid_process('process', $opts->{'process'}, \@VALID_PROCESS);
+    if(exists $opts->{'index'}) {
+      my @valid_seqs = Sanger::CGP::Pindel::Implement::valid_seqs($opts);
       my $refs = scalar @valid_seqs;
 
-      my $max = $index_max{$opts{'process'}};
+      my $max = $index_max{$opts->{'process'}};
       if($max==-1){
-        if(exists $opts{'limit'}) {
-          $max = $opts{'limit'} > $refs ? $refs : $opts{'limit'};
+        if(exists $opts->{'limit'}) {
+          $max = $opts->{'limit'} > $refs ? $refs : $opts->{'limit'};
         }
         else {
       	  $max = $refs;
       	}
       }
 
-      die "ERROR: based on reference and exclude option index must be between 1 and $refs\n" if($opts{'index'} < 1 || $opts{'index'} > $max);
-      PCAP::Cli::opt_requires_opts('index', \%opts, ['process']);
+      die "ERROR: based on reference and exclude option index must be between 1 and $refs\n" if($opts->{'index'} < 1 || $opts->{'index'} > $max);
+      PCAP::Cli::opt_requires_opts('index', $opts, ['process']);
 
       die "No max has been defined for this process type\n" if($max == 0);
 
-      PCAP::Cli::valid_index_by_factor('index', $opts{'index'}, $max, 1);
+      PCAP::Cli::valid_index_by_factor('index', $opts->{'index'}, $max, 1);
     }
   }
-  elsif(exists $opts{'index'}) {
+  elsif(exists $opts->{'index'}) {
     die "ERROR: -index cannot be defined without -process\n";
   }
 
-  # now safe to apply defaults
-  $opts{'threads'} = 1 unless(defined $opts{'threads'});
-  $opts{'seqtype'} = 'WGS' unless(defined $opts{'seqtype'});
-
-
-  # make all things that appear to be paths complete (absolute not great if BAM/BAI in different locations)
-  for my $key (keys %opts) {
-    next unless( first {$key eq $_} qw(reference outdir tumour normal badloci simrep filters genes unmatched softfil));
-    $opts{$key} = cwd().'/'.$opts{$key} if(defined $opts{$key} && -e $opts{$key} && $opts{$key} !~ m/^\//);
-  }
-
-  my $tmpdir = File::Spec->catdir($opts{'outdir'}, 'tmpPindel');
-  make_path($tmpdir) unless(-d $tmpdir);
-  my $progress = File::Spec->catdir($tmpdir, 'progress');
-  make_path($progress) unless(-d $progress);
-  my $logs = File::Spec->catdir($tmpdir, 'logs');
-  make_path($logs) unless(-d $logs);
-
-  $opts{'tmp'} = $tmpdir;
-
-  if(scalar @{$opts{'species'}} > 0 ){
-    $opts{'species'}="@{$opts{'species'}}";
-  }
-  else {
-    delete $opts{'species'};
-  }
-
-  return \%opts;
+  return $opts;
 }
 
 __END__

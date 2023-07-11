@@ -1,23 +1,4 @@
-########## LICENCE ##########
-# Copyright (c) 2014-2021 Genome Research Ltd.
-#
-# Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
-#
-# This file is part of cgpPindel.
-#
-# cgpPindel is free software: you can redistribute it and/or modify it under
-# the terms of the GNU Affero General Public License as published by the Free
-# Software Foundation; either version 3 of the License, or (at your option) any
-# later version.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
-# details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program. If not, see <http://www.gnu.org/licenses/>.
-########## LICENCE ##########
+
 
 # this is a catch all to ensure all modules do compile
 # added as lots of 'use' functionality is dynamic in pipeline
@@ -38,7 +19,7 @@ my $lib_path = "$Bin/../lib";
 
 # Add modules here that cannot be instantiated (should be extended and have no 'new')
 # or need a set of inputs - these should be tested in own test script
-use constant MODULE_SKIP => qw(Sanger::CGP::Pindel::InputGen::Pair Sanger::CGP::Pindel::InputGen::Read Sanger::CGP::Pindel::OutputGen::CombinedRecordGenerator Sanger::CGP::Pindel::OutputGen::PindelRecordParser Sanger::CGP::Pindel::OutputGen::VcfConverter);
+use constant MODULE_SKIP => qw(Sanger::CGP::Pindel::InputGen::Pair Sanger::CGP::Pindel::InputGen::Read Sanger::CGP::Pindel::OutputGen::CombinedRecordGenerator Sanger::CGP::Pindel::OutputGen::PindelRecordParser Sanger::CGP::Pindel::OutputGen::VcfConverter Sanger::CGP::Pindel::OutputGen::VcfBlatAugment);
 
 
 my $init_cwd = getcwd;
