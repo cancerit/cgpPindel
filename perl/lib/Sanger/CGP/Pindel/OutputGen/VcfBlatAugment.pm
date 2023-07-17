@@ -745,6 +745,15 @@ sub flanking_ref {
   return [$ref_left, $ref_right]
 }
 
+sub rev_comp {
+  my $seq = $_[0];
+  my $rev_seq = reverse $seq;
+  $rev_seq =~ tr/ATGCatgc/TACGtacg/;
+
+  return $rev_seq;
+}
+
+
 sub blat_ref_alt {
   my ($self, $fh, $v_h) = @_;
   my ($ref_left, $ref_right) = @{$self->flanking_ref($v_h)};
@@ -782,12 +791,15 @@ sub blat_ref_alt {
   }
 
   my $change_ref = $seq_left.$ref.$seq_right;
+  my $change_ref_rev = rev_comp($change_ref);
+
   my $change_alt = $seq_left.$alt.$seq_right;
+  my $change_alt_rev = rev_comp($change_alt);
 
   $v_h->{q_start} = $q_start;
   $v_h->{q_end} = $q_end;
   $v_h->{change_pos} = $change_at;
-  $v_h->{change_ref} = $change_ref;
-  $v_h->{change_alt} = $change_alt;
+  $v_h->{change_ref} = $change_ref_rev;
+  $v_h->{change_alt} = $change_alt_rev;
   return 1;
 }

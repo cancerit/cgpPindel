@@ -49,6 +49,7 @@ use PCAP::Cli;
 use Sanger::CGP::Pindel::Implement;
 
 const my @VALID_PROCESS => qw(input pindel pin2vcf merge flag);
+const my @RM_PROCESS => qw(  process index limit exclude excludef badloci apid);
 my %index_max = ( 'input'   => 2,
                   'pindel'  => -1,
                   'pin2vcf' => -1,
@@ -79,7 +80,7 @@ my %index_max = ( 'input'   => 2,
   Sanger::CGP::Pindel::Implement::merge_and_bam($options) if(!exists $options->{'process'} || $options->{'process'} eq 'merge');
 
   if(!exists $options->{'process'} || $options->{'process'} eq 'flag') {
-    Sanger::CGP::Pindel::Implement::flag($options);
+    Sanger::CGP::Pindel::Implement::flag($options) unless($options->{'noflag'});
     cleanup($options) unless($options->{'debug'});
   }
 }
@@ -90,8 +91,10 @@ sub cleanup {
   move(File::Spec->catdir($tmpdir, 'logs'), File::Spec->catdir($options->{'outdir'}, 'logs')) || die $!;
   remove_tree $tmpdir if(-e $tmpdir);
   opendir(my $dh, $options->{'outdir'});
-  while(readdir $dh) {
-    unlink File::Spec->catfile($options->{'outdir'}, $_) if($_ =~ /\.vcf\.gz(\.tbi)?$/ && $_ !~ /\.flagged\.vcf\.gz(\.tbi)?$/);
+  unless($options->{'noflag'}) {
+    while(readdir $dh) {
+      unlink File::Spec->catfile($options->{'outdir'}, $_) if($_ =~ /\.vcf\.gz(\.tbi)?$/ && $_ !~ /\.flagged\.vcf\.gz(\.tbi)?$/);
+    }
   }
   closedir $dh;
 	return 0;
@@ -152,31 +155,40 @@ pindel.pl [options]
     -reference -r   Path to reference genome file *.fa[.gz]
     -tumour    -t   Tumour BAM/CRAM file (co-located index and bas files)
     -normal    -n   Normal BAM/CRAM file (co-located index and bas files)
+
+
+  Flagging parameters:
+    -noflag         Skip flagging
     -simrep    -s   Full path to tabix indexed simple/satellite repeats.
     -filter    -f   VCF filter rules file (see FlagVcf.pl for details)
     -genes     -g   Full path to tabix indexed coding gene footprints.
-    -unmatched -u   Full path to tabix indexed gff3 of unmatched normal panel
-                      - see pindel_np_from_vcf.pl
+    -unmatched -u   Full path to tabix indexed gff3 or bed of unmatched normal panel
+                      - gff3 = F010 & FF010
+                      -  bed = FF021
+                      - see also pindel_np_from_vcf.pl
+    -softfil   -sf  Optional: Filter rules to be indicated in INFO field as soft flags
+    -apid      -a   Optional: Analysis process ID (numeric)
+                     - not necessary for external use
 
   Optional
-    -seqtype   -st  Sequencing protocol, expect all input to match [WGS]
-    -assembly  -as  Name of assembly in use
-                     -  when not available in BAM header SQ line.
-    -species   -sp  Species
-                     -  when not available in BAM header SQ line.
-    -exclude   -e   Exclude this list of ref sequences from processing, wildcard '%'
-                     - comma separated, e.g. NC_007605,hs37d5,GL%
+    -seqtype        -st  Sequencing protocol, expect all input to match [WGS]
+    -assembly       -as  Name of assembly in use
+                           -  when not available in BAM header SQ line.
+    -species        -sp  Species
+                           -  when not available in BAM header SQ line.
+    -exclude         -e  Exclude this list of ref sequences from processing, wildcard '%'
+                           - comma separated, e.g. NC_007605,hs37d5,GL%
+    -exclude-file    -ef File containing a list of ref sequences to exclude from processing, wildcard '%'
+                           - can be used in place of the -e|-exclude option
     -badloci   -b   Tabix indexed BED file of locations to not accept as anchors
                      - e.g. hi-seq depth from UCSC
     -skipgerm  -sg  Don't output events with more evidence in normal BAM.
     -cpus      -c   Number of cores to use. [1]
                      - recommend max 4 during 'input' process.
-    -softfil   -sf  VCF filter rules to be indicated in INFO field as soft flags
     -limit     -l   When defined with '-cpus' internally thread concurrent processes.
                      - requires '-p', specifically for pindel/pin2vcf steps
     -debug     -d   Don't cleanup workarea on completion.
-    -apid      -a   Analysis process ID (numeric) - for cgpAnalysisProc header info
-                     - not necessary for external use
+
 
   Targeted processing (further detail under OPTIONS):
     -process   -p   Only process this step then exit, optionally set -index
