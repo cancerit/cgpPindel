@@ -1,5 +1,8 @@
 # CHANGES
 
+## 3.11.0
+- Updated Dockerfile to use pcap-core 5.8.0 - htslib/samtools 1.20
+
 ## 3.10.0
 
 - Add commandline option for file containing exclude contigs
