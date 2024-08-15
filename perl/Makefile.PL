@@ -48,7 +48,7 @@ WriteMakefile(
                      'Try::Tiny' => 0.19,
                      'File::Which' => 0.05,
                      'List::Util' => 1.38,
-                     'Bio::DB::HTS' => 1.11,
+                     'Bio::DB::HTS' => 3.01,
                      'List::MoreUtils' => 0.33,
                      'Test::Fatal' => 0.013,
                      'Devel::Cover' => 1.09,
