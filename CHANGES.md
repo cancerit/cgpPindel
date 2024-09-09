@@ -1,5 +1,9 @@
 # CHANGES
 
+## 3.11.0
+- Updated Dockerfile to use pcap-core 5.8.0 - htslib/samtools 1.20
+- Update 'Bio::DB::HTS' to version 3.0.1
+
 ## 3.10.0
 
 - Add commandline option for file containing exclude contigs
