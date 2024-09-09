@@ -1,4 +1,4 @@
-FROM quay.io/wtsicgp/pcap-core:5.6.1 as builder
+FROM quay.io/wtsicgp/pcap-core:5.8.1 as builder
 
 # hadolint ignore=DL3002
 USER  root
