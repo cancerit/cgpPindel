@@ -1,5 +1,8 @@
 # CHANGES
 
+## 3.11.1
+- Added check in flag_010 if the from value becomes negative
+
 ## 3.11.0
 - Updated Dockerfile to use pcap-core 5.8.0 - htslib/samtools 1.20
 - Update 'Bio::DB::HTS' to version 3.0.1

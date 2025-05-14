@@ -376,6 +376,11 @@ sub flag_010 {
   $from -= $length_off; # no fudge of position as tabix for bed is now 1 based
   $to += $length_off;
 
+  # Check that $from has not become negative and set to 1 if it has
+  if ($from <= 0) {
+    $from = 1;
+  }
+
   my $ret = eval{
     my $iter = $vcf_flagging_unmatched_normals_tabix->query_full($CHROM,$from,$to);
     return $PASS if(!defined $iter); # no valid entries (chromosome not in index) so must pass
